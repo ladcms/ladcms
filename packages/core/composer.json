@@ -13,7 +13,10 @@
         "spatie/laravel-settings": "^3.9"
     },
     "autoload": {
-        "psr-4": { "Ladcms\\Core\\": "src/" }
+        "psr-4": {
+            "Ladcms\\Core\\": "src/",
+            "Ladcms\\Core\\Database\\Factories\\": "database/factories/"
+        }
     },
     "autoload-dev": {
         "psr-4": { "Ladcms\\Core\\Tests\\": "tests/" }

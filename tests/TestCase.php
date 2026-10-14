@@ -1,11 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ladcms\Tests;
 
 use Inertia\ServiceProvider as InertiaServiceProvider;
 use Ladcms\Core\CoreServiceProvider;
+use Ladcms\Core\Models\User;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Spatie\LaravelSettings\LaravelSettingsServiceProvider;
 use Spatie\Permission\PermissionServiceProvider;
+
+use function Orchestra\Testbench\default_migration_path;
+use function Orchestra\Testbench\laravel_or_fail;
+use function Orchestra\Testbench\load_migration_paths;
 
 abstract class TestCase extends Orchestra
 {
@@ -14,6 +22,7 @@ abstract class TestCase extends Orchestra
         return [
             InertiaServiceProvider::class,
             PermissionServiceProvider::class,
+            LaravelSettingsServiceProvider::class,
             CoreServiceProvider::class,
         ];
     }
@@ -26,5 +35,19 @@ abstract class TestCase extends Orchestra
             'database' => ':memory:',
             'prefix' => '',
         ]);
+        $app['config']->set('auth.providers.users.model', User::class);
+        $app['config']->set('inertia.pages.ensure_pages_exist', false);
+        $app['config']->set('inertia.testing.ensure_pages_exist', false);
+    }
+
+    /**
+     * Стандартные миграции Laravel (users, sessions, cache, jobs) из скелета Testbench
+     * регистрируются в мигратор, а не запускаются сразу: тогда RefreshDatabase применяет
+     * их вместе с миграциями модулей в порядке таймстампов (users раньше core-ALTER).
+     * Трейт WithLaravelMigrations здесь не годится: без testbench.yaml (workbench.install) он no-op.
+     */
+    protected function defineDatabaseMigrations(): void
+    {
+        load_migration_paths(laravel_or_fail($this->app), default_migration_path());
     }
 }

@@ -1261,7 +1261,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "9b0d3e512190558c1ecd59593702535e9a356930"
+                "reference": "ae91caef71fd75bd11d81c10fa808c71ef77160e"
             },
             "require": {
                 "composer/semver": "^3.4",
@@ -1282,7 +1282,8 @@
             },
             "autoload": {
                 "psr-4": {
-                    "Ladcms\\Core\\": "src/"
+                    "Ladcms\\Core\\": "src/",
+                    "Ladcms\\Core\\Database\\Factories\\": "database/factories/"
                 }
             },
             "autoload-dev": {
