@@ -4,12 +4,16 @@ namespace Ladcms\Tests;
 
 use Ladcms\Core\CoreServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Spatie\Permission\PermissionServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
     protected function getPackageProviders($app): array
     {
-        return [CoreServiceProvider::class];
+        return [
+            PermissionServiceProvider::class,
+            CoreServiceProvider::class,
+        ];
     }
 
     protected function defineEnvironment($app): void

@@ -2,9 +2,11 @@
 
 namespace Ladcms\Core;
 
+use Ladcms\Core\Console\InstallModuleCommand;
 use Ladcms\Core\Http\Middleware\AdminAccess;
 use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Module\ModuleServiceProvider;
+use Spatie\LaravelPackageTools\Package;
 
 class CoreServiceProvider extends ModuleServiceProvider
 {
@@ -18,6 +20,13 @@ class CoreServiceProvider extends ModuleServiceProvider
     public function version(): string
     {
         return self::VERSION;
+    }
+
+    protected function configureModule(Package $package): void
+    {
+        $package->hasCommands([
+            InstallModuleCommand::class,
+        ]);
     }
 
     public function packageBooted(): void
