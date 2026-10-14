@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Ladcms\Core\Actions\Auth\AuthenticateByLoginOrEmail;
@@ -60,6 +61,32 @@ it('does not authenticate soft-deleted users', function () {
     User::factory()->create(['login' => 'alice', 'password' => 'secret-password'])->delete();
 
     expect(app(AuthenticateByLoginOrEmail::class)->handle('alice', 'secret-password'))->toBeNull();
+});
+
+it('answers no faster than the timebox for unknown identifiers', function () {
+    User::factory()->create(['login' => 'alice', 'password' => 'secret-password']);
+
+    foreach (['nobody', 'nobody@example.com', ''] as $identifier) {
+        $start = hrtime(true);
+        $result = app(AuthenticateByLoginOrEmail::class)->handle($identifier, 'secret-password');
+        $elapsedMs = (hrtime(true) - $start) / 1e6;
+
+        expect($result)->toBeNull()->and($elapsedMs)->toBeGreaterThanOrEqual(150);
+    }
+});
+
+it('rehashes an outdated password hash on successful login', function () {
+    config(['hashing.rehash_on_login' => true, 'hashing.bcrypt.rounds' => 10]);
+    $user = User::factory()->create(['login' => 'alice']);
+    $user->forceFill(['password' => Hash::make('secret-password', ['rounds' => 4])])->saveQuietly();
+    expect(Hash::needsRehash($user->fresh()->getAuthPassword()))->toBeTrue();
+
+    app(AuthenticateByLoginOrEmail::class)->handle('alice', 'secret-password');
+
+    $hash = $user->fresh()->getAuthPassword();
+    expect(Hash::needsRehash($hash))->toBeFalse()
+        ->and(password_get_info($hash)['options']['cost'])->toBe(10)
+        ->and(Hash::check('secret-password', $hash))->toBeTrue();
 });
 
 it('registers a user with normalized login and email', function () {
