@@ -13,13 +13,16 @@ class LiftBan
     /** @throws AuthorizationException */
     public function handle(User $actor, Ban $ban): void
     {
-        $target = $ban->user;
+        // Цель может быть мягко удалена — ранг проверяем и для неё; без цели — отказ (fail closed).
+        $target = $ban->user()->withTrashed()->first();
 
-        if (! $actor->can('users.ban') || ($target !== null && ! $actor->outranks($target))) {
+        if (! $target instanceof User || ! $actor->can('users.ban') || ! $actor->outranks($target)) {
             throw new AuthorizationException('You cannot lift this ban.');
         }
 
         // TODO(Task 10): activity log.
-        $ban->update(['expires_at' => now()]);
+        if ($ban->isActive()) {
+            $ban->update(['expires_at' => now()]);
+        }
     }
 }

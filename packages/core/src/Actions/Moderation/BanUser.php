@@ -39,6 +39,10 @@ class BanUser
                 throw ValidationException::withMessages(['expires_at' => 'This violation code does not allow a permanent ban.']);
             }
         } else {
+            if (! now()->isBefore($expiresAt)) {
+                throw ValidationException::withMessages(['expires_at' => 'Expiry must be in the future.']);
+            }
+
             $days = (int) ceil(now()->diffInSeconds($expiresAt, absolute: true) / 86400);
 
             if ($days < $code['min_days'] || ($code['max_days'] !== null && $days > $code['max_days'])) {
