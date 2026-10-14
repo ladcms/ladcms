@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Ladcms\Core;
 
+use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\Gate;
 use Ladcms\Core\Console\InstallModuleCommand;
 use Ladcms\Core\Console\UninstallModuleCommand;
 use Ladcms\Core\Console\UpdateModulesCommand;
 use Ladcms\Core\Http\Middleware\AdminAccess;
+use Ladcms\Core\Http\Middleware\CheckBan;
 use Ladcms\Core\Inertia\ModulePageFinder;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
@@ -89,6 +92,17 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
         $router->aliasMiddleware('role', RoleMiddleware::class);
         $router->aliasMiddleware('permission', PermissionMiddleware::class);
         $router->aliasMiddleware('role_or_permission', RoleOrPermissionMiddleware::class);
+        $router->aliasMiddleware('ladcms.ban', CheckBan::class);
+
+        // CheckBan — в группу `web`. Через HTTP-kernel: он синхронизирует свои группы в роутер
+        // при создании и затёр бы правку, внесённую только в роутер.
+        $kernel = $this->app->make(HttpKernelContract::class);
+        // @phpstan-ignore instanceof.alwaysTrue (Larastan выводит тип из Testbench; в приложении kernel может быть любым)
+        if ($kernel instanceof HttpKernel && array_key_exists('web', $kernel->getMiddlewareGroups())) {
+            $kernel->appendMiddlewareToGroup('web', CheckBan::class);
+        } else {
+            $router->pushMiddlewareToGroup('web', CheckBan::class);
+        }
 
         // Создатель может всё, включая abilities без permission/policy.
         Gate::before(fn ($user, string $ability): ?bool => $user instanceof User && $user->isCreator() ? true : null);

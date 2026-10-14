@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ladcms\Tests;
 
+use Illuminate\Support\Facades\View;
 use Inertia\ServiceProvider as InertiaServiceProvider;
 use Ladcms\Core\CoreServiceProvider;
 use Ladcms\Core\Models\User;
@@ -38,6 +39,9 @@ abstract class TestCase extends Orchestra
         $app['config']->set('auth.providers.users.model', User::class);
         $app['config']->set('inertia.pages.ensure_pages_exist', false);
         $app['config']->set('inertia.testing.ensure_pages_exist', false);
+
+        // Корневой Blade-шаблон Inertia (`app`) для рендера страниц в Testbench.
+        View::addLocation(__DIR__.'/views');
     }
 
     /**
