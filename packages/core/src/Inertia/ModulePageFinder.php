@@ -10,7 +10,8 @@ use Ladcms\Core\Module\ModuleRegistry;
 
 /**
  * Декоратор `inertia.view-finder` (Illuminate\View\FileViewFinder): имя `module::Path`
- * ищется в `<modulePath>/resources/js/pages/Path.<ext>`, остальные имена — оригиналом.
+ * ищется в `<modulePath>/resources/js/pages/Path.tsx`, остальные имена — оригиналом.
+ * Только `.tsx` — как и фронтовый резолвер (resources/js/inertia/resolve-page.ts).
  * Не найдено → InvalidArgumentException, как у FileViewFinder (Inertia превращает его в ComponentNotFoundException).
  */
 class ModulePageFinder implements ViewFinderInterface
@@ -21,7 +22,7 @@ class ModulePageFinder implements ViewFinderInterface
     public function __construct(
         private readonly ViewFinderInterface $inner,
         private readonly ModuleRegistry $registry,
-        private readonly array $extensions = ['tsx', 'jsx', 'ts', 'js'],
+        private readonly array $extensions = ['tsx'],
     ) {}
 
     /**

@@ -1,4 +1,6 @@
 /vendor/
+/packages/*/vendor/
+/packages/*/composer.lock
 /node_modules/
 /.superpowers/
 /.phpunit.cache/
