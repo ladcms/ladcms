@@ -3,6 +3,8 @@
 namespace Ladcms\Core;
 
 use Ladcms\Core\Console\InstallModuleCommand;
+use Ladcms\Core\Console\UninstallModuleCommand;
+use Ladcms\Core\Console\UpdateModulesCommand;
 use Ladcms\Core\Http\Middleware\AdminAccess;
 use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Module\ModuleServiceProvider;
@@ -26,6 +28,8 @@ class CoreServiceProvider extends ModuleServiceProvider
     {
         $package->hasCommands([
             InstallModuleCommand::class,
+            UpdateModulesCommand::class,
+            UninstallModuleCommand::class,
         ]);
     }
 
