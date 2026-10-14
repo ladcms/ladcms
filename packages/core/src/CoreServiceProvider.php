@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Ladcms\Core;
 
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Ladcms\Core\Console\InstallModuleCommand;
+use Ladcms\Core\Console\PruneUnverifiedUsersCommand;
 use Ladcms\Core\Console\UninstallModuleCommand;
 use Ladcms\Core\Console\UpdateModulesCommand;
 use Ladcms\Core\Http\Middleware\AdminAccess;
@@ -72,6 +74,7 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
             InstallModuleCommand::class,
             UpdateModulesCommand::class,
             UninstallModuleCommand::class,
+            PruneUnverifiedUsersCommand::class,
         ]);
     }
 
@@ -121,6 +124,12 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
 
         Inertia::share('locale', fn (): string => app()->getLocale());
         Inertia::share('locales', fn (): mixed => config('core.locales'));
+
+        // Ежедневная чистка: неподтверждённые аккаунты и старые записи журнала активности.
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('ladcms:prune-unverified')->daily();
+            $schedule->command('activitylog:clean --force')->daily();
+        });
 
         // Роль регистрации — новым пользователям (событие диспатчит Fortify после CreateNewUser).
         Event::listen(Registered::class, AssignDefaultRole::class);
