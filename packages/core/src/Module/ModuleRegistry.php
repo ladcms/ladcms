@@ -7,7 +7,10 @@ use Illuminate\Support\Collection;
 
 class ModuleRegistry
 {
-    /** @var array<string, ModuleServiceProvider> */
+    /** @var array<string, ModuleServiceProvider> все зарегистрированные модули */
+    private array $registered = [];
+
+    /** @var array<string, ModuleServiceProvider> модули, прошедшие проверку */
     private array $modules = [];
 
     /** @var array<string, ModuleFailure> */
@@ -19,19 +22,24 @@ class ModuleRegistry
 
     public function register(ModuleServiceProvider $module): void
     {
-        $this->modules[$module->name()] = $module;
+        $this->registered[$module->name()] = $module;
         $this->validated = false;
     }
 
     /**
-     * Проверяет версии и зависимости. Вызывается после boot всех провайдеров,
-     * чтобы порядок регистрации не влиял на результат.
+     * Проверяет версии и зависимости. Laravel регистрирует все провайдеры до boot любого из них,
+     * поэтому к первому вызову (из boot модуля) набор модулей полон и порядок регистрации не важен.
+     * Каждый прогон пересчитывает результат с нуля по текущему набору модулей.
      */
     public function validate(): void
     {
         if ($this->validated) {
             return;
         }
+
+        $previous = $this->failures;
+        $this->modules = $this->registered;
+        $this->failures = [];
 
         foreach ($this->modules as $name => $module) {
             if ($name === 'core') {
@@ -57,6 +65,12 @@ class ModuleRegistry
             }
         } while ($changed);
 
+        foreach ($this->failures as $name => $failure) {
+            if (($previous[$name] ?? null)?->reason !== $failure->reason) {
+                logger()->warning("LADCMS module [{$name}] disabled: {$failure->reason}");
+            }
+        }
+
         $this->validated = true;
     }
 
@@ -64,7 +78,6 @@ class ModuleRegistry
     {
         unset($this->modules[$name]);
         $this->failures[$name] = new ModuleFailure($name, $reason);
-        logger()->warning("LADCMS module [{$name}] disabled: {$reason}");
     }
 
     /** @return Collection<string, ModuleServiceProvider> */

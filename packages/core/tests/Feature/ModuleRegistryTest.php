@@ -6,6 +6,7 @@ use Ladcms\Core\Module\Contracts\HasPermissions;
 use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Tests\Fixtures\BrokenModule\BrokenServiceProvider;
 use Ladcms\Core\Tests\Fixtures\DummyModule\DummyServiceProvider;
+use Ladcms\Core\Tests\Fixtures\FriendModule\FriendServiceProvider;
 use Ladcms\Core\Tests\Fixtures\NeedsFriendModule\NeedsFriendServiceProvider;
 
 beforeEach(function () {
@@ -54,11 +55,27 @@ it('does not boot a module whose core version is incompatible', function () {
     $this->get('/dummy')->assertOk(); // приложение живо
 });
 
+it('does not load resources of a module that fails validation', function () {
+    $this->get('/broken')->assertNotFound();
+    expect(config('broken.flag'))->toBeNull();
+});
+
 it('does not boot a module whose dependency is missing', function () {
     $registry = app(ModuleRegistry::class);
 
     expect($registry->has('needs-friend'))->toBeFalse()
         ->and($registry->failures()['needs-friend']->reason)->toContain('friend');
+});
+
+it('resolves dependencies regardless of registration order', function () {
+    // NeedsFriend уже зарегистрирован в beforeEach, Friend — после него; затем проверка.
+    $this->app->register(FriendServiceProvider::class);
+    $registry = app(ModuleRegistry::class);
+    $registry->validate();
+
+    expect($registry->has('friend'))->toBeTrue()
+        ->and($registry->has('needs-friend'))->toBeTrue()
+        ->and($registry->failures())->not->toHaveKey('needs-friend');
 });
 
 it('collects modules implementing an interface', function () {

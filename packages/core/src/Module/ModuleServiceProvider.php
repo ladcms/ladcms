@@ -67,12 +67,30 @@ abstract class ModuleServiceProvider extends PackageServiceProvider implements M
 
     public function packageRegistered(): void
     {
-        $config = $this->modulePath("config/{$this->name()}.php");
-        if (is_file($config)) {
-            $this->mergeConfigFrom($config, $this->name());
+        $this->app->make(ModuleRegistry::class)->register($this);
+    }
+
+    /**
+     * Модуль, не прошедший проверку версий/зависимостей, не загружается вовсе:
+     * ни конфиг, ни миграции, ни переводы, ни маршруты, ни ресурсы package-tools.
+     *
+     * В реальном приложении все провайдеры регистрируются до boot, так что решение
+     * принимается по полному набору модулей. Ограничение: если зависимость регистрируется
+     * уже после boot (только в тестах через $app->register()), пропущенный ранее модуль
+     * не догружается, хотя реестр после повторной проверки и считает его валидным.
+     *
+     * @return $this
+     */
+    public function boot()
+    {
+        $registry = $this->app->make(ModuleRegistry::class);
+        $registry->validate();
+
+        if (array_key_exists($this->name(), $registry->failures())) {
+            return $this;
         }
 
-        $this->app->make(ModuleRegistry::class)->register($this);
+        return parent::boot();
     }
 
     public function packageBooted(): void
@@ -86,8 +104,12 @@ abstract class ModuleServiceProvider extends PackageServiceProvider implements M
         $name = $this->name();
 
         $config = $this->modulePath("config/{$name}.php");
-        if (is_file($config) && $this->app->runningInConsole()) {
-            $this->publishes([$config => config_path("{$name}.php")], "{$name}-config");
+        if (is_file($config)) {
+            $this->mergeConfigFrom($config, $name);
+
+            if ($this->app->runningInConsole()) {
+                $this->publishes([$config => config_path("{$name}.php")], "{$name}-config");
+            }
         }
 
         // Миграции регистрируются в мигратор (применяются через `artisan migrate`), но не запускаются сами.
