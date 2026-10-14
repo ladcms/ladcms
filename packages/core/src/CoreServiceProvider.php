@@ -12,6 +12,7 @@ use Ladcms\Core\Console\UninstallModuleCommand;
 use Ladcms\Core\Console\UpdateModulesCommand;
 use Ladcms\Core\Http\Middleware\AdminAccess;
 use Ladcms\Core\Http\Middleware\CheckBan;
+use Ladcms\Core\Http\Middleware\TrackOnline;
 use Ladcms\Core\Inertia\ModulePageFinder;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
@@ -96,14 +97,16 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
         $router->aliasMiddleware('role_or_permission', RoleOrPermissionMiddleware::class);
         $router->aliasMiddleware('ladcms.ban', CheckBan::class);
 
-        // CheckBan — в группу `web`. Через HTTP-kernel: он синхронизирует свои группы в роутер
+        // CheckBan и TrackOnline — в группу `web`. Через HTTP-kernel: он синхронизирует свои группы в роутер
         // при создании и затёр бы правку, внесённую только в роутер.
         $kernel = $this->app->make(HttpKernelContract::class);
         // @phpstan-ignore instanceof.alwaysTrue (Larastan выводит тип из Testbench; в приложении kernel может быть любым)
         if ($kernel instanceof HttpKernel && array_key_exists('web', $kernel->getMiddlewareGroups())) {
             $kernel->appendMiddlewareToGroup('web', CheckBan::class);
+            $kernel->appendMiddlewareToGroup('web', TrackOnline::class);
         } else {
             $router->pushMiddlewareToGroup('web', CheckBan::class);
+            $router->pushMiddlewareToGroup('web', TrackOnline::class);
         }
 
         // Создатель проходит любые простые проверки (permission/ability без модели). Проверки с моделью

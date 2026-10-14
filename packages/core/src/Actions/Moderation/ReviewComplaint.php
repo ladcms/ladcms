@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use Ladcms\Core\Enums\ComplaintStatus;
 use Ladcms\Core\Models\Complaint;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\Audit;
 
 class ReviewComplaint
 {
@@ -26,12 +27,12 @@ class ReviewComplaint
             throw new InvalidArgumentException('A complaint cannot be reviewed back to pending.');
         }
 
-        // TODO(Task 10): Audit::log('complaint.reviewed', ...)
         $complaint->update([
             'status' => $status,
             'reviewed_by_id' => $reviewer->id,
             'reviewed_at' => now(),
         ]);
+        Audit::log('complaint.reviewed', $reviewer, $complaint, ['status' => $status->value]);
 
         return $complaint;
     }

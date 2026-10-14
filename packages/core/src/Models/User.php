@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ladcms\Core\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -117,6 +118,23 @@ class User extends Authenticatable
     public function isCreator(): bool
     {
         return $this->level() >= RoleLevel::CREATOR;
+    }
+
+    /** Онлайн — активность за последние 10 минут. */
+    public const ONLINE_MINUTES = 10;
+
+    /**
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeOnline(Builder $query): Builder
+    {
+        return $query->where('last_activity_at', '>', now()->subMinutes(self::ONLINE_MINUTES));
+    }
+
+    public function isOnline(): bool
+    {
+        return $this->last_activity_at !== null && $this->last_activity_at->greaterThan(now()->subMinutes(self::ONLINE_MINUTES));
     }
 
     /** @return HasMany<Ban, $this> */

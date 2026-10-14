@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\Audit;
 
 class AssignRoles
 {
@@ -48,8 +49,9 @@ class AssignRoles
             }
         }
 
-        // TODO(Task 10): Audit::log role assignment (old → new roles).
+        $previous = $target->getRoleNames()->values()->all();
         $target->syncRoles($roles);
+        Audit::log('roles.assigned', $actor, $target, ['roles' => $roles->pluck('name')->values()->all(), 'previous' => $previous]);
 
         return $target;
     }

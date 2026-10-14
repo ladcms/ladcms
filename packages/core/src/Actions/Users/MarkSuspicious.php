@@ -6,6 +6,7 @@ namespace Ladcms\Core\Actions\Users;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\Audit;
 
 class MarkSuspicious
 {
@@ -16,11 +17,11 @@ class MarkSuspicious
             throw new AuthorizationException('You cannot change this user.');
         }
 
-        // TODO(Task 10): Audit::log suspicious flag change.
         $target->forceFill([
             'is_suspicious' => $flag,
             'suspicious_note' => $flag ? $note : null,
         ])->save();
+        Audit::log('user.suspicious', $actor, $target, ['flag' => $flag, 'note' => $target->suspicious_note]);
 
         return $target;
     }

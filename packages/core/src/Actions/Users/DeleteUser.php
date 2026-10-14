@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use InvalidArgumentException;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\Audit;
 
 class DeleteUser
 {
@@ -27,9 +28,9 @@ class DeleteUser
 
         Gate::forUser($actor)->authorize('delete', $target);
 
-        DB::transaction(function () use ($target): void {
-            // TODO(Task 10): Audit::log user deletion.
+        DB::transaction(function () use ($actor, $target): void {
             $target->delete();
+            Audit::log('user.deleted', $actor, $target);
         });
     }
 }

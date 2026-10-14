@@ -9,6 +9,7 @@ use Inertia\ServiceProvider as InertiaServiceProvider;
 use Ladcms\Core\CoreServiceProvider;
 use Ladcms\Core\Models\User;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Spatie\Activitylog\ActivitylogServiceProvider;
 use Spatie\LaravelSettings\LaravelSettingsServiceProvider;
 use Spatie\Permission\PermissionServiceProvider;
 
@@ -24,6 +25,7 @@ abstract class TestCase extends Orchestra
             InertiaServiceProvider::class,
             PermissionServiceProvider::class,
             LaravelSettingsServiceProvider::class,
+            ActivitylogServiceProvider::class,
             CoreServiceProvider::class,
         ];
     }

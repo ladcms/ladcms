@@ -13,6 +13,7 @@ use Ladcms\Core\Enums\BanType;
 use Ladcms\Core\Models\Ban;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Settings\ModerationSettings;
+use Ladcms\Core\Support\Audit;
 
 class BanUser
 {
@@ -52,8 +53,7 @@ class BanUser
             }
         }
 
-        // TODO(Task 10): activity log.
-        return Ban::create([
+        $ban = Ban::create([
             'user_id' => $target->id,
             'banned_by_id' => $actor->id,
             'type' => $type,
@@ -62,5 +62,14 @@ class BanUser
             'starts_at' => now(),
             'expires_at' => $expiresAt,
         ]);
+
+        Audit::log('ban.created', $actor, $target, [
+            'ban_id' => $ban->id,
+            'type' => $type->value,
+            'reason_code' => $reasonCode,
+            'expires_at' => $ban->expires_at?->toIso8601String(),
+        ]);
+
+        return $ban;
     }
 }

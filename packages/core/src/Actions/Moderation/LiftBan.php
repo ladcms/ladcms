@@ -7,6 +7,7 @@ namespace Ladcms\Core\Actions\Moderation;
 use Illuminate\Auth\Access\AuthorizationException;
 use Ladcms\Core\Models\Ban;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\Audit;
 
 class LiftBan
 {
@@ -20,9 +21,10 @@ class LiftBan
             throw new AuthorizationException('You cannot lift this ban.');
         }
 
-        // TODO(Task 10): activity log.
+        // Истёкший бан не трогаем: его expires_at — исторический факт.
         if ($ban->isActive()) {
             $ban->update(['expires_at' => now()]);
+            Audit::log('ban.lifted', $actor, $target, ['ban_id' => $ban->id]);
         }
     }
 }
