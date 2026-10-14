@@ -56,3 +56,10 @@ it('runs through the artisan command', function () {
         ->expectsOutput('Pruned 1 unverified users.')
         ->assertSuccessful();
 });
+
+it('deletes every match across several chunks', function () {
+    User::factory()->unverified()->count(5)->create(['created_at' => now()->subDays(10)]);
+
+    expect(app(PruneUnverifiedUsers::class)->handle(7, chunk: 2))->toBe(5)
+        ->and(User::withTrashed()->count())->toBe(0);
+});
