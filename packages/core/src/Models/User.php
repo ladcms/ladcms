@@ -109,7 +109,32 @@ class User extends Authenticatable
 
     public function getAvatarUrlAttribute(): ?string
     {
-        return $this->avatar_path ? Storage::disk(config('core.avatars.disk', 'public'))->url($this->avatar_path) : null;
+        return $this->avatarUrl('md');
+    }
+
+    public function avatarUrl(string $size = 'md'): ?string
+    {
+        if ($this->avatar_path === null || $this->avatar_path === '') {
+            return null;
+        }
+
+        return Storage::disk(self::avatarDisk())->url(self::avatarFile($this->id, $size));
+    }
+
+    public static function avatarDisk(): string
+    {
+        return (string) config('core.avatars.disk', 'public');
+    }
+
+    /** Каталог аватаров конкретного пользователя; строится только из int id. */
+    public static function avatarDirectory(int $userId): string
+    {
+        return trim((string) config('core.avatars.path', 'avatars'), '/').'/'.$userId;
+    }
+
+    public static function avatarFile(int $userId, string $size): string
+    {
+        return self::avatarDirectory($userId).'/'.$size.'.jpg';
     }
 
     public function level(): int
