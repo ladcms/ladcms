@@ -46,7 +46,7 @@ it('resolves user policy abilities by permission and rank', function (string $ac
     'user cannot view other user in admin' => ['user', 'view', 'user', false],
     'creator bans admin' => ['creator', 'ban', 'main_admin', true],
     'creator deletes creator' => ['creator', 'delete', 'creator', true],
-    'creator assigns roles to creator' => ['creator', 'assignRoles', 'creator', true],
+    'creator cannot assign roles to creator' => ['creator', 'assignRoles', 'creator', false],
 ]);
 
 it('lets any user update and view themselves', function () {

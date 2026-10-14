@@ -13,6 +13,7 @@ use Ladcms\Core\Models\User;
  * creators too: `can('<permission>')` passes for them, and only the model guards below can refuse.
  *
  * - `update`: self-edit is always allowed regardless of permissions; otherwise `users.edit` && outranks.
+ * - `assignRoles`: strict `users.assign-roles` && outranks (creators cannot change other creators or themselves).
  * - `delete`: never self; `users.delete` && (outranks || actor is creator) && target is not a creator
  *   unless the actor is a creator too. "Not the last creator" is enforced in DeleteUser.
  */
@@ -44,7 +45,7 @@ class UserPolicy
 
     public function assignRoles(User $actor, User $target): bool
     {
-        return $actor->can('users.assign-roles') && ($actor->outranks($target) || $actor->isCreator());
+        return $actor->can('users.assign-roles') && $actor->outranks($target);
     }
 
     public function delete(User $actor, User $target): bool

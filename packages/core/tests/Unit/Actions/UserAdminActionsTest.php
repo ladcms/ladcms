@@ -107,3 +107,17 @@ it('does not let a creator delete themselves even when another creator exists', 
 
     expect(fn () => app(DeleteUser::class)->handle($this->creator, $this->creator))->toThrow(AuthorizationException::class);
 });
+
+it('never lets the last creator lose the creator role', function () {
+    expect(fn () => app(AssignRoles::class)->handle($this->creator, $this->creator, ['user']))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => app(AssignRoles::class)->handle($this->admin, $this->creator, ['user']))->toThrow(InvalidArgumentException::class);
+
+    expect($this->creator->fresh()->isCreator())->toBeTrue();
+});
+
+it('does not let creators change roles of other creators', function () {
+    $second = User::factory()->create()->assignRole('creator');
+
+    expect(fn () => app(AssignRoles::class)->handle($this->creator, $second, ['user']))->toThrow(AuthorizationException::class);
+    expect($second->fresh()->isCreator())->toBeTrue();
+});
