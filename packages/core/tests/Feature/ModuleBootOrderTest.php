@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Tests\Support\ReversedProviderOrder;
 

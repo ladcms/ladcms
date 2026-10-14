@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ladcms\Core\Http\Middleware;
 
 use Closure;

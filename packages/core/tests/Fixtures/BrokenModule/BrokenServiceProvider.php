@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ladcms\Core\Tests\Fixtures\BrokenModule;
 
 use Ladcms\Core\Module\ModuleServiceProvider;

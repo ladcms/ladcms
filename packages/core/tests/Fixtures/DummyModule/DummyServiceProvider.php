@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ladcms\Core\Tests\Fixtures\DummyModule;
 
 use Ladcms\Core\Module\Contracts\HasPermissions;

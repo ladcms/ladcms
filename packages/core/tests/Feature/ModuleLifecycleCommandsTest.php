@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Ladcms\Core\Models\Module;
 use Ladcms\Core\Tests\Fixtures\BrokenModule\BrokenServiceProvider;

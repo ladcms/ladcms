@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ladcms\Core\Actions\Modules;
 
 use Illuminate\Database\Migrations\Migration;

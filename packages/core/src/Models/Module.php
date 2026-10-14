@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ladcms\Core\Models;
 
 use Illuminate\Database\Eloquent\Builder;

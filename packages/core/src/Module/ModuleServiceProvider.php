@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ladcms\Core\Module;
 
 use Illuminate\Support\Facades\Route;
@@ -47,7 +49,7 @@ abstract class ModuleServiceProvider extends PackageServiceProvider implements M
      */
     protected function moduleRoot(): string
     {
-        return dirname((string) (new ReflectionClass($this))->getFileName(), 2);
+        return dirname((string) new ReflectionClass($this)->getFileName(), 2);
     }
 
     public function configurePackage(Package $package): void

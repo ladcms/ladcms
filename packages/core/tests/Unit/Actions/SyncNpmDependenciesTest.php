@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Ladcms\Core\Actions\Modules\SyncNpmDependencies;
 
 it('adds missing npm dependencies without overwriting existing ones', function () {

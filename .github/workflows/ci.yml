@@ -17,6 +17,7 @@ jobs:
       - run: composer install --no-interaction --prefer-dist
       - run: vendor/bin/pint --test
       - run: vendor/bin/phpstan analyse --memory-limit=1G
+      - run: vendor/bin/rector --dry-run
       - run: vendor/bin/pest
 
   app:
@@ -44,6 +45,7 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
       - run: composer install --no-interaction --prefer-dist
+      - run: composer types:check
       - run: cp .env.example .env && php artisan key:generate
       # Generated Wayfinder files are git-ignored; types:check needs them.
       - run: php artisan wayfinder:generate --with-form
