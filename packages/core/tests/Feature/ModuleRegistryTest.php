@@ -67,15 +67,15 @@ it('does not boot a module whose dependency is missing', function () {
         ->and($registry->failures()['needs-friend']->reason)->toContain('friend');
 });
 
-it('resolves dependencies regardless of registration order', function () {
-    // NeedsFriend уже зарегистрирован в beforeEach, Friend — после него; затем проверка.
+it('keeps a module skipped at boot unavailable even if its dependency appears later', function () {
+    // needs-friend был пропущен при boot в beforeEach; friend регистрируется уже после boot.
     $this->app->register(FriendServiceProvider::class);
     $registry = app(ModuleRegistry::class);
-    $registry->validate();
 
     expect($registry->has('friend'))->toBeTrue()
-        ->and($registry->has('needs-friend'))->toBeTrue()
-        ->and($registry->failures())->not->toHaveKey('needs-friend');
+        ->and($registry->has('needs-friend'))->toBeFalse()
+        ->and($registry->names())->not->toContain('needs-friend')
+        ->and($registry->failures()['needs-friend']->reason)->toStartWith('skipped at boot: ')->toContain('friend');
 });
 
 it('collects modules implementing an interface', function () {

@@ -3,6 +3,7 @@
 namespace Ladcms\Core\Module;
 
 use Illuminate\Support\Facades\Route;
+use Ladcms\Core\CoreServiceProvider;
 use Ladcms\Core\Module\Contracts\ModuleInterface;
 use ReflectionClass;
 use Spatie\LaravelPackageTools\Package;
@@ -65,28 +66,52 @@ abstract class ModuleServiceProvider extends PackageServiceProvider implements M
      */
     protected function configureModule(Package $package): void {}
 
+    /**
+     * Реестр биндится здесь, а не в CoreServiceProvider: package discovery регистрирует
+     * провайдеры в порядке installed.json, и модуль может оказаться раньше core.
+     *
+     * @return $this
+     */
+    public function register()
+    {
+        $this->app->singletonIf(ModuleRegistry::class, fn () => new ModuleRegistry(CoreServiceProvider::VERSION));
+
+        parent::register();
+
+        return $this;
+    }
+
     public function packageRegistered(): void
     {
+        // Конфиг мержится в фазе register (конвенция Laravel), чтобы другие провайдеры могли читать его в register()/boot().
+        $config = $this->modulePath("config/{$this->name()}.php");
+        if (is_file($config)) {
+            $this->mergeConfigFrom($config, $this->name());
+        }
+
         $this->app->make(ModuleRegistry::class)->register($this);
     }
 
     /**
      * Модуль, не прошедший проверку версий/зависимостей, не загружается вовсе:
-     * ни конфиг, ни миграции, ни переводы, ни маршруты, ни ресурсы package-tools.
+     * ни миграции, ни переводы, ни маршруты, ни ресурсы package-tools, а его конфиг удаляется.
      *
      * В реальном приложении все провайдеры регистрируются до boot, так что решение
-     * принимается по полному набору модулей. Ограничение: если зависимость регистрируется
-     * уже после boot (только в тестах через $app->register()), пропущенный ранее модуль
-     * не догружается, хотя реестр после повторной проверки и считает его валидным.
+     * принимается по полному набору модулей. Если зависимость регистрируется уже после
+     * boot (только в тестах через $app->register()), пропущенный модуль остаётся
+     * недоступным: реестр помечает его как skipped навсегда.
      *
      * @return $this
      */
     public function boot()
     {
         $registry = $this->app->make(ModuleRegistry::class);
-        $registry->validate();
 
         if (array_key_exists($this->name(), $registry->failures())) {
+            $registry->markSkipped($this->name());
+            // Конфиг уже смержен в register(), а модуль не загружается — убираем его, чтобы не выглядел доступным.
+            $this->app['config']->offsetUnset($this->name());
+
             return $this;
         }
 
@@ -104,12 +129,8 @@ abstract class ModuleServiceProvider extends PackageServiceProvider implements M
         $name = $this->name();
 
         $config = $this->modulePath("config/{$name}.php");
-        if (is_file($config)) {
-            $this->mergeConfigFrom($config, $name);
-
-            if ($this->app->runningInConsole()) {
-                $this->publishes([$config => config_path("{$name}.php")], "{$name}-config");
-            }
+        if (is_file($config) && $this->app->runningInConsole()) {
+            $this->publishes([$config => config_path("{$name}.php")], "{$name}-config");
         }
 
         // Миграции регистрируются в мигратор (применяются через `artisan migrate`), но не запускаются сами.

@@ -8,6 +8,8 @@ use Ladcms\Core\Module\ModuleServiceProvider;
 
 class CoreServiceProvider extends ModuleServiceProvider
 {
+    public const VERSION = '0.1.0';
+
     public function name(): string
     {
         return 'core';
@@ -15,12 +17,7 @@ class CoreServiceProvider extends ModuleServiceProvider
 
     public function version(): string
     {
-        return '0.1.0';
-    }
-
-    public function registeringPackage(): void
-    {
-        $this->app->singleton(ModuleRegistry::class, fn () => new ModuleRegistry($this->version()));
+        return self::VERSION;
     }
 
     public function packageBooted(): void

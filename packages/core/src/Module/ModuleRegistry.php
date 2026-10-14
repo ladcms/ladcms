@@ -16,6 +16,9 @@ class ModuleRegistry
     /** @var array<string, ModuleFailure> */
     private array $failures = [];
 
+    /** @var array<string, string> модули, пропущенные при boot => причина пропуска */
+    private array $skipped = [];
+
     private bool $validated = false;
 
     public function __construct(private readonly string $coreVersion) {}
@@ -51,6 +54,13 @@ class ModuleRegistry
             }
         }
 
+        // Модуль, пропущенный при boot, не загрузил ресурсы — он недоступен, даже если теперь проверку проходит.
+        foreach ($this->skipped as $name => $reason) {
+            if (isset($this->modules[$name])) {
+                $this->fail($name, "skipped at boot: {$reason}");
+            }
+        }
+
         // Зависимости проверяем отдельным проходом, когда известно, кто уже отвалился.
         do {
             $changed = false;
@@ -72,6 +82,15 @@ class ModuleRegistry
         }
 
         $this->validated = true;
+    }
+
+    /** Помечает модуль, который не был загружен при boot из-за непройденной проверки. */
+    public function markSkipped(string $name): void
+    {
+        $this->validate();
+
+        $this->skipped[$name] ??= $this->failures[$name]->reason ?? 'unknown reason';
+        $this->validated = false;
     }
 
     private function fail(string $name, string $reason): void

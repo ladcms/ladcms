@@ -1,5 +1,7 @@
 <?php
 
+use Ladcms\Core\CoreServiceProvider;
+
 return [
-    'version' => '0.1.0',
+    'version' => CoreServiceProvider::VERSION,
 ];
