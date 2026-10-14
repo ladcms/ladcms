@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Ladcms\Core\Database\Factories\UserFactory;
 use Ladcms\Core\Enums\MessagesFrom;
 use Ladcms\Core\Enums\Sex;
+use Ladcms\Core\Support\LoginRules;
 use Ladcms\Core\Support\RoleLevel;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -79,6 +80,20 @@ class User extends Authenticatable
     protected static function newFactory(): UserFactory
     {
         return UserFactory::new();
+    }
+
+    public static function findByCurrentLogin(string $login): ?self
+    {
+        return static::query()->where('login', LoginRules::normalize($login))->first();
+    }
+
+    /** Finds a user by current login, falling back to the latest owner of a historical login. */
+    public static function findByLogin(string $login): ?self
+    {
+        $login = LoginRules::normalize($login);
+
+        return static::findByCurrentLogin($login)
+            ?? LoginHistory::query()->where('old_login', $login)->latest('changed_at')->first()?->user;
     }
 
     public function getDisplayNameAttribute(): string
