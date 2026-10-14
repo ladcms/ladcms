@@ -4,7 +4,8 @@
     "type": "project",
     "license": "MIT",
     "require": {
-        "php": "^8.4"
+        "php": "^8.4",
+        "ladcms/core": "*@dev"
     },
     "require-dev": {
         "larastan/larastan": "^3.9",
@@ -19,7 +20,8 @@
     ],
     "autoload-dev": {
         "psr-4": {
-            "Ladcms\\Tests\\": "tests/"
+            "Ladcms\\Tests\\": "tests/",
+            "Ladcms\\Core\\Tests\\": "packages/core/tests/"
         }
     },
     "scripts": {
