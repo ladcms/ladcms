@@ -105,5 +105,5 @@ it('collects modules implementing an interface', function () {
     $registry = app(ModuleRegistry::class);
 
     expect($registry->implementing(HasPermissions::class)->keys()->all())
-        ->toBe(['dummy']);
+        ->toBe(['core', 'dummy']);
 });

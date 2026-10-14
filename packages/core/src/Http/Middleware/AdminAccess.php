@@ -5,16 +5,27 @@ declare(strict_types=1);
 namespace Ladcms\Core\Http\Middleware;
 
 use Closure;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/** Временная заглушка middleware "admin"; план core заменит её на полноценную проверку permission. */
+/**
+ * Middleware "admin": пускает в админку только при permission `admin.access`.
+ * Гость → AuthenticationException (редирект на login / 401 JSON), без права → 403.
+ */
 class AdminAccess
 {
     /** @param  Closure(Request): Response  $next */
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless($request->user()?->can('admin.access'), 403);
+        $user = $request->user();
+        if ($user === null) {
+            throw new AuthenticationException;
+        }
+
+        if (! $user->can('admin.access')) {
+            abort(403, 'Forbidden.');
+        }
 
         return $next($request);
     }
