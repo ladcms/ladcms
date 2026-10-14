@@ -5,6 +5,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
+        "composer/semver": "^3.4",
         "illuminate/contracts": "^13.0",
         "inertiajs/inertia-laravel": "^3.0",
         "spatie/laravel-package-tools": "^1.92",

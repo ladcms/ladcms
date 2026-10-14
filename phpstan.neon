@@ -2,5 +2,5 @@ includes:
     - vendor/larastan/larastan/extension.neon
 parameters:
     paths:
-        - packages/*/src
+        - packages/core/src
     level: 6

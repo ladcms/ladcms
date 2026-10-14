@@ -1,0 +1,136 @@
+<?php
+
+namespace Ladcms\Core\Module;
+
+use Illuminate\Support\Facades\Route;
+use Ladcms\Core\Module\Contracts\ModuleInterface;
+use ReflectionClass;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
+
+abstract class ModuleServiceProvider extends PackageServiceProvider implements ModuleInterface
+{
+    public function coreVersion(): string
+    {
+        return '*';
+    }
+
+    public function dependencies(): array
+    {
+        return [];
+    }
+
+    public function optionalDependencies(): array
+    {
+        return [];
+    }
+
+    public function npmDependencies(): array
+    {
+        return [];
+    }
+
+    public function install(): void {}
+
+    public function uninstall(): void {}
+
+    /** Абсолютный путь внутри пакета модуля. */
+    public function modulePath(string $relative = ''): string
+    {
+        return rtrim($this->moduleRoot(), '/').($relative !== '' ? '/'.ltrim($relative, '/') : '');
+    }
+
+    /**
+     * Корень пакета модуля. По умолчанию провайдер лежит в `src/`, значит корень — на уровень выше.
+     * Модуль с другой раскладкой (например, тестовая фикстура) переопределяет этот метод.
+     */
+    protected function moduleRoot(): string
+    {
+        return dirname((string) (new ReflectionClass($this))->getFileName(), 2);
+    }
+
+    public function configurePackage(Package $package): void
+    {
+        $package->name($this->name());
+
+        $this->configureModule($package);
+    }
+
+    /**
+     * Точка расширения для модуля (команды, доп. ассеты).
+     *
+     * Ресурсы по соглашению LADCMS (config, migrations, lang, views, routes) грузятся
+     * провайдером сам по modulePath(), а не через package-tools: тот резолвит пути
+     * как dirname(provider)/../ и ищет переводы в resources/lang.
+     */
+    protected function configureModule(Package $package): void {}
+
+    public function packageRegistered(): void
+    {
+        $config = $this->modulePath("config/{$this->name()}.php");
+        if (is_file($config)) {
+            $this->mergeConfigFrom($config, $this->name());
+        }
+
+        $this->app->make(ModuleRegistry::class)->register($this);
+    }
+
+    public function packageBooted(): void
+    {
+        $this->loadModuleResources();
+        $this->loadModuleRoutes();
+    }
+
+    protected function loadModuleResources(): void
+    {
+        $name = $this->name();
+
+        $config = $this->modulePath("config/{$name}.php");
+        if (is_file($config) && $this->app->runningInConsole()) {
+            $this->publishes([$config => config_path("{$name}.php")], "{$name}-config");
+        }
+
+        // Миграции регистрируются в мигратор (применяются через `artisan migrate`), но не запускаются сами.
+        $migrations = $this->modulePath('database/migrations');
+        if (is_dir($migrations)) {
+            $this->loadMigrationsFrom($migrations);
+        }
+
+        $lang = $this->modulePath('lang');
+        if (is_dir($lang)) {
+            $this->loadTranslationsFrom($lang, $name);
+            $this->loadJsonTranslationsFrom($lang);
+        }
+
+        $views = $this->modulePath('resources/views');
+        if (is_dir($views)) {
+            $this->loadViewsFrom($views, $name);
+        }
+    }
+
+    protected function loadModuleRoutes(): void
+    {
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
+        $name = $this->name();
+        $routes = $this->modulePath('routes');
+
+        if (is_file("{$routes}/web.php")) {
+            Route::middleware('web')->group("{$routes}/web.php");
+        }
+        if (is_file("{$routes}/admin.php")) {
+            Route::middleware(['web', 'auth', 'admin'])
+                ->prefix("admin/{$name}")
+                ->name("admin.{$name}.")
+                ->group("{$routes}/admin.php");
+        }
+        if (is_file("{$routes}/api.php")) {
+            Route::middleware(['api', 'auth:sanctum'])
+                ->prefix("api/{$name}")
+                ->name("api.{$name}.")
+                ->group("{$routes}/api.php");
+        }
+    }
+}

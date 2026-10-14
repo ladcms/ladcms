@@ -1,0 +1,69 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Ladcms\Core\Module\Contracts\HasPermissions;
+use Ladcms\Core\Module\ModuleRegistry;
+use Ladcms\Core\Tests\Fixtures\BrokenModule\BrokenServiceProvider;
+use Ladcms\Core\Tests\Fixtures\DummyModule\DummyServiceProvider;
+use Ladcms\Core\Tests\Fixtures\NeedsFriendModule\NeedsFriendServiceProvider;
+
+beforeEach(function () {
+    $this->app->register(DummyServiceProvider::class);
+    $this->app->register(BrokenServiceProvider::class);
+    $this->app->register(NeedsFriendServiceProvider::class);
+    $this->app->make(ModuleRegistry::class)->validate();
+});
+
+it('registers core itself as a module', function () {
+    expect(app(ModuleRegistry::class)->has('core'))->toBeTrue();
+});
+
+it('registers a module and exposes it by name', function () {
+    $registry = app(ModuleRegistry::class);
+
+    expect($registry->has('dummy'))->toBeTrue()
+        ->and($registry->get('dummy')->version())->toBe('1.0.0')
+        ->and($registry->names())->toContain('core', 'dummy');
+});
+
+it('loads module config, translations, routes and migrations', function () {
+    expect(config('dummy.greeting'))->toBe('hello')
+        ->and(__('dummy::messages.hi'))->toBe('Hi from dummy');
+
+    $this->get('/dummy')->assertOk()->assertSee('dummy web');
+    expect(Schema::hasTable('dummy_items'))->toBeFalse(); // миграции грузятся, но не применяются автоматически
+
+    $this->artisan('migrate')->assertSuccessful();
+    expect(Schema::hasTable('dummy_items'))->toBeTrue();
+});
+
+it('wraps admin routes with the admin prefix and middleware', function () {
+    $route = collect(Route::getRoutes())->first(fn ($r) => $r->uri() === 'admin/dummy');
+
+    expect($route)->not->toBeNull()
+        ->and($route->gatherMiddleware())->toContain('web', 'auth', 'admin');
+});
+
+it('does not boot a module whose core version is incompatible', function () {
+    $registry = app(ModuleRegistry::class);
+
+    expect($registry->has('broken'))->toBeFalse()
+        ->and($registry->failures())->toHaveKey('broken')
+        ->and($registry->failures()['broken']->reason)->toContain('core');
+    $this->get('/dummy')->assertOk(); // приложение живо
+});
+
+it('does not boot a module whose dependency is missing', function () {
+    $registry = app(ModuleRegistry::class);
+
+    expect($registry->has('needs-friend'))->toBeFalse()
+        ->and($registry->failures()['needs-friend']->reason)->toContain('friend');
+});
+
+it('collects modules implementing an interface', function () {
+    $registry = app(ModuleRegistry::class);
+
+    expect($registry->implementing(HasPermissions::class)->keys()->all())
+        ->toBe(['dummy']);
+});
