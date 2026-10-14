@@ -19,6 +19,8 @@ use Ladcms\Core\Module\Contracts\HasPermissions;
 use Ladcms\Core\Module\Contracts\HasSettings;
 use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Module\ModuleServiceProvider;
+use Ladcms\Core\Policies\RolePolicy;
+use Ladcms\Core\Policies\UserPolicy;
 use Ladcms\Core\Settings\AppearanceSettings;
 use Ladcms\Core\Settings\GeneralSettings;
 use Ladcms\Core\Settings\ModerationSettings;
@@ -106,6 +108,11 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
 
         // Создатель может всё, включая abilities без permission/policy.
         Gate::before(fn ($user, string $ability): ?bool => $user instanceof User && $user->isCreator() ? true : null);
+
+        // Политики ядра. Gate::getPolicyFor() сам находит политику для наследников (is_subclass_of),
+        // поэтому App\Models\User extends core User отдельной регистрации не требует.
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Role::class, RolePolicy::class);
 
         // Страницы модулей: Inertia-компонент `module::Path` → <modulePath>/resources/js/pages/Path.tsx.
         $this->app->extend('inertia.view-finder', fn ($finder, $app) => new ModulePageFinder(

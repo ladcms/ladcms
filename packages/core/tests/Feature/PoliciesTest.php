@@ -1,0 +1,91 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
+use Ladcms\Core\Database\Seeders\PermissionsSeeder;
+use Ladcms\Core\Database\Seeders\RolesSeeder;
+use Ladcms\Core\Models\Role;
+use Ladcms\Core\Models\User;
+use Ladcms\Core\Policies\UserPolicy;
+
+uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->seed(RolesSeeder::class);
+    $this->seed(PermissionsSeeder::class);
+});
+
+function userWithRole(string $role): User
+{
+    return User::factory()->create()->assignRole($role);
+}
+
+it('resolves user policy abilities by permission and rank', function (string $actorRole, string $ability, string $targetRole, bool $expected) {
+    $actor = userWithRole($actorRole);
+    $target = userWithRole($targetRole);
+
+    expect(Gate::forUser($actor)->allows($ability, $target))->toBe($expected);
+})->with([
+    'moderator bans user' => ['moderator', 'ban', 'user', true],
+    'moderator cannot ban moderator' => ['moderator', 'ban', 'moderator', false],
+    'moderator cannot ban admin' => ['moderator', 'ban', 'admin', false],
+    'admin assigns roles to moderator' => ['admin', 'assignRoles', 'moderator', true],
+    'admin cannot assign roles to admin' => ['admin', 'assignRoles', 'admin', false],
+    'admin cannot ban admin' => ['admin', 'ban', 'admin', false],
+    'admin cannot delete admin' => ['admin', 'delete', 'admin', false],
+    'admin deletes user' => ['admin', 'delete', 'user', true],
+    'admin cannot delete creator' => ['admin', 'delete', 'creator', false],
+    'main admin cannot delete creator' => ['main_admin', 'delete', 'creator', false],
+    'super moderator updates user' => ['super_moderator', 'update', 'user', true],
+    'moderator cannot update user (no users.edit)' => ['moderator', 'update', 'user', false],
+    'user cannot update other user' => ['user', 'update', 'user', false],
+    'moderator cannot delete user (no users.delete)' => ['moderator', 'delete', 'user', false],
+    'moderator views any user' => ['moderator', 'view', 'user', true],
+    'user cannot view other user in admin' => ['user', 'view', 'user', false],
+    'creator bans admin' => ['creator', 'ban', 'main_admin', true],
+    'creator deletes creator' => ['creator', 'delete', 'creator', true],
+    'creator assigns roles to creator' => ['creator', 'assignRoles', 'creator', true],
+]);
+
+it('lets any user update and view themselves', function () {
+    $user = userWithRole('user');
+
+    expect(Gate::forUser($user)->allows('update', $user))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('view', $user))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('ban', $user))->toBeFalse()
+        ->and(Gate::forUser($user)->allows('delete', $user))->toBeFalse();
+});
+
+it('checks viewAny against users.view', function () {
+    expect(Gate::forUser(userWithRole('moderator'))->allows('viewAny', User::class))->toBeTrue()
+        ->and(Gate::forUser(userWithRole('user'))->allows('viewAny', User::class))->toBeFalse();
+});
+
+it('applies the user policy to subclasses of the core user model', function () {
+    $sub = new class extends User
+    {
+        protected $table = 'users';
+    };
+    $mod = userWithRole('moderator');
+    $target = $sub->newQuery()->findOrFail(userWithRole('user')->id);
+
+    expect(Gate::getPolicyFor($target))->toBeInstanceOf(UserPolicy::class)
+        ->and(Gate::forUser($mod)->allows('ban', $target))->toBeTrue();
+});
+
+it('manages roles only with roles.manage and never deletes system roles', function () {
+    $main = userWithRole('main_admin');
+    $admin = userWithRole('admin');
+    $vip = Role::findByName('vip');
+    $custom = Role::create(['name' => 'editor', 'guard_name' => 'web', 'level' => null]);
+
+    expect(Gate::forUser($main)->allows('viewAny', Role::class))->toBeTrue()
+        ->and(Gate::forUser($main)->allows('create', Role::class))->toBeTrue()
+        ->and(Gate::forUser($main)->allows('update', $custom))->toBeTrue()
+        ->and(Gate::forUser($main)->allows('delete', $vip))->toBeFalse()
+        ->and(Gate::forUser($main)->allows('delete', $custom))->toBeTrue()
+        ->and(Gate::forUser($admin)->allows('viewAny', Role::class))->toBeFalse()
+        ->and(Gate::forUser($admin)->allows('delete', $custom))->toBeFalse();
+});

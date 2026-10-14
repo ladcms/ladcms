@@ -1,0 +1,102 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
+use Ladcms\Core\Actions\Users\AssignRoles;
+use Ladcms\Core\Actions\Users\DeleteUser;
+use Ladcms\Core\Actions\Users\MarkSuspicious;
+use Ladcms\Core\Database\Seeders\PermissionsSeeder;
+use Ladcms\Core\Database\Seeders\RolesSeeder;
+use Ladcms\Core\Models\User;
+
+uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->seed(RolesSeeder::class);
+    $this->seed(PermissionsSeeder::class);
+    $this->admin = User::factory()->create()->assignRole('admin');
+    $this->creator = User::factory()->create()->assignRole('creator');
+    $this->target = User::factory()->create()->assignRole('user');
+});
+
+it('lets admin assign roles below their level', function () {
+    $user = app(AssignRoles::class)->handle($this->admin, $this->target, ['moderator', 'vip']);
+
+    expect($user->fresh()->getRoleNames()->sort()->values()->all())->toBe(['moderator', 'vip']);
+});
+
+it('forbids admin assigning roles at or above their level', function (string $role) {
+    expect(fn () => app(AssignRoles::class)->handle($this->admin, $this->target, [$role]))
+        ->toThrow(AuthorizationException::class);
+
+    expect($this->target->fresh()->getRoleNames()->all())->toBe(['user']);
+})->with(['admin', 'main_admin', 'creator']);
+
+it('forbids assigning roles to equal or higher ranks and without permission', function () {
+    $otherAdmin = User::factory()->create()->assignRole('admin');
+    $mod = User::factory()->create()->assignRole('moderator');
+
+    expect(fn () => app(AssignRoles::class)->handle($this->admin, $otherAdmin, ['user']))->toThrow(AuthorizationException::class)
+        ->and(fn () => app(AssignRoles::class)->handle($mod, $this->target, ['user']))->toThrow(AuthorizationException::class);
+});
+
+it('rejects unknown role names', function () {
+    expect(fn () => app(AssignRoles::class)->handle($this->admin, $this->target, ['nope']))
+        ->toThrow(ValidationException::class);
+});
+
+it('lets the creator assign any role', function () {
+    app(AssignRoles::class)->handle($this->creator, $this->target, ['creator', 'main_admin']);
+
+    expect($this->target->fresh()->isCreator())->toBeTrue();
+});
+
+it('marks a user suspicious with a note and clears it', function () {
+    $user = app(MarkSuspicious::class)->handle($this->admin, $this->target, true, 'multi-account');
+
+    expect($user->fresh()->is_suspicious)->toBeTrue()
+        ->and($user->fresh()->suspicious_note)->toBe('multi-account');
+
+    app(MarkSuspicious::class)->handle($this->admin, $this->target, false, null);
+
+    expect($this->target->fresh()->is_suspicious)->toBeFalse()
+        ->and($this->target->fresh()->suspicious_note)->toBeNull();
+});
+
+it('refuses marking suspicious without users.edit or rank', function () {
+    $mod = User::factory()->create()->assignRole('moderator');
+
+    expect(fn () => app(MarkSuspicious::class)->handle($mod, $this->target, true, null))->toThrow(AuthorizationException::class)
+        ->and(fn () => app(MarkSuspicious::class)->handle($this->admin, $this->creator, true, null))->toThrow(AuthorizationException::class);
+});
+
+it('soft deletes a user', function () {
+    app(DeleteUser::class)->handle($this->admin, $this->target);
+
+    expect(User::find($this->target->id))->toBeNull()
+        ->and(User::withTrashed()->find($this->target->id)?->trashed())->toBeTrue();
+});
+
+it('refuses deleting without permission or rank', function () {
+    $mod = User::factory()->create()->assignRole('moderator');
+
+    expect(fn () => app(DeleteUser::class)->handle($mod, $this->target))->toThrow(AuthorizationException::class)
+        ->and(fn () => app(DeleteUser::class)->handle($this->admin, $this->creator))->toThrow(AuthorizationException::class);
+});
+
+it('never deletes the last creator', function () {
+    expect(fn () => app(DeleteUser::class)->handle($this->creator, $this->creator))->toThrow(InvalidArgumentException::class);
+    expect($this->creator->fresh()->trashed())->toBeFalse();
+});
+
+it('lets a creator delete another creator when two exist', function () {
+    $second = User::factory()->create()->assignRole('creator');
+
+    app(DeleteUser::class)->handle($this->creator, $second);
+
+    expect($second->fresh()->trashed())->toBeTrue()
+        ->and(fn () => app(DeleteUser::class)->handle($this->creator, $this->creator))->toThrow(InvalidArgumentException::class);
+});
