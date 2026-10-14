@@ -218,11 +218,16 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                 >
                                     <Avatar className="size-8 overflow-hidden rounded-full">
                                         <AvatarImage
-                                            src={auth.user?.avatar}
-                                            alt={auth.user?.name}
+                                            src={
+                                                auth.user?.avatar_url ??
+                                                undefined
+                                            }
+                                            alt={auth.user?.display_name}
                                         />
                                         <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                            {getInitials(auth.user?.name ?? '')}
+                                            {getInitials(
+                                                auth.user?.display_name ?? '',
+                                            )}
                                         </AvatarFallback>
                                     </Avatar>
                                 </Button>

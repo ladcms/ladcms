@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Ladcms\Core\Http\Resources\CurrentUserResource;
+use Ladcms\Core\Models\User;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -35,11 +37,17 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user instanceof User ? [
+                    ...CurrentUserResource::make($user)->resolve($request),
+                    // Kit-страницы настроек показывают баннер неподтверждённого email.
+                    'email_verified_at' => $user->email_verified_at?->toISOString(),
+                ] : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

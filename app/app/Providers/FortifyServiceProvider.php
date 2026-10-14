@@ -11,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Ladcms\Core\Actions\Auth\AuthenticateByLoginOrEmail;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
@@ -41,6 +42,12 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+
+        // Поле формы остаётся `email` (Fortify::username()), но принимает и логин.
+        Fortify::authenticateUsing(fn (Request $request) => app(AuthenticateByLoginOrEmail::class)->handle(
+            (string) $request->input(Fortify::username()),
+            (string) $request->input('password'),
+        ));
     }
 
     /**

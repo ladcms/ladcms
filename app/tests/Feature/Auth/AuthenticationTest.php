@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
+use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 use Tests\TestCase;
 
@@ -28,8 +29,47 @@ class AuthenticationTest extends TestCase
             'password' => 'password',
         ]);
 
-        $this->assertAuthenticated();
+        $this->assertAuthenticatedAs($user);
         $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_users_can_authenticate_with_their_login()
+    {
+        $user = User::factory()->create(['login' => 'alice']);
+
+        $response = $this->post(route('login.store'), [
+            'email' => 'Alice',
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_users_can_not_authenticate_with_their_login_and_invalid_password()
+    {
+        User::factory()->create(['login' => 'alice']);
+
+        $response = $this->post(route('login.store'), [
+            'email' => 'alice',
+            'password' => 'wrong-password',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('email');
+    }
+
+    public function test_deleted_users_can_not_authenticate()
+    {
+        $user = User::factory()->create(['login' => 'alice']);
+        $user->delete();
+
+        $this->post(route('login.store'), [
+            'email' => 'alice',
+            'password' => 'password',
+        ]);
+
+        $this->assertGuest();
     }
 
     public function test_users_with_two_factor_enabled_are_redirected_to_two_factor_challenge()
@@ -63,6 +103,21 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertGuest();
+    }
+
+    public function test_the_current_user_is_shared_with_the_frontend()
+    {
+        $user = User::factory()->create(['login' => 'alice']);
+
+        $this->actingAs($user)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+            ->where('auth.user.id', $user->id)
+            ->where('auth.user.login', 'alice')
+            ->where('auth.user.roles', [])
+            ->where('auth.user.is_banned', false)
+            ->where('auth.user.can_write', true)
+            ->has('auth.user.email_verified_at')
+            ->missing('auth.user.password'),
+        );
     }
 
     public function test_users_can_logout()

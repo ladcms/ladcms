@@ -2,32 +2,23 @@
 
 namespace App\Actions\Fortify;
 
-use App\Concerns\PasswordValidationRules;
-use App\Concerns\ProfileValidationRules;
 use App\Models\User;
-use Illuminate\Support\Facades\Validator;
+use Ladcms\Core\Actions\Auth\RegisterUser;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
 {
-    use PasswordValidationRules, ProfileValidationRules;
-
     /**
-     * Validate and create a newly registered user.
+     * Validate and create a newly registered user (rules and registration settings live in the core action).
      *
      * @param  array<string, string>  $input
      */
     public function create(array $input): User
     {
-        Validator::make($input, [
-            ...$this->profileRules(),
-            'password' => $this->passwordRules(),
-        ])->validate();
+        $user = app(RegisterUser::class)->handle($input, request()->ip());
 
-        return User::create([
-            'name' => $input['name'],
-            'email' => $input['email'],
-            'password' => $input['password'],
-        ]);
+        assert($user instanceof User);
+
+        return $user;
     }
 }

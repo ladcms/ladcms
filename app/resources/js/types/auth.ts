@@ -1,12 +1,16 @@
+/** Текущий пользователь (core CurrentUserResource + email_verified_at из HandleInertiaRequests). */
 export type User = {
     id: number;
+    login: string;
     name: string;
+    display_name: string;
     email: string;
-    avatar?: string;
+    avatar_url: string | null;
+    roles: string[];
+    permissions: string[];
+    is_banned: boolean;
+    can_write: boolean;
     email_verified_at: string | null;
-    two_factor_enabled?: boolean;
-    created_at: string;
-    updated_at: string;
     [key: string]: unknown;
 };
 
