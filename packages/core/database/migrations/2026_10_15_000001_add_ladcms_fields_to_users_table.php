@@ -33,6 +33,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            $table->dropUnique(['login']);
+            $table->dropIndex(['last_activity_at']);
             $table->dropSoftDeletes();
             $table->dropColumn([
                 'login', 'avatar_path', 'sex', 'birth_date', 'about', 'signature', 'language', 'timezone',

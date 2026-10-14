@@ -21,6 +21,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table(config('permission.table_names.roles'), function (Blueprint $table) {
+            $table->dropUnique(['level']);
             $table->dropColumn(['level', 'color', 'is_default', 'is_system']);
         });
     }
