@@ -40,7 +40,7 @@ Defaults are seeded by settings migrations (they run with `migrate`), not by cla
 
 ### Authorization conventions
 - Actions that affect users authorize via policies (`UserPolicy`, `RolePolicy`) and `User::outranks()`; policies allow self-edit in `UserPolicy::update`.
-- Actions never touch HTTP (no `request()`, Inertia, redirects); controllers authorize and translate results.
+- Actions never touch HTTP (no `request()`, Inertia, redirects); Actions authorize themselves (policies via `Gate::forUser($actor)->authorize(...)`, or `can()` + `outranks()`); controllers only translate exceptions (`AuthorizationException` -> 403, `ValidationException` -> 422, `InvalidArgumentException` -> 422/409).
 
 ### Conventions a module must follow
 - `name()` must equal the Composer package directory (`vendor/ladcms/<name>`): the frontend resolves

@@ -7,7 +7,7 @@ LADCMS core: users, roles, admin, module system.
 - Roles with levels 0-6 (`RolesSeeder`), core permissions (`PermissionsSeeder`), `UserPolicy`, `RolePolicy`, `User::outranks()`.
 - Settings: `GeneralSettings`, `RegistrationSettings`, `ModerationSettings`, `AppearanceSettings` (defaults via settings migrations).
 - Actions for install, auth/registration, users, moderation and module lifecycle (see the Boost guideline for the catalogue).
-- Middleware appended to `web`: `AdminAccess`, `CheckBan`, `TrackOnline`, `SetLocale`, `EnsureRegistrationOpen`.
+- Middleware appended to `web`: `CheckBan`, `TrackOnline`, `EnsureRegistrationOpen`, `SetLocale`. `AdminAccess` is only the route alias `admin` (used by module `routes/admin.php`); `ladcms.ban` is an alias for `CheckBan`.
 - `MentionService`, `LocaleManager`, notifications (`ComplaintFiled`, `UserMentioned`, `UserBanned`), `GET /api/users/mention-search`, `/banned`.
 
 ## Install flow
