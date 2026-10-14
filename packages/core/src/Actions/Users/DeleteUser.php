@@ -20,11 +20,12 @@ class DeleteUser
      */
     public function handle(User $actor, User $target): void
     {
-        Gate::forUser($actor)->authorize('delete', $target);
-
+        // Инвариант проверяется до авторизации: последнего создателя нельзя удалить никому.
         if ($target->isCreator() && User::role('creator')->count() <= 1) {
             throw new InvalidArgumentException('The last creator cannot be deleted.');
         }
+
+        Gate::forUser($actor)->authorize('delete', $target);
 
         DB::transaction(function () use ($target): void {
             // TODO(Task 10): Audit::log user deletion.

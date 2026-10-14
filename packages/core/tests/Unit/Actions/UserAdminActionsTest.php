@@ -82,6 +82,7 @@ it('soft deletes a user', function () {
 
 it('refuses deleting without permission or rank', function () {
     $mod = User::factory()->create()->assignRole('moderator');
+    User::factory()->create()->assignRole('creator'); // not the last creator, so rank decides
 
     expect(fn () => app(DeleteUser::class)->handle($mod, $this->target))->toThrow(AuthorizationException::class)
         ->and(fn () => app(DeleteUser::class)->handle($this->admin, $this->creator))->toThrow(AuthorizationException::class);
@@ -99,4 +100,10 @@ it('lets a creator delete another creator when two exist', function () {
 
     expect($second->fresh()->trashed())->toBeTrue()
         ->and(fn () => app(DeleteUser::class)->handle($this->creator, $this->creator))->toThrow(InvalidArgumentException::class);
+});
+
+it('does not let a creator delete themselves even when another creator exists', function () {
+    User::factory()->create()->assignRole('creator');
+
+    expect(fn () => app(DeleteUser::class)->handle($this->creator, $this->creator))->toThrow(AuthorizationException::class);
 });

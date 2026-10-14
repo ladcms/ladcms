@@ -89,3 +89,24 @@ it('manages roles only with roles.manage and never deletes system roles', functi
         ->and(Gate::forUser($admin)->allows('viewAny', Role::class))->toBeFalse()
         ->and(Gate::forUser($admin)->allows('delete', $custom))->toBeFalse();
 });
+
+it('runs model policies for creators so system roles stay protected', function () {
+    $creator = userWithRole('creator');
+    $custom = Role::create(['name' => 'editor', 'guard_name' => 'web', 'level' => null]);
+
+    expect(Gate::forUser($creator)->allows('delete', Role::findByName('vip')))->toBeFalse()
+        ->and(Gate::forUser($creator)->allows('delete', $custom))->toBeTrue();
+});
+
+it('does not let a creator delete themselves', function () {
+    $creator = userWithRole('creator');
+    userWithRole('creator');
+
+    expect(Gate::forUser($creator)->allows('delete', $creator))->toBeFalse();
+});
+
+it('keeps creator abilities over lower ranks under model policies', function (string $ability) {
+    $creator = userWithRole('creator');
+
+    expect(Gate::forUser($creator)->allows($ability, userWithRole('admin')))->toBeTrue();
+})->with(['update', 'ban', 'assignRoles', 'delete']);

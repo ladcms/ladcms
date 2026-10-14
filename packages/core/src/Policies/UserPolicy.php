@@ -9,8 +9,8 @@ use Ladcms\Core\Models\User;
 /**
  * Admin abilities over users: permission (via Gate → spatie) plus strict rank check (`outranks`).
  *
- * Creators pass every ability through `Gate::before` in CoreServiceProvider; the explicit creator
- * branches below only matter when the policy is called directly.
+ * `Gate::before` grants creators only plain permission checks (no model), so these policies run for
+ * creators too: `can('<permission>')` passes for them, and only the model guards below can refuse.
  *
  * - `update`: self-edit is always allowed regardless of permissions; otherwise `users.edit` && outranks.
  * - `delete`: never self; `users.delete` && (outranks || actor is creator) && target is not a creator

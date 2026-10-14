@@ -106,8 +106,9 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
             $router->pushMiddlewareToGroup('web', CheckBan::class);
         }
 
-        // Создатель может всё, включая abilities без permission/policy.
-        Gate::before(fn ($user, string $ability): ?bool => $user instanceof User && $user->isCreator() ? true : null);
+        // Создатель проходит любые простые проверки (permission/ability без модели). Проверки с моделью
+        // идут через политики и для него: так системные роли и сам создатель защищены от удаления.
+        Gate::before(fn ($user, string $ability, array $arguments = []): ?bool => $user instanceof User && $user->isCreator() && $arguments === [] ? true : null);
 
         // Политики ядра. Gate::getPolicyFor() сам находит политику для наследников (is_subclass_of),
         // поэтому App\Models\User extends core User отдельной регистрации не требует.
