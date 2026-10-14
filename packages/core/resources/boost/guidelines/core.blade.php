@@ -10,6 +10,38 @@ Module system for LADCMS. Every module is a Composer package whose service provi
 - `coreVersion()` is a Composer constraint `^<major.minor>` of the installed core (core is `0.1.x` now, so `'^0.1'`).
   A module whose constraint is not satisfied (or is unparsable) is not booted and is listed in the registry failures.
 
+### Users, roles and levels
+- `Ladcms\Core\Models\User` (soft deletes; the app's `User` extends it). `login` is for sign-in and URLs, `name` is the display name.
+- Roles carry a `level` (0-6, constants in `Support\RoleLevel`): guest 0, user 1, moderator 2, super_moderator 3, admin 4, main_admin 5, creator 6; `vip` has no level.
+  System roles (`is_system`) are protected by `RolePolicy`. `$user->level()` is the max level of the user's roles.
+- Permissions say what may be done; levels say who stands above whom: `$actor->outranks($target)` (strictly higher level).
+- The `creator` Gate bypass applies only to plain permission checks (`can('x')`); policies still run.
+- The last creator can never be deleted or demoted. Trashed users keep their login reserved.
+- Modules may store `min_role_level` on their objects; compare it with `$user->level()` or use `RoleLevel`.
+- Ban state: `$user->isBanned()`, `$user->canWrite()` (false for readonly bans). Online = activity within 10 minutes; `TrackOnline` writes at most once per 60 s.
+
+### Settings (`HasSettings`)
+A module lists its `Spatie\LaravelSettings\Settings` classes in `settings()` (`HasSettings`); they are registered automatically.
+Defaults are seeded by settings migrations (they run with `migrate`), not by classes. Core ships
+`GeneralSettings`, `RegistrationSettings`, `ModerationSettings`, `AppearanceSettings`.
+
+### Permissions (`HasPermissions`)
+`permissions()` returns `name => translation key`. Core permissions: `admin.access`, `users.view`, `users.edit`, `users.ban`,
+`users.delete`, `users.assign-roles`, `roles.manage`, `settings.manage`, `modules.manage`, `complaints.review`, `activity.view`.
+`PermissionsSeeder` only adds missing permissions and never revokes ones granted manually.
+
+### Actions catalogue (`Ladcms\Core\Actions`)
+- `Install\InstallSite` - one-time site setup (settings, roles, administrator); `Install\CreateAdministrator` - creates the creator account.
+- `Auth\AuthenticateByLoginOrEmail` - credential lookup by login or email; `Auth\RegisterUser` - registration honoring registration settings.
+- `Users\ChangeLogin`, `AssignRoles`, `MarkSuspicious`, `DeleteUser`, `UpdateAvatar`, `RemoveAvatar` - user management;
+  `Users\PruneUnverifiedUsers` - deletes stale unverified accounts.
+- `Moderation\BanUser`, `LiftBan` - bans; `FileComplaint`, `ReviewComplaint` - complaints.
+- `Modules\InstallModule`, `UpdateInstalledModules`, `UninstallModule`, `SyncModulePermissions`, `SyncNpmDependencies` - module lifecycle.
+
+### Authorization conventions
+- Actions that affect users authorize via policies (`UserPolicy`, `RolePolicy`) and `User::outranks()`; policies allow self-edit in `UserPolicy::update`.
+- Actions never touch HTTP (no `request()`, Inertia, redirects); controllers authorize and translate results.
+
 ### Conventions a module must follow
 - `name()` must equal the Composer package directory (`vendor/ladcms/<name>`): the frontend resolves
   `<name>::Page` to `vendor/ladcms/<name>/resources/js/pages/Page.tsx`.

@@ -191,7 +191,7 @@ final class ForumServiceProvider extends ModuleServiceProvider
 | Команда | Когда | Что делает |
 |---|---|---|
 | `ladcms:install` | один раз, новый сайт | мастер: проверка окружения, `migrate`, сидер ролей, админ, базовые настройки, язык. Замена `/install/` |
-| `ladcms:install <module>` | после `composer require` и после обновления модуля | идемпотентно: 1) `migrate`; 2) создать недостающие permissions; 3) дефолты настроек; 4) `npmDependencies()` → `app/package.json`; 5) хук `install()`; 6) запись в `modules`; 7) подсказка `npm install && npm run build` |
+| `ladcms:install <module>` | после `composer require` и после обновления модуля | идемпотентно: 1) `migrate`; 2) создать недостающие permissions; 3) дефолты настроек (реализуются settings-миграциями, которые выполняет `migrate` на шаге 1); 4) `npmDependencies()` → `app/package.json`; 5) хук `install()`; 6) запись в `modules`; 7) подсказка `npm install && npm run build` |
 | `ladcms:update` | после `composer update` (в `post-update-cmd`) | `ladcms:install` для всех модулей из `modules` |
 | `ladcms:uninstall <module>` | перед `composer remove` | хук `uninstall()`, откат миграций модуля (с подтверждением), удаление permissions и записи в `modules` |
 
@@ -216,13 +216,13 @@ npm install && npm run build
 |---|---|
 | **User** | `Ladcms\Core\Models\User`; `app` наследует его. `login` — для входа и URL, `name` — отображаемое (по умолчанию = login). Soft delete |
 | **Auth** | Fortify: логин по `login` или email; регистрация с настройками `registration.open`, `registration.require_email_verification`, `registration.require_rules`, `registration.invite_only` (инвайты реализует `community`, core только читает флаг и вызывает `InviteValidator`-контракт, если он забинден). `registration.readonly_hours` — новый аккаунт read-only N часов. 2FA и passkeys — из kit |
-| **Роли/права (гибрид)** | Spatie. Роли с `level` (0–6), `color`, `is_default`, `is_system`. Сидер: `guest 0`, `user 1`, `moderator 2`, `super_moderator 3`, `admin 4`, `main_admin 5`, `creator 6` + `vip` (без уровня). **Что можно делать** — permissions модулей; **кто выше кого** — `level`: `$user->outranks($other)`, модератор не трогает равных/старших. Объекты модулей (категория форума, папка) хранят `min_role_level` для просмотра/записи — решение каждого модуля, core даёт хелпер `RoleLevel` |
+| **Роли/права (гибрид)** | Spatie. Роли с `level` (0–6), `color`, `is_default`, `is_system`. Сидер: `guest 0`, `user 1`, `moderator 2`, `super_moderator 3`, `admin 4`, `main_admin 5`, `creator 6` + `vip` (без уровня). **Что можно делать** — permissions модулей; **кто выше кого** — `level`: `$user->outranks($other)`, модератор не трогает равных/старших. Gate-bypass для `creator` действует только на обычные проверки permissions (policy выполняются); последнего creator нельзя удалить или понизить. Объекты модулей (категория форума, папка) хранят `min_role_level` для просмотра/записи — решение каждого модуля, core даёт хелпер `RoleLevel` |
 | **Настройки** | `laravel-settings`. Core: `GeneralSettings` (название, описание, язык по умолчанию, таймзона, стартовая страница, текст правил сайта в Markdown для `/rules`), `RegistrationSettings`, `ModerationSettings` (коды нарушений с диапазонами сроков бана), `AppearanceSettings` (акцентный цвет, логотип, режим темы по умолчанию) |
 | **i18n** | Laravel lang. Старт: `ru`, `en`; структура под 11 языков DCMS. Выбор: профиль → cookie → `Accept-Language` → дефолт. Переключатель в футере и в настройках |
 | **Модерация** | `bans` (full / readonly, срок, код нарушения, комментарий), `complaints` (polymorphic на любой контент). `CheckBan` middleware: full → `/banned` с причиной и сроком; readonly → `$user->canWrite() === false`, формы модулей проверяют через policy-хелпер `WriteAccess` |
 | **Уведомления** | Laravel Notifications: `database` + `mail` + `broadcast`. Колокольчик в шапке, страница `/notifications`, настройки `/settings/notifications` (по типам). Это замена «личка как шина уведомлений» DCMS |
 | **Mentions** | `MentionService::extract(html)` + `GET /api/users/mention-search?q=`; формат `<span data-mention data-user-id="42">@login</span>`, не зависит от редактора |
-| **Онлайн** | `TrackOnline` обновляет `last_activity_at` не чаще раза в минуту; онлайн = `last_activity_at > now - 10 min`. Гости — в `analytics` |
+| **Онлайн** | `TrackOnline` обновляет `last_activity_at` не чаще раза в 60 с; онлайн = `last_activity_at > now - 10 min`. Гости — в `analytics` |
 | **Аватары** | колонка `avatar_path`, диск `public`, ресайз `intervention/image` в 2 размера. Без medialibrary (YAGNI; пересмотрим в `files`) |
 | **Аудит** | `activity_log` (spatie): действия админов, смена ролей, баны |
 | **Профиль** | `/u/{login}`; `login_history` даёт редирект со старого логина; приватность `show_email`, `show_birthday`, `messages_from` (all/friends/none — читает `community`) |
@@ -254,7 +254,7 @@ npm install && npm run build
 | Fortify | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/email/verify`, `/two-factor-challenge`, `/user/confirm-password` |
 | Настройки | `/settings/profile`, `/settings/password`, `/settings/appearance`, `/settings/two-factor` (kit) + `/settings/privacy`, `/settings/notifications` |
 | Админка `admin/*` | `dashboard`, `users`, `users/{id}` (роль, бан, подозрительный, удалить), `roles`, `roles/{id}/permissions`, `moderation/complaints`, `moderation/bans`, `settings/{group}`, `modules`, `activity` |
-| API | `GET /api/users/mention-search` (`auth`, throttle) |
+| API | `GET /api/users/mention-search` (`auth`, throttle; в группе `web`, т.е. полный путь `/api/users/mention-search`) |
 
 Middleware: `admin` = `auth` + `can:admin.access` + `password.confirm` (TTL из настроек, по умолчанию 30 мин).
 
