@@ -4,6 +4,7 @@ namespace Ladcms\Core\Actions\Modules;
 
 use Illuminate\Support\Facades\Artisan;
 use Ladcms\Core\Models\Module;
+use Ladcms\Core\Module\ModuleFailedException;
 use Ladcms\Core\Module\ModuleNotFoundException;
 use Ladcms\Core\Module\ModuleRegistry;
 
@@ -17,7 +18,12 @@ class InstallModule
 
     public function handle(string $name): InstallReport
     {
-        $module = $this->registry->get($name) ?? throw new ModuleNotFoundException($name);
+        if (! $this->registry->isRegistered($name)) {
+            throw new ModuleNotFoundException($name);
+        }
+
+        $module = $this->registry->get($name)
+            ?? throw new ModuleFailedException($name, $this->registry->failures()[$name]->reason ?? 'unknown reason');
 
         Artisan::call('migrate', ['--force' => true]);
 
@@ -26,10 +32,14 @@ class InstallModule
 
         $module->install();
 
-        Module::updateOrCreate(
-            ['name' => $name],
-            ['version' => $module->version(), 'installed_at' => now(), 'is_enabled' => true],
-        );
+        // Повторная установка (обновление) не сбрасывает дату установки и не включает выключенный модуль.
+        $record = Module::firstOrNew(['name' => $name]);
+        if (! $record->exists) {
+            $record->installed_at = now();
+            $record->is_enabled = true;
+        }
+        $record->version = $module->version();
+        $record->save();
 
         return new InstallReport($name, $module->version(), $createdPermissions, $addedNpm, $addedNpm !== []);
     }

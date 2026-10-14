@@ -4,8 +4,10 @@ namespace Ladcms\Core\Actions\Modules;
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use Ladcms\Core\Models\Module;
 use Ladcms\Core\Module\Contracts\HasPermissions;
+use Ladcms\Core\Module\ModuleHasDependentsException;
 use Ladcms\Core\Module\ModuleNotFoundException;
 use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Module\ModuleServiceProvider;
@@ -18,7 +20,7 @@ class UninstallModule
 
     public function handle(string $name, bool $rollbackMigrations = false): void
     {
-        $module = $this->registry->get($name) ?? throw new ModuleNotFoundException($name);
+        $module = $this->ensureCanUninstall($name);
 
         $module->uninstall();
 
@@ -34,6 +36,30 @@ class UninstallModule
         }
 
         Module::where('name', $name)->delete();
+    }
+
+    /**
+     * Проверки до любых изменений; команда вызывает их до вопроса об откате миграций.
+     *
+     * @throws InvalidArgumentException для core
+     * @throws ModuleNotFoundException
+     * @throws ModuleHasDependentsException
+     */
+    public function ensureCanUninstall(string $name): ModuleServiceProvider
+    {
+        if ($name === 'core') {
+            throw new InvalidArgumentException('The core module cannot be uninstalled.');
+        }
+
+        // Модуль, не прошедший проверку, тоже можно удалить — поэтому провайдер берём мимо валидации.
+        $module = $this->registry->getRegistered($name) ?? throw new ModuleNotFoundException($name);
+
+        $dependents = $this->registry->dependents($name);
+        if ($dependents !== []) {
+            throw new ModuleHasDependentsException($name, $dependents);
+        }
+
+        return $module;
     }
 
     /** Откатывает только миграции модуля, записанные в таблице migrations, в обратном порядке. */

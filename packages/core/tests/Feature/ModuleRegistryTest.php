@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Ladcms\Core\Module\Contracts\HasPermissions;
 use Ladcms\Core\Module\ModuleRegistry;
+use Ladcms\Core\Tests\Fixtures\BadConstraintModule\BadConstraintServiceProvider;
 use Ladcms\Core\Tests\Fixtures\BrokenModule\BrokenServiceProvider;
 use Ladcms\Core\Tests\Fixtures\DummyModule\DummyServiceProvider;
 use Ladcms\Core\Tests\Fixtures\FriendModule\FriendServiceProvider;
@@ -53,6 +54,26 @@ it('does not boot a module whose core version is incompatible', function () {
         ->and($registry->failures())->toHaveKey('broken')
         ->and($registry->failures()['broken']->reason)->toContain('core');
     $this->get('/dummy')->assertOk(); // приложение живо
+});
+
+it('does not crash on a malformed core version constraint', function () {
+    $this->app->register(BadConstraintServiceProvider::class);
+    $registry = app(ModuleRegistry::class);
+
+    expect($registry->has('bad-constraint'))->toBeFalse()
+        ->and($registry->failures()['bad-constraint']->reason)->toContain('invalid core version constraint [1.x-foo]');
+    $this->get('/dummy')->assertOk();
+});
+
+it('reports registered-but-failed modules and dependents', function () {
+    $this->app->register(FriendServiceProvider::class);
+    $registry = app(ModuleRegistry::class);
+
+    expect($registry->isRegistered('broken'))->toBeTrue()
+        ->and($registry->getRegistered('broken'))->toBeInstanceOf(BrokenServiceProvider::class)
+        ->and($registry->get('broken'))->toBeNull()
+        ->and($registry->isRegistered('nope'))->toBeFalse()
+        ->and($registry->dependents('friend'))->toBe([]); // needs-friend пропущен при boot, значит невалиден
 });
 
 it('does not load resources of a module that fails validation', function () {

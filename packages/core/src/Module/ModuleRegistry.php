@@ -4,6 +4,7 @@ namespace Ladcms\Core\Module;
 
 use Composer\Semver\Semver;
 use Illuminate\Support\Collection;
+use UnexpectedValueException;
 
 class ModuleRegistry
 {
@@ -49,8 +50,13 @@ class ModuleRegistry
                 continue;
             }
 
-            if (! Semver::satisfies($this->coreVersion, $module->coreVersion())) {
-                $this->fail($name, "requires core {$module->coreVersion()}, installed {$this->coreVersion}");
+            try {
+                if (! Semver::satisfies($this->coreVersion, $module->coreVersion())) {
+                    $this->fail($name, "requires core {$module->coreVersion()}, installed {$this->coreVersion}");
+                }
+            } catch (UnexpectedValueException $e) {
+                // Битый constraint одного модуля не должен ронять весь сайт.
+                $this->fail($name, "invalid core version constraint [{$module->coreVersion()}]: {$e->getMessage()}");
             }
         }
 
@@ -115,6 +121,32 @@ class ModuleRegistry
     public function get(string $name): ?ModuleServiceProvider
     {
         return $this->all()->get($name);
+    }
+
+    /** Провайдер с таким именем зарегистрирован — независимо от того, прошёл ли он проверку. */
+    public function isRegistered(string $name): bool
+    {
+        return isset($this->registered[$name]);
+    }
+
+    /** Зарегистрированный провайдер, даже если модуль не прошёл проверку (для install/uninstall). */
+    public function getRegistered(string $name): ?ModuleServiceProvider
+    {
+        return $this->registered[$name] ?? null;
+    }
+
+    /**
+     * Валидные модули, которые зависят от $name.
+     *
+     * @return list<string>
+     */
+    public function dependents(string $name): array
+    {
+        return $this->all()
+            ->filter(fn (ModuleServiceProvider $m) => in_array($name, $m->dependencies(), true))
+            ->keys()
+            ->values()
+            ->all();
     }
 
     /** @return list<string> */

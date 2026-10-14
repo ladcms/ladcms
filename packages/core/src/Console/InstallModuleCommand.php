@@ -4,6 +4,7 @@ namespace Ladcms\Core\Console;
 
 use Illuminate\Console\Command;
 use Ladcms\Core\Actions\Modules\InstallModule;
+use Ladcms\Core\Module\ModuleFailedException;
 use Ladcms\Core\Module\ModuleNotFoundException;
 
 class InstallModuleCommand extends Command
@@ -16,7 +17,7 @@ class InstallModuleCommand extends Command
     {
         try {
             $report = $install->handle((string) $this->argument('module'));
-        } catch (ModuleNotFoundException $e) {
+        } catch (ModuleNotFoundException|ModuleFailedException $e) {
             $this->error($e->getMessage());
 
             return self::FAILURE;

@@ -3,7 +3,9 @@
 namespace Ladcms\Core\Console;
 
 use Illuminate\Console\Command;
+use InvalidArgumentException;
 use Ladcms\Core\Actions\Modules\UninstallModule;
+use Ladcms\Core\Module\ModuleHasDependentsException;
 use Ladcms\Core\Module\ModuleNotFoundException;
 
 class UninstallModuleCommand extends Command
@@ -15,11 +17,13 @@ class UninstallModuleCommand extends Command
     public function handle(UninstallModule $uninstall): int
     {
         $name = (string) $this->argument('module');
-        $rollback = $this->confirm("Roll back migrations of [{$name}]? Data will be lost.", false);
 
         try {
+            // Проверки (существует, не core, нет зависимых) — до вопроса об откате миграций.
+            $uninstall->ensureCanUninstall($name);
+            $rollback = $this->confirm("Roll back migrations of [{$name}]? Data will be lost.", false);
             $uninstall->handle($name, $rollback);
-        } catch (ModuleNotFoundException $e) {
+        } catch (ModuleNotFoundException|ModuleHasDependentsException|InvalidArgumentException $e) {
             $this->error($e->getMessage());
 
             return self::FAILURE;
