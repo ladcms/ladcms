@@ -10,7 +10,7 @@ env:
 
 jobs:
   split:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -18,7 +18,7 @@ jobs:
           - { local_path: packages/core, repo: core }
           - { local_path: app, repo: app }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Релизный тег обязан совпадать с CoreServiceProvider::VERSION — иначе модули проверяют
       # coreVersion() против версии, которой нет в опубликованном пакете.
