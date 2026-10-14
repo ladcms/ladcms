@@ -79,7 +79,7 @@
         // "isolatedDeclarations": true,                     /* Require sufficient annotation on exports so other tools can trivially generate declaration files. */
         // "allowSyntheticDefaultImports": true,             /* Allow 'import x from y' when a module doesn't have a default export. */
         "esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */,
-        // "preserveSymlinks": true,                         /* Disable resolving symlinks to their realpath. This correlates to the same flag in node. */
+        "preserveSymlinks": true /* Disable resolving symlinks to their realpath. This correlates to the same flag in node. */,
         "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
 
         /* Type Checking */
@@ -108,13 +108,15 @@
         // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
         "skipLibCheck": true /* Skip type checking all .d.ts files. */,
         "paths": {
-            "@/*": ["./resources/js/*"]
+            "@/*": ["./resources/js/*"],
+            "@ladcms/core/*": ["./vendor/ladcms/core/resources/js/*"]
         },
         "jsx": "react-jsx"
     },
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.d.ts",
-        "resources/js/**/*.tsx"
+        "resources/js/**/*.tsx",
+        "vendor/ladcms/*/resources/js/**/*"
     ]
 }

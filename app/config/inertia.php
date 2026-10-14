@@ -48,6 +48,8 @@ return [
             'vue',
         ],
 
+        'ensure_pages_exist' => true,
+
     ],
 
     /*

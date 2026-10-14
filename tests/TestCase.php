@@ -2,6 +2,7 @@
 
 namespace Ladcms\Tests;
 
+use Inertia\ServiceProvider as InertiaServiceProvider;
 use Ladcms\Core\CoreServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Spatie\Permission\PermissionServiceProvider;
@@ -11,6 +12,7 @@ abstract class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         return [
+            InertiaServiceProvider::class,
             PermissionServiceProvider::class,
             CoreServiceProvider::class,
         ];

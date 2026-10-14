@@ -1,4 +1,6 @@
 import { createInertiaApp } from '@inertiajs/react';
+import type { ResolvedComponent } from '@inertiajs/react';
+import { resolveModulePage } from '@ladcms/core/inertia/resolve-page';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -8,11 +10,23 @@ import SettingsLayout from '@/layouts/settings/layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+const appPages = import.meta.glob('./pages/**/*.tsx');
+const modulePages = import.meta.glob(
+    '/vendor/ladcms/*/resources/js/pages/**/*.tsx',
+);
+
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
+    // Резолвер отдаёт модуль страницы ({ default }); Inertia сам разворачивает `module.default`.
+    resolve: (name) =>
+        resolveModulePage(
+            name,
+            appPages,
+            modulePages,
+        ) as Promise<ResolvedComponent>,
     layout: (name) => {
         switch (true) {
-            case name === 'welcome':
+            case name === 'core::welcome':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;

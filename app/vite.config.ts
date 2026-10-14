@@ -18,7 +18,7 @@ export default defineConfig({
                 }),
             ],
         }),
-        inertia(),
+        inertia({ ssr: false }),
         react(),
         babel({
             presets: [reactCompilerPreset()],
@@ -28,6 +28,12 @@ export default defineConfig({
             formVariants: true,
         }),
     ]),
+    resolve: {
+        preserveSymlinks: true,
+        alias: {
+            '@ladcms/core': '/vendor/ladcms/core/resources/js',
+        },
+    },
     server: {
         watch: {
             ignored: [
@@ -35,7 +41,7 @@ export default defineConfig({
                 '**/.claude/**',
                 '**/.cursor/**',
                 '**/.junie/**',
-                '**/vendor/**',
+                '**/vendor/!(ladcms)/**',
             ],
         },
     },
