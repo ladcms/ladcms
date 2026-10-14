@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Ladcms\Core\Enums\BanType;
 use Ladcms\Core\Models\Ban;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Notifications\UserBanned;
 use Ladcms\Core\Settings\ModerationSettings;
 use Ladcms\Core\Support\Audit;
 
@@ -69,6 +70,8 @@ class BanUser
             'reason_code' => $reasonCode,
             'expires_at' => $ban->expires_at?->toIso8601String(),
         ]);
+
+        $target->notify(new UserBanned($ban));
 
         return $ban;
     }

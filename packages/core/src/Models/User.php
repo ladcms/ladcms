@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Ladcms\Core\Database\Factories\UserFactory;
 use Ladcms\Core\Enums\MessagesFrom;
 use Ladcms\Core\Enums\Sex;
@@ -25,6 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $name
  * @property string $email
  * @property ?string $avatar_path
+ * @property-read ?string $avatar_url
  * @property ?Sex $sex
  * @property ?Carbon $birth_date
  * @property ?string $about
@@ -103,6 +105,11 @@ class User extends Authenticatable
     public function getDisplayNameAttribute(): string
     {
         return $this->name !== '' ? $this->name : $this->login;
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->avatar_path ? Storage::disk(config('core.avatars.disk', 'public'))->url($this->avatar_path) : null;
     }
 
     public function level(): int
