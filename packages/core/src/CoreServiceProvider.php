@@ -9,12 +9,14 @@ use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
 use Ladcms\Core\Console\InstallModuleCommand;
 use Ladcms\Core\Console\UninstallModuleCommand;
 use Ladcms\Core\Console\UpdateModulesCommand;
 use Ladcms\Core\Http\Middleware\AdminAccess;
 use Ladcms\Core\Http\Middleware\CheckBan;
 use Ladcms\Core\Http\Middleware\EnsureRegistrationOpen;
+use Ladcms\Core\Http\Middleware\SetLocale;
 use Ladcms\Core\Http\Middleware\TrackOnline;
 use Ladcms\Core\Inertia\ModulePageFinder;
 use Ladcms\Core\Listeners\AssignDefaultRole;
@@ -109,11 +111,16 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
             $kernel->appendMiddlewareToGroup('web', CheckBan::class);
             $kernel->appendMiddlewareToGroup('web', TrackOnline::class);
             $kernel->appendMiddlewareToGroup('web', EnsureRegistrationOpen::class);
+            $kernel->appendMiddlewareToGroup('web', SetLocale::class);
         } else {
             $router->pushMiddlewareToGroup('web', CheckBan::class);
             $router->pushMiddlewareToGroup('web', TrackOnline::class);
             $router->pushMiddlewareToGroup('web', EnsureRegistrationOpen::class);
+            $router->pushMiddlewareToGroup('web', SetLocale::class);
         }
+
+        Inertia::share('locale', fn (): string => app()->getLocale());
+        Inertia::share('locales', fn (): mixed => config('core.locales'));
 
         // Роль регистрации — новым пользователям (событие диспатчит Fortify после CreateNewUser).
         Event::listen(Registered::class, AssignDefaultRole::class);

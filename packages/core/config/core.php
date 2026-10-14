@@ -7,6 +7,7 @@ use Ladcms\Core\CoreServiceProvider;
 return [
     'version' => CoreServiceProvider::VERSION,
     'package_json' => base_path('package.json'),
+    'locales' => ['ru' => 'Русский', 'en' => 'English'],
     'avatars' => [
         'disk' => 'public',
         'path' => 'avatars',
