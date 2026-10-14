@@ -48,3 +48,17 @@ it('lets the owner take back their own old login', function () {
 
     expect(app(ChangeLogin::class)->handle($user, 'mine')->login)->toBe('mine');
 });
+
+it('keeps a soft-deleted user login reserved', function () {
+    User::factory()->create(['login' => 'ghost'])->delete();
+    $user = User::factory()->create();
+
+    expect(fn () => app(ChangeLogin::class)->handle($user, 'ghost'))->toThrow(ValidationException::class);
+});
+
+it('does nothing when the new login equals the current one', function () {
+    $user = User::factory()->create(['login' => 'same']);
+
+    expect(app(ChangeLogin::class)->handle($user, ' SAME ')->login)->toBe('same')
+        ->and(LoginHistory::query()->count())->toBe(0);
+});

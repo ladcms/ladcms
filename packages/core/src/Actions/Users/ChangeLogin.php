@@ -15,6 +15,11 @@ class ChangeLogin
     public function handle(User $user, string $newLogin): User
     {
         $login = LoginRules::normalize($newLogin);
+
+        if ($login === $user->login) {
+            return $user;
+        }
+
         Validator::make(['login' => $login], ['login' => LoginRules::rules($user->id)])->validate();
 
         return DB::transaction(function () use ($user, $login): User {

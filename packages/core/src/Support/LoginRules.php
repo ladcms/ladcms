@@ -21,7 +21,7 @@ final class LoginRules
     {
         return [
             'required', 'string', 'min:3', 'max:32', 'regex:'.self::REGEX,
-            Rule::unique('users', 'login')->ignore($ignoreUserId)->whereNull('deleted_at'),
+            Rule::unique('users', 'login')->ignore($ignoreUserId),
             new LoginNotRecentlyReleased($ignoreUserId),
         ];
     }
