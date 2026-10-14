@@ -20,9 +20,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Релизный тег обязан совпадать с CoreServiceProvider::VERSION — иначе модули проверяют
+      # coreVersion() против версии, которой нет в опубликованном пакете.
+      - name: Guard release tag against CoreServiceProvider::VERSION
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          core_version=$(php -r 'preg_match("/const VERSION = \x27([^\x27]+)\x27;/", file_get_contents("packages/core/src/CoreServiceProvider.php"), $m) || exit(1); echo $m[1];')
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "$core_version" != "$tag_version" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match CoreServiceProvider::VERSION '${core_version}'. Bump the constant before tagging."
+            exit 1
+          fi
+          echo "Release ${tag_version} matches CoreServiceProvider::VERSION."
+
       - name: Rewrite app composer.json for standalone install
         if: matrix.package.repo == 'app'
         run: php .github/split/rewrite-app-composer.php app/composer.json "${GITHUB_REF_NAME#v}"
+
+      # В монорепо app/ работает из корня (Sail монтирует `..`, чтобы видеть packages/ по path-репозиторию).
+      # В отдельном репозитории ladcms/app: lock собран с path-репозиторием (невалиден без него),
+      # .ai — симлинк на корень монорепо (битый), compose.yaml монтирует родителя и работает из /app.
+      - name: Prepare app for standalone repository
+        if: matrix.package.repo == 'app'
+        run: |
+          set -euo pipefail
+          rm -f app/composer.lock
+          rm -f app/.ai
+          sed -i "s#'\.\.:/var/www/html'#'.:/var/www/html'#" app/compose.yaml
+          sed -i '/working_dir: \/var\/www\/html\/app/d' app/compose.yaml
+          sed -i 's#/var/www/html/app/artisan#/var/www/html/artisan#' app/compose.yaml
+          grep -q "'\.:/var/www/html'" app/compose.yaml || { echo "::error::volume not rewritten"; exit 1; }
+          ! grep -q "'\.\.:/var/www/html'" app/compose.yaml || { echo "::error::parent volume still present"; exit 1; }
+          ! grep -q 'working_dir: /var/www/html/app' app/compose.yaml || { echo "::error::working_dir not removed"; exit 1; }
+          grep -q '/var/www/html/artisan serve' app/compose.yaml || { echo "::error::SUPERVISOR_PHP_COMMAND not rewritten"; exit 1; }
+          ! grep -q '/var/www/html/app/' app/compose.yaml || { echo "::error::leftover /var/www/html/app path"; exit 1; }
+          test ! -e app/composer.lock && test ! -L app/.ai
 
       - if: "!startsWith(github.ref, 'refs/tags/')"
         uses: danharrin/monorepo-split-github-action@v2.4.0

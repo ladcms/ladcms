@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "568433729c4b87255ec8225fe18a47b9",
+    "content-hash": "8cfdbc3f3744694f0905aa291a4d22d4",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -1403,58 +1403,6 @@
                 "symlink": true,
                 "relative": true
             }
-        },
-        {
-            "name": "laravel/chisel",
-            "version": "v0.1.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/laravel/chisel.git",
-                "reference": "c2ac11cd1c6b763b412aa26b9d95fce70a489d31"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/laravel/chisel/zipball/c2ac11cd1c6b763b412aa26b9d95fce70a489d31",
-                "reference": "c2ac11cd1c6b763b412aa26b9d95fce70a489d31",
-                "shasum": ""
-            },
-            "require": {
-                "illuminate/process": "^10.20|^11.0|^12.0|^13.0",
-                "nikic/php-parser": "^5.0",
-                "php": "^8.2"
-            },
-            "require-dev": {
-                "laravel/pint": "^1.24.0",
-                "pestphp/pest": "^4.1.0",
-                "phpstan/phpstan": "^2.1.26",
-                "rector/rector": "^2.1.7"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Laravel\\Chisel\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Taylor Otwell",
-                    "email": "taylor@laravel.com"
-                }
-            ],
-            "description": "Toolkit for building scripts that remove unwanted code, files, and dependencies.",
-            "keywords": [
-                "chisel",
-                "laravel"
-            ],
-            "support": {
-                "issues": "https://github.com/laravel/chisel/issues",
-                "source": "https://github.com/laravel/chisel/tree/v0.1.1"
-            },
-            "time": "2026-05-13T21:29:24+00:00"
         },
         {
             "name": "laravel/fortify",
@@ -12033,5 +11981,5 @@
         "php": "^8.4"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.6.0"
 }
