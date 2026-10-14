@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Ladcms\Core\Database\Factories\UserFactory;
 use Ladcms\Core\Enums\MessagesFrom;
 use Ladcms\Core\Enums\Sex;
+use Ladcms\Core\Support\RoleLevel;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -83,5 +84,20 @@ class User extends Authenticatable
     public function getDisplayNameAttribute(): string
     {
         return $this->name !== '' ? $this->name : $this->login;
+    }
+
+    public function level(): int
+    {
+        return (int) ($this->roles()->max('level') ?? 0);
+    }
+
+    public function outranks(User $other): bool
+    {
+        return $this->level() > $other->level();
+    }
+
+    public function isCreator(): bool
+    {
+        return $this->level() >= RoleLevel::CREATOR;
     }
 }

@@ -15,7 +15,8 @@
     "autoload": {
         "psr-4": {
             "Ladcms\\Core\\": "src/",
-            "Ladcms\\Core\\Database\\Factories\\": "database/factories/"
+            "Ladcms\\Core\\Database\\Factories\\": "database/factories/",
+            "Ladcms\\Core\\Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {
