@@ -6,6 +6,7 @@ namespace Ladcms\Core\Module;
 
 use Illuminate\Support\Facades\Route;
 use Ladcms\Core\CoreServiceProvider;
+use Ladcms\Core\Module\Concerns\RegistersSettings;
 use Ladcms\Core\Module\Contracts\ModuleInterface;
 use ReflectionClass;
 use Spatie\LaravelPackageTools\Package;
@@ -13,6 +14,8 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 abstract class ModuleServiceProvider extends PackageServiceProvider implements ModuleInterface
 {
+    use RegistersSettings;
+
     public function coreVersion(): string
     {
         return '*';
@@ -79,6 +82,9 @@ abstract class ModuleServiceProvider extends PackageServiceProvider implements M
         $this->app->singletonIf(ModuleRegistry::class, fn () => new ModuleRegistry(CoreServiceProvider::VERSION));
 
         parent::register();
+
+        // Классы настроек из HasSettings — scoped-биндинги с данными из БД.
+        $this->registerModuleSettings();
 
         return $this;
     }

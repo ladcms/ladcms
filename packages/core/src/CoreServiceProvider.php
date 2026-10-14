@@ -13,15 +13,20 @@ use Ladcms\Core\Inertia\ModulePageFinder;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Module\Contracts\HasPermissions;
+use Ladcms\Core\Module\Contracts\HasSettings;
 use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Module\ModuleServiceProvider;
+use Ladcms\Core\Settings\AppearanceSettings;
+use Ladcms\Core\Settings\GeneralSettings;
+use Ladcms\Core\Settings\ModerationSettings;
+use Ladcms\Core\Settings\RegistrationSettings;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Spatie\Permission\PermissionRegistrar;
 
-class CoreServiceProvider extends ModuleServiceProvider implements HasPermissions
+class CoreServiceProvider extends ModuleServiceProvider implements HasPermissions, HasSettings
 {
     public const VERSION = '0.1.0';
 
@@ -42,6 +47,11 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
             'roles.manage', 'settings.manage', 'modules.manage', 'complaints.review', 'activity.view'];
 
         return array_combine($names, array_map(fn (string $n): string => 'core::permissions.'.$n, $names));
+    }
+
+    public function settings(): array
+    {
+        return [GeneralSettings::class, RegistrationSettings::class, ModerationSettings::class, AppearanceSettings::class];
     }
 
     protected function configureModule(Package $package): void
