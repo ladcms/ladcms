@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace Ladcms\Core;
 
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Ladcms\Core\Console\InstallModuleCommand;
 use Ladcms\Core\Console\UninstallModuleCommand;
 use Ladcms\Core\Console\UpdateModulesCommand;
 use Ladcms\Core\Http\Middleware\AdminAccess;
 use Ladcms\Core\Http\Middleware\CheckBan;
+use Ladcms\Core\Http\Middleware\EnsureRegistrationOpen;
 use Ladcms\Core\Http\Middleware\TrackOnline;
 use Ladcms\Core\Inertia\ModulePageFinder;
+use Ladcms\Core\Listeners\AssignDefaultRole;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Module\Contracts\HasPermissions;
@@ -97,17 +101,22 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
         $router->aliasMiddleware('role_or_permission', RoleOrPermissionMiddleware::class);
         $router->aliasMiddleware('ladcms.ban', CheckBan::class);
 
-        // CheckBan и TrackOnline — в группу `web`. Через HTTP-kernel: он синхронизирует свои группы в роутер
+        // CheckBan, TrackOnline и EnsureRegistrationOpen — в группу `web`. Через HTTP-kernel: он синхронизирует свои группы в роутер
         // при создании и затёр бы правку, внесённую только в роутер.
         $kernel = $this->app->make(HttpKernelContract::class);
         // @phpstan-ignore instanceof.alwaysTrue (Larastan выводит тип из Testbench; в приложении kernel может быть любым)
         if ($kernel instanceof HttpKernel && array_key_exists('web', $kernel->getMiddlewareGroups())) {
             $kernel->appendMiddlewareToGroup('web', CheckBan::class);
             $kernel->appendMiddlewareToGroup('web', TrackOnline::class);
+            $kernel->appendMiddlewareToGroup('web', EnsureRegistrationOpen::class);
         } else {
             $router->pushMiddlewareToGroup('web', CheckBan::class);
             $router->pushMiddlewareToGroup('web', TrackOnline::class);
+            $router->pushMiddlewareToGroup('web', EnsureRegistrationOpen::class);
         }
+
+        // Роль регистрации — новым пользователям (событие диспатчит Fortify после CreateNewUser).
+        Event::listen(Registered::class, AssignDefaultRole::class);
 
         // Создатель проходит любые простые проверки (permission/ability без модели). Проверки с моделью
         // идут через политики и для него: так системные роли и сам создатель защищены от удаления.
