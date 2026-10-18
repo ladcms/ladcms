@@ -12,6 +12,7 @@ return [
         'active_bans' => 'Active bans',
         'modules' => 'Modules installed',
         'modules_failed' => 'failed',
+        'modules_disabled' => 'disabled',
         'recent_activity' => 'Recent activity',
         'recent_users' => 'New users',
     ],

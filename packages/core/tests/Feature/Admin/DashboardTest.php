@@ -15,6 +15,9 @@ use Ladcms\Core\Models\Complaint;
 use Ladcms\Core\Models\Module;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
+use Ladcms\Core\Tests\Fixtures\BrokenModule\BrokenServiceProvider;
+use Ladcms\Core\Tests\Fixtures\DummyModule\DummyServiceProvider;
+use Spatie\Activitylog\Models\Activity;
 
 uses(RefreshDatabase::class);
 
@@ -51,7 +54,7 @@ it('collects stats from the data', function () {
         ->and($stats['users_today'])->toBe(4)
         ->and($stats['pending_complaints'])->toBe(1)
         ->and($stats['active_bans'])->toBe(1)
-        ->and($stats['modules'])->toBe(['installed' => 1, 'failed' => 0]);
+        ->and($stats['modules'])->toBe(['installed' => 1, 'failed' => 0, 'disabled' => 0]);
 });
 
 it('renders the dashboard with stats and recent lists', function () {
@@ -76,4 +79,19 @@ it('lets a user with admin.access only see the dashboard', function () {
     $moderator = User::factory()->create()->assignRole('moderator');
 
     dashboardAs($moderator)->get('/admin')->assertOk();
+});
+
+it('counts admin-disabled modules separately from failed ones', function () {
+    $this->app->register(BrokenServiceProvider::class);
+    Module::create(['name' => 'dummy', 'version' => '1.0.0', 'installed_at' => now(), 'is_enabled' => false]);
+    $this->app->register(DummyServiceProvider::class);
+
+    expect(app(DashboardStats::class)->collect()['modules'])->toMatchArray(['failed' => 1, 'disabled' => 1]);
+});
+
+it('survives activity whose subject class no longer exists', function () {
+    Activity::query()->create(['log_name' => 'admin', 'event' => 'gone.thing', 'description' => 'x', 'subject_type' => 'Vendor\\Gone\\Model', 'subject_id' => 5]);
+
+    dashboardAs($this->admin)->get('/admin')->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('recent_activity.0.subject.type', 'Model'));
 });

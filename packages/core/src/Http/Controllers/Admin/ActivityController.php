@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Inertia\Inertia;
 use Inertia\Response;
+use Ladcms\Core\Admin\ActivitySubjects;
 use Ladcms\Core\Admin\TableQuery;
 use Ladcms\Core\Http\Resources\Admin\ActivityResource;
 use Ladcms\Core\Models\User;
@@ -27,7 +28,7 @@ class ActivityController
             'to' => ['nullable', 'date'],
         ]);
 
-        $query = Activity::query()->with(['causer', 'subject']);
+        $query = Activity::query()->with('causer');
 
         if (filled($filters['causer'] ?? null)) {
             $like = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $filters['causer']).'%';
@@ -48,11 +49,14 @@ class ActivityController
         TableQuery::apply($query, $request, self::SORTABLE, 'created_at');
         $query->orderByDesc('id');
 
+        $page = TableQuery::paginate($query, $request);
+        ActivitySubjects::load($page->items());
+
         $sort = $request->query('sort');
         $direction = $request->query('direction');
 
         return Inertia::render('core::admin/activity/index', [
-            'activity' => ActivityResource::collection(TableQuery::paginate($query, $request)),
+            'activity' => ActivityResource::collection($page),
             'filters' => [
                 'causer' => $filters['causer'] ?? null,
                 'event' => $filters['event'] ?? null,

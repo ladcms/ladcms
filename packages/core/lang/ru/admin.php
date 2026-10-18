@@ -12,6 +12,7 @@ return [
         'active_bans' => 'Активных банов',
         'modules' => 'Модулей установлено',
         'modules_failed' => 'с ошибками',
+        'modules_disabled' => 'выключено',
         'recent_activity' => 'Последние действия',
         'recent_users' => 'Новые пользователи',
     ],

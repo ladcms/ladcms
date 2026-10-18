@@ -45,15 +45,21 @@ final readonly class ModulesOverview
                 $reason = 'module code is not available';
             }
 
+            $isCore = $name === 'core';
+            if ($isCore) {
+                $status = 'active';
+                $reason = null;
+            }
+
             return [
                 'name' => $name,
                 'version' => $provider?->version(),
                 'installed_version' => $row?->version,
-                'is_enabled' => $row !== null && $row->is_enabled,
+                'is_enabled' => $isCore || ($row !== null && $row->is_enabled),
                 'status' => $status,
                 'reason' => $reason,
                 'needs_update' => $provider instanceof ModuleServiceProvider && $row !== null && $provider->version() !== $row->version,
-                'is_core' => $name === 'core',
+                'is_core' => $isCore,
                 'dependencies' => $provider?->dependencies() ?? [],
             ];
         });

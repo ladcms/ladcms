@@ -18,7 +18,7 @@ final readonly class DashboardStats
     public function __construct(private ModuleRegistry $registry) {}
 
     /**
-     * @return array{users_total: int, users_online: int, users_today: int, pending_complaints: int, active_bans: int, modules: array{installed: int, failed: int}}
+     * @return array{users_total: int, users_online: int, users_today: int, pending_complaints: int, active_bans: int, modules: array{installed: int, failed: int, disabled: int}}
      */
     public function collect(): array
     {
@@ -30,7 +30,8 @@ final readonly class DashboardStats
             'active_bans' => Ban::query()->active()->count(),
             'modules' => [
                 'installed' => Module::query()->count(),
-                'failed' => count($this->registry->failures()),
+                'failed' => count(array_diff_key($this->registry->failures(), array_flip($this->registry->disabled()))),
+                'disabled' => count($this->registry->disabled()),
             ],
         ];
     }

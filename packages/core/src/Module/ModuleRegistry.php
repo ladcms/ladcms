@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Ladcms\Core\Module;
 
 use Composer\Semver\Semver;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Schema;
 use Ladcms\Core\Models\Module;
-use PDOException;
+use Throwable;
 use UnexpectedValueException;
 
 class ModuleRegistry
@@ -104,7 +102,7 @@ class ModuleRegistry
         } while ($changed);
 
         foreach ($this->failures as $name => $failure) {
-            if (($previous[$name] ?? null)?->reason !== $failure->reason) {
+            if (! isset($this->disabled[$name]) && ($previous[$name] ?? null)?->reason !== $failure->reason) {
                 logger()->warning("LADCMS module [{$name}] disabled: {$failure->reason}");
             }
         }
@@ -143,13 +141,11 @@ class ModuleRegistry
         }
         $this->disabledLoaded = true;
 
+        // Fail open намеренно: нет таблицы, соединения или драйвера — значит, выключенных модулей нет,
+        // и приложение (включая artisan-команды вроде config:clear) продолжает загружаться.
         try {
-            if (! Schema::hasTable('modules')) {
-                return;
-            }
-
             $names = Module::query()->where('is_enabled', false)->pluck('name');
-        } catch (QueryException|PDOException) {
+        } catch (Throwable) {
             return;
         }
 
@@ -214,6 +210,21 @@ class ModuleRegistry
     public function names(): array
     {
         return $this->all()->keys()->values()->all();
+    }
+
+    /**
+     * Зарегистрированные модули, выключенные администратором.
+     *
+     * @return list<string>
+     */
+    public function disabled(): array
+    {
+        $this->validate();
+
+        return array_values(array_filter(
+            array_keys($this->disabled),
+            fn (string $name): bool => isset($this->registered[$name]),
+        ));
     }
 
     /** @return array<string, ModuleFailure> */

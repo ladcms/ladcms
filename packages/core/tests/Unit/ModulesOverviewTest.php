@@ -18,8 +18,9 @@ it('builds rows sorted core first then by name', function () {
 
     $rows = collect(app(ModulesOverview::class)->rows());
 
-    expect($rows->pluck('name')->all())->toBe(['core', 'broken', 'dummy', 'ghost'])
-        ->and($rows->firstWhere('name', 'core')['status'])->toBe('not_installed') // no row in this test DB
+    expect($rows->firstWhere('name', 'core'))->toMatchArray(['is_enabled' => true, 'installed_version' => null, 'needs_update' => false, 'reason' => null])
+        ->and($rows->pluck('name')->all())->toBe(['core', 'broken', 'dummy', 'ghost'])
+        ->and($rows->firstWhere('name', 'core')['status'])->toBe('active') // core is never not_installed, even without a row
         ->and($rows->firstWhere('name', 'dummy'))->toMatchArray(['status' => 'active', 'needs_update' => false, 'dependencies' => []])
         ->and($rows->firstWhere('name', 'broken')['status'])->toBe('failed')
         ->and($rows->firstWhere('name', 'ghost')['version'])->toBeNull();

@@ -47,6 +47,19 @@ class ToggleModule
             }
         }
 
+        if ($enabled) {
+            $disabled = array_values(array_intersect($this->registry->getRegistered($name)?->dependencies() ?? [], $this->registry->disabled()));
+            if ($disabled !== []) {
+                throw new InvalidArgumentException(
+                    "Cannot enable [{$name}]: requires disabled module [".implode('], [', $disabled).'].',
+                );
+            }
+        }
+
+        if ($module->is_enabled === $enabled) {
+            return $module;
+        }
+
         $module->update(['is_enabled' => $enabled]);
 
         Audit::log('module.toggled', $actor, $module, ['module' => $name, 'enabled' => $enabled]);

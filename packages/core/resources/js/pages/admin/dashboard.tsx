@@ -20,6 +20,7 @@ const t = {
         modules: 'Модулей установлено',
     },
     failed: 'с ошибками',
+    disabled: 'выключено',
     recentActivity: 'Последние действия',
     recentUsers: 'Новые пользователи',
     empty: 'Пока ничего нет',
@@ -32,7 +33,7 @@ type Stats = {
     users_today: number;
     pending_complaints: number;
     active_bans: number;
-    modules: { installed: number; failed: number };
+    modules: { installed: number; failed: number; disabled: number };
 };
 
 type ActivityRow = {
@@ -85,6 +86,12 @@ export default function Dashboard({
                                 stats.modules.failed > 0 && (
                                     <p className="text-sm text-destructive">
                                         {stats.modules.failed} {t.failed}
+                                    </p>
+                                )}
+                            {card.key === 'modules' &&
+                                stats.modules.disabled > 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {stats.modules.disabled} {t.disabled}
                                     </p>
                                 )}
                         </CardHeader>

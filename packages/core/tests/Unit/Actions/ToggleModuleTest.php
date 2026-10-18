@@ -9,6 +9,7 @@ use Ladcms\Core\Database\Seeders\PermissionsSeeder;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Models\Module;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Tests\Fixtures\DummyModule\DummyServiceProvider;
 use Ladcms\Core\Tests\Fixtures\FriendModule\FriendServiceProvider;
 use Ladcms\Core\Tests\Fixtures\NeedsFriendModule\NeedsFriendServiceProvider;
@@ -62,4 +63,20 @@ it('toggles a module that exists only in the table', function () {
     Module::create(['name' => 'ghost', 'version' => '1.0.0', 'installed_at' => now(), 'is_enabled' => true]);
 
     expect(app(ToggleModule::class)->handle($this->admin, 'ghost', false)->is_enabled)->toBeFalse();
+});
+
+it('refuses to enable a module whose dependency is disabled', function () {
+    $this->app->register(FriendServiceProvider::class);
+    $this->app->register(NeedsFriendServiceProvider::class);
+    Module::create(['name' => 'friend', 'version' => '1.0.0', 'installed_at' => now(), 'is_enabled' => true]);
+    Module::create(['name' => 'needs-friend', 'version' => '1.0.0', 'installed_at' => now(), 'is_enabled' => false]);
+    app(ModuleRegistry::class)->markDisabled('friend');
+
+    app(ToggleModule::class)->handle($this->admin, 'needs-friend', true);
+})->throws(InvalidArgumentException::class, 'friend');
+
+it('does not audit a toggle that changes nothing', function () {
+    app(ToggleModule::class)->handle($this->admin, 'dummy', true);
+
+    expect(Activity::query()->where('event', 'module.toggled')->count())->toBe(0);
 });

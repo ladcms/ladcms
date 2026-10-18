@@ -90,3 +90,11 @@ it('is forbidden without activity.view', function () {
 
     activityAs($moderator)->get('/admin/activity')->assertForbidden();
 });
+
+it('survives activity whose subject class no longer exists', function () {
+    Activity::query()->create(['log_name' => 'admin', 'event' => 'gone.thing', 'description' => 'x', 'subject_type' => 'Vendor\\Gone\\Model', 'subject_id' => 5]);
+    Audit::log('role.created', $this->admin, $this->other);
+
+    activityAs($this->admin)->get('/admin/activity')->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->has('activity.data', 2));
+});

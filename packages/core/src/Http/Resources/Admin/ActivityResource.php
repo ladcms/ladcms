@@ -18,7 +18,8 @@ class ActivityResource extends JsonResource
         /** @var Activity $activity */
         $activity = $this->resource;
         $causer = $activity->causer;
-        $subject = $activity->subject;
+        // subject подгружается заранее и только для существующих классов; ленивая загрузка уронила бы страницу.
+        $subject = $activity->relationLoaded('subject') ? $activity->subject : null;
 
         return [
             'id' => $activity->id,

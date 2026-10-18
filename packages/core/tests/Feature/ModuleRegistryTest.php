@@ -129,3 +129,12 @@ it('recomputes a disabled module from scratch and never disables core', function
         ->and($registry->failures()['dummy']->reason)->toBe('custom reason')
         ->and($registry->has('core'))->toBeTrue();
 });
+
+it('fails open when the database connection is unusable', function () {
+    config(['database.default' => 'nope']);
+    $registry = new ModuleRegistry('0.1.0');
+
+    expect($registry->failures())->toBe([])
+        ->and($registry->all()->all())->toBe([])
+        ->and($registry->disabled())->toBe([]);
+});
