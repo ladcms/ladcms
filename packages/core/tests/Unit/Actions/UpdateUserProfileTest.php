@@ -10,6 +10,7 @@ use Ladcms\Core\Database\Seeders\PermissionsSeeder;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Enums\Sex;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Settings\RegistrationSettings;
 use Spatie\Activitylog\Models\Activity;
 
 uses(RefreshDatabase::class);
@@ -79,4 +80,33 @@ it('rejects an email taken by another user', function () {
     expect(fn () => app(UpdateUserProfile::class)->handle($this->admin, $this->target, ['email' => 'TAKEN@example.test']))
         ->toThrow(ValidationException::class)
         ->and($this->target->fresh()->email)->toBe('old@example.test');
+});
+
+it('resets email verification when the email changes and verification is required', function () {
+    $settings = app(RegistrationSettings::class);
+    $settings->require_email_verification = true;
+    $settings->save();
+
+    app(UpdateUserProfile::class)->handle($this->admin, $this->target, ['email' => 'changed@example.test']);
+
+    expect($this->target->fresh()->email_verified_at)->toBeNull();
+});
+
+it('keeps the user verified on email change when verification is disabled', function () {
+    $settings = app(RegistrationSettings::class);
+    $settings->require_email_verification = false;
+    $settings->save();
+    $this->target->forceFill(['email_verified_at' => null])->save();
+
+    app(UpdateUserProfile::class)->handle($this->admin, $this->target, ['email' => 'changed@example.test']);
+
+    expect($this->target->fresh()->email_verified_at)->not->toBeNull();
+});
+
+it('does not touch verification when the email is unchanged', function () {
+    $verifiedAt = $this->target->email_verified_at;
+
+    app(UpdateUserProfile::class)->handle($this->admin, $this->target, ['name' => 'Another', 'email' => 'OLD@example.test']);
+
+    expect($this->target->fresh()->email_verified_at?->toIso8601String())->toBe($verifiedAt?->toIso8601String());
 });

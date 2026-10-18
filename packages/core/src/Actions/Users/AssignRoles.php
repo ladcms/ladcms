@@ -42,14 +42,20 @@ class AssignRoles
             throw ValidationException::withMessages(['roles' => 'Unknown roles: '.implode(', ', $missing).'.']);
         }
 
+        // Проверяются только изменения: добавлять и снимать можно лишь роли, которые актор вправе назначать.
+        // Роль вне его полномочий, присутствующая и до, и после, остаётся как есть.
+        $current = Role::query()->with('permissions')->whereKey($target->roles()->pluck('roles.id')->all())->get();
+        $added = $roles->reject(fn (Role $role): bool => $current->contains('id', $role->id));
+        $removed = $current->reject(fn (Role $role): bool => $roles->contains('id', $role->id));
+
         $actorPermissions = $actor->isCreator() ? [] : self::permissionsOf($actor);
-        $forbidden = $roles->reject(fn (Role $role): bool => self::mayAssign($actor, $role, $actorPermissions));
+        $forbidden = $added->merge($removed)->reject(fn (Role $role): bool => self::mayAssign($actor, $role, $actorPermissions));
 
         if ($forbidden->isNotEmpty()) {
-            throw new AuthorizationException('You cannot assign roles at or above your own level or with permissions you do not have.');
+            throw new AuthorizationException('You cannot add or remove roles at or above your own level or with permissions you do not have.');
         }
 
-        $previous = $target->getRoleNames()->values()->all();
+        $previous = $current->pluck('name')->values()->all();
         $target->syncRoles($roles);
         Audit::log('roles.assigned', $actor, $target, ['roles' => $roles->pluck('name')->values()->all(), 'previous' => $previous]);
 

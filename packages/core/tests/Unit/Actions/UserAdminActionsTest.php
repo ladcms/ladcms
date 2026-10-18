@@ -12,6 +12,7 @@ use Ladcms\Core\Database\Seeders\PermissionsSeeder;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
@@ -146,4 +147,18 @@ it('lets the creator assign roles with any permissions', function () {
     app(AssignRoles::class)->handle($this->creator, $this->target, ['helper']);
 
     expect($this->target->fresh()->hasPermissionTo('roles.manage'))->toBeTrue();
+});
+
+it('validates only role deltas: untouchable roles are kept, but cannot be removed', function () {
+    $foreign = Permission::query()->whereNotIn('name', $this->admin->getAllPermissions()->pluck('name'))->firstOrFail();
+    $moduleRole = Role::create(['name' => 'module_keeper', 'guard_name' => 'web']);
+    $moduleRole->givePermissionTo($foreign);
+    $this->target->assignRole('module_keeper');
+
+    app(AssignRoles::class)->handle($this->admin, $this->target, ['user', 'module_keeper', 'moderator']);
+    expect($this->target->fresh()->getRoleNames()->sort()->values()->all())->toBe(['moderator', 'module_keeper', 'user']);
+
+    expect(fn () => app(AssignRoles::class)->handle($this->admin, $this->target->fresh(), ['user']))
+        ->toThrow(AuthorizationException::class);
+    expect($this->target->fresh()->getRoleNames()->sort()->values()->all())->toBe(['moderator', 'module_keeper', 'user']);
 });

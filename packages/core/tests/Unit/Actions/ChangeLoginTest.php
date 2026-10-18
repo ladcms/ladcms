@@ -7,6 +7,7 @@ use Illuminate\Validation\ValidationException;
 use Ladcms\Core\Actions\Users\ChangeLogin;
 use Ladcms\Core\Models\LoginHistory;
 use Ladcms\Core\Models\User;
+use Spatie\Activitylog\Models\Activity;
 
 uses(RefreshDatabase::class);
 
@@ -61,4 +62,19 @@ it('does nothing when the new login equals the current one', function () {
 
     expect(app(ChangeLogin::class)->handle($user, ' SAME ')->login)->toBe('same')
         ->and(LoginHistory::query()->count())->toBe(0);
+});
+
+it('audits login changes made by an actor only', function () {
+    $admin = User::factory()->create();
+    $user = User::factory()->create(['login' => 'before']);
+
+    app(ChangeLogin::class)->handle($user, 'self_change');
+    expect(Activity::query()->where('event', 'user.login_changed')->exists())->toBeFalse();
+
+    app(ChangeLogin::class)->handle($user, 'After', $admin);
+
+    $activity = Activity::query()->where('event', 'user.login_changed')->sole();
+    expect($activity->causer_id)->toBe($admin->id)
+        ->and($activity->subject_id)->toBe($user->id)
+        ->and($activity->properties->all())->toBe(['from' => 'self_change', 'to' => 'after']);
 });

@@ -12,6 +12,7 @@ use Ladcms\Core\Enums\BanType;
 use Ladcms\Core\Models\Ban;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
+use Spatie\Activitylog\Models\Activity;
 
 uses(RefreshDatabase::class);
 
@@ -241,7 +242,8 @@ it('marks a user suspicious', function () {
 it('changes the login', function () {
     assertUserActionSaved(userActionsAs($this->admin)->patch("/admin/users/{$this->member->id}/login", ['login' => 'Fresh_Login']));
 
-    expect($this->member->fresh()->login)->toBe('fresh_login');
+    expect($this->member->fresh()->login)->toBe('fresh_login')
+        ->and(Activity::query()->where('event', 'user.login_changed')->where('causer_id', $this->admin->id)->exists())->toBeTrue();
 });
 
 it('rejects a taken login and forbids moderators', function () {

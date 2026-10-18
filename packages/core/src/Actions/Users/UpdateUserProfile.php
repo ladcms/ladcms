@@ -11,10 +11,13 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Settings\RegistrationSettings;
 use Ladcms\Core\Support\Audit;
 
 class UpdateUserProfile
 {
+    public function __construct(private readonly RegistrationSettings $registration) {}
+
     /** Поля профиля, которые можно менять этим действием (логин, роли, флаги — отдельными действиями). */
     public const array FIELDS = ['name', 'email', 'sex', 'birth_date', 'about', 'signature', 'language', 'timezone'];
 
@@ -39,7 +42,13 @@ class UpdateUserProfile
         }
 
         $target->fill($data);
-        $changed = array_keys($target->getDirty());
+
+        // Новый адрес не подтверждён; если сайт не требует подтверждения — считаем его подтверждённым (как при регистрации).
+        if ($target->isDirty('email')) {
+            $target->forceFill(['email_verified_at' => $this->registration->require_email_verification ? null : now()]);
+        }
+
+        $changed = array_values(array_diff(array_keys($target->getDirty()), ['email_verified_at']));
 
         if ($changed !== []) {
             $target->save();

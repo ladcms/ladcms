@@ -67,7 +67,7 @@ class UserController
     {
         // ChangeLogin работает только с субъектом — права проверяем здесь.
         Gate::forUser($actor)->authorize('update', $user);
-        $action->handle($user, (string) $request->validated('login'));
+        $action->handle($user, (string) $request->validated('login'), $actor);
 
         return $this->saved();
     }

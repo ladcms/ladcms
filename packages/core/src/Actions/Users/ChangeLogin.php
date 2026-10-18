@@ -8,11 +8,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Ladcms\Core\Models\LoginHistory;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\Audit;
 use Ladcms\Core\Support\LoginRules;
 
 class ChangeLogin
 {
-    public function handle(User $user, string $newLogin): User
+    /**
+     * Changes the login of `$user`. Authorization is the caller's job; when `$actor` is given
+     * (admin-initiated change) the change is written to the audit log.
+     */
+    public function handle(User $user, string $newLogin, ?User $actor = null): User
     {
         $login = LoginRules::normalize($newLogin);
 
@@ -22,9 +27,14 @@ class ChangeLogin
 
         Validator::make(['login' => $login], ['login' => LoginRules::rules($user->id)])->validate();
 
-        return DB::transaction(function () use ($user, $login): User {
-            LoginHistory::query()->create(['user_id' => $user->id, 'old_login' => $user->login, 'changed_at' => now()]);
+        return DB::transaction(function () use ($user, $login, $actor): User {
+            $old = $user->login;
+            LoginHistory::query()->create(['user_id' => $user->id, 'old_login' => $old, 'changed_at' => now()]);
             $user->forceFill(['login' => $login])->save();
+
+            if ($actor instanceof User) {
+                Audit::log('user.login_changed', $actor, $user, ['from' => $old, 'to' => $login]);
+            }
 
             return $user;
         });
