@@ -108,5 +108,5 @@ it('shares the i18n map on admin routes only', function () {
         ->where('i18n', fn ($map) => $map['core::admin.saved'] === 'Сохранено'
             && $map['dummy::admin.title'] === 'Элементы Dummy'));
 
-    $auth()->get('/plain')->assertInertia(fn (AssertableInertia $page) => $page->where('i18n', null));
+    $auth()->get('/plain')->assertInertia(fn (AssertableInertia $page) => $page->where('i18n', fn ($map) => ! array_key_exists('core::admin.saved', $map->toArray())));
 });

@@ -13,7 +13,7 @@ use Ladcms\Core\Module\ModuleRegistry;
 /** Счётчики для карточек дашборда. */
 final readonly class DashboardStats
 {
-    private const int ONLINE_MINUTES = 15;
+    public const int ONLINE_MINUTES = 15;
 
     public function __construct(private ModuleRegistry $registry) {}
 

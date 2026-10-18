@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Ladcms\Core\Admin\AdminMenu;
+use Ladcms\Core\Admin\DashboardStats;
 use Ladcms\Core\Admin\MenuItem;
 use Ladcms\Core\Console\InstallModuleCommand;
 use Ladcms\Core\Console\PruneUnverifiedUsersCommand;
@@ -28,6 +29,7 @@ use Ladcms\Core\Http\Middleware\CheckBan;
 use Ladcms\Core\Http\Middleware\ConfirmPasswordWithSettingsTtl;
 use Ladcms\Core\Http\Middleware\EnsureRegistrationOpen;
 use Ladcms\Core\Http\Middleware\SetLocale;
+use Ladcms\Core\Http\Middleware\SharePublicLayout;
 use Ladcms\Core\Http\Middleware\TrackOnline;
 use Ladcms\Core\Http\Resources\CurrentUserResource;
 use Ladcms\Core\Inertia\ModulePageFinder;
@@ -35,8 +37,11 @@ use Ladcms\Core\Listeners\AssignDefaultRole;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Module\Contracts\HasAdminPanel;
+use Ladcms\Core\Module\Contracts\HasHeaderActions;
+use Ladcms\Core\Module\Contracts\HasNavigation;
 use Ladcms\Core\Module\Contracts\HasPermissions;
 use Ladcms\Core\Module\Contracts\HasSettings;
+use Ladcms\Core\Module\Contracts\HasWidgets;
 use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Module\ModuleServiceProvider;
 use Ladcms\Core\Policies\RolePolicy;
@@ -47,13 +52,14 @@ use Ladcms\Core\Settings\GeneralSettings;
 use Ladcms\Core\Settings\ModerationSettings;
 use Ladcms\Core\Settings\RegistrationSettings;
 use Ladcms\Core\Support\UserModel;
+use Ladcms\Core\Ui\Widgets;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Spatie\Permission\PermissionRegistrar;
 
-class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel, HasPermissions, HasSettings
+class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel, HasHeaderActions, HasNavigation, HasPermissions, HasSettings, HasWidgets
 {
     public const VERSION = '0.1.0';
 
@@ -121,6 +127,45 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
         ];
     }
 
+    public function navigation(): array
+    {
+        return [
+            ['key' => 'home', 'label' => 'Home', 'icon' => 'house', 'route' => 'home', 'order' => 10],
+            ['key' => 'users', 'label' => 'Users', 'icon' => 'users', 'route' => 'users.index', 'order' => 20, 'path' => '/users'],
+            ['key' => 'rules', 'label' => 'Rules', 'icon' => 'scroll', 'route' => 'rules', 'order' => 30, 'path' => '/rules'],
+        ];
+    }
+
+    public function widgets(): array
+    {
+        $avatar = fn (User $user): array => [
+            'id' => $user->id,
+            'login' => $user->login,
+            'display_name' => $user->name ?: $user->login,
+            'avatar_url' => $user->avatar_url,
+        ];
+
+        return [
+            ['name' => 'online', 'component' => 'core::Online', 'slot' => 'sidebar', 'order' => 10, 'props' => function () use ($avatar): array {
+                $online = UserModel::query()->where('last_activity_at', '>=', now()->subMinutes(DashboardStats::ONLINE_MINUTES));
+
+                return [
+                    'count' => (clone $online)->count(),
+                    'users' => $online->orderByDesc('last_activity_at')->limit(10)->get()->map($avatar)->all(),
+                ];
+            }],
+            ['name' => 'latest-users', 'component' => 'core::LatestUsers', 'slot' => 'sidebar', 'order' => 20, 'props' => fn (): array => [
+                'users' => UserModel::query()->latest('id')->limit(5)->get()
+                    ->map(fn (User $user): array => $avatar($user) + ['created_at' => $user->created_at?->toISOString()])->all(),
+            ]],
+        ];
+    }
+
+    public function headerActions(): array
+    {
+        return [['key' => 'notifications', 'icon' => 'bell', 'component' => 'core::NotificationBell', 'order' => 10, 'auth' => true]];
+    }
+
     /** Админ-роуты ядра — прямо под `/admin` с именами `admin.*`. */
     protected function adminRoutePrefix(): string
     {
@@ -180,12 +225,16 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
             $kernel->appendMiddlewareToGroup('web', TrackOnline::class);
             $kernel->appendMiddlewareToGroup('web', EnsureRegistrationOpen::class);
             $kernel->appendMiddlewareToGroup('web', SetLocale::class);
+            $kernel->appendMiddlewareToGroup('web', SharePublicLayout::class);
         } else {
             $router->pushMiddlewareToGroup('web', CheckBan::class);
             $router->pushMiddlewareToGroup('web', TrackOnline::class);
             $router->pushMiddlewareToGroup('web', EnsureRegistrationOpen::class);
             $router->pushMiddlewareToGroup('web', SetLocale::class);
+            $router->pushMiddlewareToGroup('web', SharePublicLayout::class);
         }
+
+        $this->app->scoped(Widgets::class);
 
         Inertia::share('locale', fn (): string => app()->getLocale());
         Inertia::share('locales', fn (): array => $this->app->make(LocaleManager::class)->available());
@@ -207,19 +256,19 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
             ];
         });
 
-        // Переводы админки (`<module>::admin.*`) для текущей локали — плоской картой, только на админ-роутах.
-        // Собирается на каждый запрос, без кэша: набор модулей и локаль меняются между запросами.
-        Inertia::share('i18n', function (): ?array {
-            if (! $this->app->make(Request::class)->routeIs('admin.*')) {
-                return null;
-            }
+        // Переводы (`<module>::public.*` на всех страницах, `<module>::admin.*` дополнительно на админ-роутах)
+        // для текущей локали — плоской картой. Собирается на каждый запрос, без кэша: набор модулей и локаль меняются между запросами.
+        Inertia::share('i18n', function (): array {
+            $groups = $this->app->make(Request::class)->routeIs('admin.*') ? ['public', 'admin'] : ['public'];
 
             $map = [];
             foreach ($this->app->make(ModuleRegistry::class)->names() as $name) {
-                $lines = Lang::get("{$name}::admin");
-                if (is_array($lines)) {
-                    foreach (Arr::dot($lines) as $key => $value) {
-                        $map["{$name}::admin.{$key}"] = $value;
+                foreach ($groups as $group) {
+                    $lines = Lang::get("{$name}::{$group}");
+                    if (is_array($lines)) {
+                        foreach (Arr::dot($lines) as $key => $value) {
+                            $map["{$name}::{$group}.{$key}"] = $value;
+                        }
                     }
                 }
             }
