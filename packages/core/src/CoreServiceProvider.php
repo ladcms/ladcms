@@ -57,6 +57,22 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
         return self::VERSION;
     }
 
+    /**
+     * npm packages required by the core UI kit (beyond the starter kit's own dependencies).
+     *
+     * @return array<string, string>
+     */
+    public function npmDependencies(): array
+    {
+        return [
+            '@radix-ui/react-alert-dialog' => '^1.2.1',
+            '@radix-ui/react-popover' => '^1.3.1',
+            '@radix-ui/react-switch' => '^1.4.1',
+            '@radix-ui/react-tabs' => '^1.2.1',
+            'cmdk' => '^1.1.1',
+        ];
+    }
+
     /** @return array<string, string> */
     public function permissions(): array
     {

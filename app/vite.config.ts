@@ -13,8 +13,8 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
             fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
+                bunny('Nunito', {
+                    weights: [400, 600, 700],
                 }),
             ],
         }),
@@ -54,6 +54,7 @@ export default defineConfig({
             'tailwind.config.js',
             'resources/js/actions/**',
             'resources/js/components/ui/*',
+            'vendor/ladcms/*/resources/js/components/ui/*',
             'resources/js/routes/**',
             'resources/js/wayfinder/**',
         ],
@@ -74,6 +75,7 @@ export default defineConfig({
             'compose.yaml',
             'composer.json',
             'resources/js/components/ui/*',
+            'vendor/ladcms/*/resources/js/components/ui/*',
             'resources/views/mail/*',
         ],
         sortTailwindcss: {
