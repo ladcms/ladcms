@@ -41,6 +41,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property bool $show_email
  * @property bool $show_birthday
  * @property MessagesFrom $messages_from
+ * @property ?Carbon $email_verified_at
  * @property ?Carbon $created_at
  */
 class User extends Authenticatable
