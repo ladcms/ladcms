@@ -9,7 +9,7 @@ it('publishes the core config', function () {
 });
 
 it('declares the npm dependencies of the core UI kit', function () {
-    $deps = (new CoreServiceProvider(app()))->npmDependencies();
+    $deps = new CoreServiceProvider(app())->npmDependencies();
 
     expect($deps)->toHaveKey('cmdk')
         ->and($deps)->toHaveKeys(['@radix-ui/react-alert-dialog', '@radix-ui/react-popover', '@radix-ui/react-switch', '@radix-ui/react-tabs']);
