@@ -9,8 +9,11 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use InvalidArgumentException;
+use Ladcms\Core\Actions\Users\DeleteOwnAccount;
 
 class ProfileController extends Controller
 {
@@ -50,9 +53,16 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        Auth::logout();
+        // Удаление — через core: последнего создателя удалить нельзя, удаление мягкое и попадает в журнал.
+        try {
+            app(DeleteOwnAccount::class)->handle($user);
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages([
+                'password' => __('The last creator cannot delete their account.'),
+            ]);
+        }
 
-        $user->delete();
+        Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

@@ -4,6 +4,7 @@ namespace Tests\Feature\Settings;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Tests\TestCase;
 
 class ProfileUpdateTest extends TestCase
@@ -78,6 +79,46 @@ class ProfileUpdateTest extends TestCase
         $this->assertGuest();
         // Пользователи ядра удаляются мягко (SoftDeletes).
         $this->assertSoftDeleted($user);
+        $this->assertDatabaseHas('activity_log', [
+            'event' => 'user.deleted_own_account',
+            'causer_type' => 'user',
+            'causer_id' => $user->id,
+        ]);
+    }
+
+    public function test_last_creator_cannot_delete_their_account()
+    {
+        $this->seed(RolesSeeder::class);
+        $creator = User::factory()->create()->assignRole('creator');
+
+        $response = $this
+            ->actingAs($creator)
+            ->from(route('profile.edit'))
+            ->delete(route('profile.destroy'), [
+                'password' => 'password',
+            ]);
+
+        $response
+            ->assertSessionHasErrors('password')
+            ->assertRedirect(route('profile.edit'));
+
+        $this->assertAuthenticatedAs($creator);
+        $this->assertNotSoftDeleted($creator);
+    }
+
+    public function test_creator_can_delete_their_account_when_another_creator_exists()
+    {
+        $this->seed(RolesSeeder::class);
+        $creator = User::factory()->create()->assignRole('creator');
+        User::factory()->create()->assignRole('creator');
+
+        $this->actingAs($creator)
+            ->delete(route('profile.destroy'), ['password' => 'password'])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('home'));
+
+        $this->assertGuest();
+        $this->assertSoftDeleted($creator);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account()
