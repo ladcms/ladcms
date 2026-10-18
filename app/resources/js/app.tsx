@@ -1,5 +1,6 @@
 import { createInertiaApp } from '@inertiajs/react';
 import type { ResolvedComponent } from '@inertiajs/react';
+import AdminLayout from '@ladcms/core/layouts/admin-layout';
 import { resolveModulePage } from '@ladcms/core/inertia/resolve-page';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -32,6 +33,8 @@ void createInertiaApp({
                 return AuthLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
+            case /^[a-z0-9-]+::admin\//.test(name):
+                return AdminLayout;
             default:
                 return AppLayout;
         }
