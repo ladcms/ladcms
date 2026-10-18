@@ -270,7 +270,7 @@ it('builds the current user with one roles query and one bans query', function (
     $this->seed(PermissionsSeeder::class);
     $user = User::factory()->create()->assignRole('admin');
     $user = User::query()->findOrFail($user->id);
-    app(RegistrationSettings::class)->readonly_hours; // настройки загружаются один раз на запрос
+    expect(app(RegistrationSettings::class)->readonly_hours)->toBe(0); // прогрев: настройки грузятся раз на запрос
 
     DB::enableQueryLog();
     CurrentUserResource::make($user)->resolve();

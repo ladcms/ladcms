@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Ladcms\Core\Actions\Moderation\BanUser;
 use Ladcms\Core\Database\Seeders\PermissionsSeeder;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Enums\BanType;
+use Ladcms\Core\Models\Ban;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Notifications\UserBanned;
 
@@ -53,4 +56,13 @@ it('sends UserBanned via database and mail', function () {
 
     expect($notification->via($this->target))->toBe(['database', 'mail'])
         ->and($notification->toMail($this->target))->toBeInstanceOf(MailMessage::class);
+});
+
+it('queues UserBanned after the surrounding transaction commits', function () {
+    Notification::fake();
+
+    app(BanUser::class)->handle($this->mod, $this->target, BanType::Full, 'spam', now()->addDays(3));
+
+    Notification::assertSentTo($this->target, UserBanned::class, fn (UserBanned $notification): bool => $notification->afterCommit === true);
+    expect(new UserBanned(Ban::query()->sole()))->toBeInstanceOf(ShouldQueue::class);
 });

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Ladcms\Core\Actions\Install;
 
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\AdministratorRules;
 use Ladcms\Core\Support\LoginRules;
 use Ladcms\Core\Support\UserModel;
 
@@ -16,15 +15,7 @@ final class CreateAdministrator
     {
         $login = LoginRules::normalize($login);
 
-        Validator::make(
-            ['login' => $login, 'name' => $name, 'email' => $email, 'password' => $password],
-            [
-                'login' => LoginRules::rules(),
-                'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-                'password' => ['required', 'string', 'min:12'],
-            ],
-        )->validate();
+        AdministratorRules::validate($login, $name, $email, $password);
 
         $user = UserModel::query()->create(['login' => $login, 'name' => $name, 'email' => $email, 'password' => $password]);
         $user->forceFill(['email_verified_at' => now()])->save();

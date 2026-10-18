@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Ladcms\Core\Actions\Install\InstallSite;
 use Ladcms\Core\Actions\Install\SiteAlreadyInstalledException;
 use Ladcms\Core\Actions\Install\SiteInstallData;
@@ -41,4 +42,14 @@ it('with force re-seeds without duplicating', function () {
     app(InstallSite::class)->handle(new SiteInstallData('X', 'ru', 'second', 'S', 's@example.com', 'another-secret-12'), force: true);
 
     expect(Role::count())->toBe(8)->and(User::count())->toBe(2);
+});
+
+it('validates the administrator before seeding anything', function () {
+    $invalid = new SiteInstallData('Broken', 'en', 'owner', 'Owner', 'not-an-email', 'secret-password-123');
+
+    expect(fn () => app(InstallSite::class)->handle($invalid))->toThrow(ValidationException::class)
+        ->and(Role::count())->toBe(0)
+        ->and(User::count())->toBe(0)
+        ->and(app(GeneralSettings::class)->site_name)->not->toBe('Broken')
+        ->and(Module::where('name', 'core')->exists())->toBeFalse();
 });

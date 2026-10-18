@@ -57,7 +57,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'login', 'name', 'email', 'password', 'avatar_path', 'sex', 'birth_date', 'about', 'signature',
-        'language', 'timezone', 'registered_ip', 'is_suspicious', 'suspicious_note',
+        'language', 'timezone',
         'show_email', 'show_birthday', 'messages_from',
     ];
 

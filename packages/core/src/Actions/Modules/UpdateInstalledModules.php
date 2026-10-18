@@ -19,9 +19,15 @@ class UpdateInstalledModules
     {
         $reports = [];
 
+        // Ядро — первым (его миграции и права нужны модулям) и всегда, если сайт установлен.
+        $names = Module::enabled()->where('name', '!=', 'core')->orderBy('name')->pluck('name')->all();
+        if (Module::query()->where('name', 'core')->exists()) {
+            array_unshift($names, 'core');
+        }
+
         /** @var string $name */
-        foreach (Module::enabled()->pluck('name') as $name) {
-            if ($name === 'core' || ! $this->registry->has($name)) {
+        foreach ($names as $name) {
+            if (! $this->registry->has($name)) {
                 continue;
             }
             $reports[] = $this->install->handle($name);

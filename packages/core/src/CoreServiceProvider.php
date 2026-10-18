@@ -31,6 +31,7 @@ use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Module\ModuleServiceProvider;
 use Ladcms\Core\Policies\RolePolicy;
 use Ladcms\Core\Policies\UserPolicy;
+use Ladcms\Core\Services\LocaleManager;
 use Ladcms\Core\Settings\AppearanceSettings;
 use Ladcms\Core\Settings\GeneralSettings;
 use Ladcms\Core\Settings\ModerationSettings;
@@ -125,7 +126,7 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
         }
 
         Inertia::share('locale', fn (): string => app()->getLocale());
-        Inertia::share('locales', fn (): mixed => config('core.locales'));
+        Inertia::share('locales', fn (): array => $this->app->make(LocaleManager::class)->available());
 
         // Ежедневная чистка: неподтверждённые аккаунты и старые записи журнала активности.
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {

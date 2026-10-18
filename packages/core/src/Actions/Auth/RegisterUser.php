@@ -77,14 +77,14 @@ class RegisterUser
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => $data['password'],
-                'registered_ip' => $ip,
                 'language' => $this->general->default_language,
             ]);
 
-            // Подтверждение email отключено — аккаунт сразу считается подтверждённым.
-            if (! $this->registration->require_email_verification) {
-                $user->forceFill(['email_verified_at' => now()])->save();
-            }
+            // Служебные поля не mass-assignable. Подтверждение email отключено — аккаунт сразу подтверждён.
+            $user->forceFill([
+                'registered_ip' => $ip,
+                'email_verified_at' => $this->registration->require_email_verification ? null : now(),
+            ])->save();
 
             if ($invites instanceof InviteValidator) {
                 $invites->consume($data['invite_code'] ?? '', $user);

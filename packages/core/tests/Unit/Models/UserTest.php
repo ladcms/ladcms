@@ -41,3 +41,12 @@ it('soft deletes users', function () {
 
     expect(User::count())->toBe(0)->and(User::withTrashed()->count())->toBe(1);
 });
+
+it('does not mass-assign moderation and audit fields', function () {
+    $user = new User(['login' => 'someone', 'registered_ip' => '10.0.0.1', 'is_suspicious' => true, 'suspicious_note' => 'x']);
+
+    expect($user->registered_ip)->toBeNull()
+        ->and($user->is_suspicious)->toBeFalse()
+        ->and($user->suspicious_note)->toBeNull()
+        ->and($user->login)->toBe('someone');
+});

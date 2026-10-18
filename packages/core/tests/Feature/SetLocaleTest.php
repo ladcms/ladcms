@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Services\LocaleManager;
 
@@ -42,4 +43,17 @@ it('exposes available locales and the current one', function () {
 
     expect($manager->available())->toBe(['ru' => 'Русский', 'en' => 'English'])
         ->and($manager->current())->toBe(app()->getLocale());
+});
+
+it('shares the available locales from LocaleManager with Inertia pages', function () {
+    $this->app->instance(LocaleManager::class, new class extends LocaleManager
+    {
+        public function available(): array
+        {
+            return ['en' => 'English'];
+        }
+    });
+    Route::middleware('web')->get('/locales-probe', fn () => Inertia::render('core::welcome'));
+
+    $this->get('/locales-probe')->assertOk()->assertInertia(fn ($page) => $page->where('locales', ['en' => 'English']));
 });
