@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\LoginRules;
+use Ladcms\Core\Support\UserModel;
 
 final class CreateAdministrator
 {
@@ -25,7 +26,7 @@ final class CreateAdministrator
             ],
         )->validate();
 
-        $user = User::create(['login' => $login, 'name' => $name, 'email' => $email, 'password' => $password]);
+        $user = UserModel::query()->create(['login' => $login, 'name' => $name, 'email' => $email, 'password' => $password]);
         $user->forceFill(['email_verified_at' => now()])->save();
         $user->assignRole('creator');
 

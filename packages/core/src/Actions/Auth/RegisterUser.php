@@ -11,6 +11,7 @@ use Ladcms\Core\Models\User;
 use Ladcms\Core\Settings\GeneralSettings;
 use Ladcms\Core\Settings\RegistrationSettings;
 use Ladcms\Core\Support\LoginRules;
+use Ladcms\Core\Support\UserModel;
 
 /**
  * Регистрация нового пользователя с учётом настроек регистрации. Событие `Registered`
@@ -56,10 +57,7 @@ class RegisterUser
         /** @var array{login: string, name: string, email: string, password: string} $data */
         $data = Validator::make($input, $rules)->validate();
 
-        /** @var class-string<User> $model */
-        $model = config('auth.providers.users.model', User::class);
-
-        return $model::query()->create([
+        return UserModel::query()->create([
             'login' => $data['login'],
             'name' => $data['name'],
             'email' => $data['email'],

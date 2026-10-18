@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Ladcms\Core\Actions\Users;
 
-use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\UserModel;
 
 class PruneUnverifiedUsers
 {
@@ -14,7 +14,7 @@ class PruneUnverifiedUsers
         $count = 0;
 
         // lazyById: пагинация по id устойчива к удалению строк (offset-пагинация пропускала бы записи).
-        $users = User::withTrashed()
+        $users = UserModel::query()->withTrashed()
             ->whereNull('email_verified_at')
             ->where('created_at', '<', now()->subDays($days))
             ->whereDoesntHave('roles', fn ($query) => $query->where('level', '>', 1))

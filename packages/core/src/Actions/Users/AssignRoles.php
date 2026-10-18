@@ -11,6 +11,7 @@ use InvalidArgumentException;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
+use Ladcms\Core\Support\UserModel;
 
 class AssignRoles
 {
@@ -28,7 +29,7 @@ class AssignRoles
         $roleNames = array_values(array_unique($roleNames));
 
         // Инвариант проверяется до авторизации: последний создатель не может потерять роль creator.
-        if (! in_array('creator', $roleNames, true) && $target->hasRole('creator') && User::role('creator')->count() <= 1) {
+        if (! in_array('creator', $roleNames, true) && $target->hasRole('creator') && UserModel::query()->role('creator')->count() <= 1) {
             throw new InvalidArgumentException('The last creator cannot lose the creator role.');
         }
 

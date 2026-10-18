@@ -18,6 +18,7 @@ use Ladcms\Core\Enums\Sex;
 use Ladcms\Core\Settings\RegistrationSettings;
 use Ladcms\Core\Support\LoginRules;
 use Ladcms\Core\Support\RoleLevel;
+use Ladcms\Core\Support\UserModel;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -51,6 +52,9 @@ class User extends Authenticatable
     use Notifiable;
     use SoftDeletes;
 
+    /** Guard для spatie/permission: явно, чтобы не зависеть от того, какой класс указан в `auth.providers`. */
+    protected string $guard_name = 'web';
+
     protected $fillable = [
         'login', 'name', 'email', 'password', 'avatar_path', 'sex', 'birth_date', 'about', 'signature',
         'language', 'timezone', 'registered_ip', 'is_suspicious', 'suspicious_note',
@@ -82,6 +86,21 @@ class User extends Authenticatable
         'show_birthday' => true,
         'messages_from' => 'all',
     ];
+
+    /**
+     * Единый морф-тип для core User и наследника приложения: `model_has_roles`, `notifications`,
+     * `activity_log` хранят `user`, а morphMap (CoreServiceProvider) резолвит его в модель приложения.
+     */
+    public function getMorphClass(): string
+    {
+        return UserModel::MORPH_ALIAS;
+    }
+
+    /** Внешний ключ `user_id` и для наследников (иначе Eloquent вывел бы его из имени класса наследника). */
+    public function getForeignKey(): string
+    {
+        return 'user_id';
+    }
 
     protected static function newFactory(): UserFactory
     {

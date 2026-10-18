@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use InvalidArgumentException;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
+use Ladcms\Core\Support\UserModel;
 
 class DeleteUser
 {
@@ -22,7 +23,7 @@ class DeleteUser
     public function handle(User $actor, User $target): void
     {
         // Инвариант проверяется до авторизации: последнего создателя нельзя удалить никому.
-        if ($target->isCreator() && User::role('creator')->count() <= 1) {
+        if ($target->isCreator() && UserModel::query()->role('creator')->count() <= 1) {
             throw new InvalidArgumentException('The last creator cannot be deleted.');
         }
 

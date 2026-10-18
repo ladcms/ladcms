@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Timebox;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\LoginRules;
+use Ladcms\Core\Support\UserModel;
 
 /**
  * Находит пользователя по логину или email (если есть `@`) и проверяет пароль. Удалённых не пускает.
@@ -53,11 +54,8 @@ class AuthenticateByLoginOrEmail
 
     private function find(string $identifier): ?User
     {
-        /** @var class-string<User> $model */
-        $model = config('auth.providers.users.model', User::class);
-
         return str_contains($identifier, '@')
-            ? $model::query()->where('email', mb_strtolower($identifier))->first()
-            : $model::query()->where('login', LoginRules::normalize($identifier))->first();
+            ? UserModel::query()->where('email', mb_strtolower($identifier))->first()
+            : UserModel::query()->where('login', LoginRules::normalize($identifier))->first();
     }
 }

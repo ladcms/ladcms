@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Notification;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Notifications\UserMentioned;
+use Ladcms\Core\Support\UserModel;
 
 class MentionService
 {
@@ -33,7 +34,7 @@ class MentionService
             return new Collection;
         }
 
-        return User::query()->whereIn('id', array_keys($ids))->get();
+        return UserModel::query()->whereIn('id', array_keys($ids))->get();
     }
 
     /** Отправляет `UserMentioned` всем упомянутым, кроме автора; возвращает число получателей. */

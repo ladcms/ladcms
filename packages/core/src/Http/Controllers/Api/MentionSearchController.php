@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\UserModel;
 
 class MentionSearchController
 {
@@ -23,7 +24,7 @@ class MentionSearchController
         // `!` как escape-символ: обратный слэш в литерале ESCAPE ломается в MySQL.
         $prefix = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $q).'%';
 
-        $users = User::query()
+        $users = UserModel::query()
             ->where(fn (Builder $query) => $query
                 ->whereRaw("login LIKE ? ESCAPE '!'", [$prefix])
                 ->orWhereRaw("name LIKE ? ESCAPE '!'", [$prefix]))

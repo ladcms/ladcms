@@ -7,6 +7,7 @@ namespace Ladcms\Core;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -34,6 +35,7 @@ use Ladcms\Core\Settings\AppearanceSettings;
 use Ladcms\Core\Settings\GeneralSettings;
 use Ladcms\Core\Settings\ModerationSettings;
 use Ladcms\Core\Settings\RegistrationSettings;
+use Ladcms\Core\Support\UserModel;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -142,6 +144,10 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
         // поэтому App\Models\User extends core User отдельной регистрации не требует.
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Role::class, RolePolicy::class);
+
+        // Морф-алиас пользователя (см. User::getMorphClass): роли, уведомления и журнал хранят `user`,
+        // а при чтении morphTo получает модель приложения из `auth.providers.users.model`.
+        Relation::morphMap([UserModel::MORPH_ALIAS => UserModel::class()]);
 
         // Страницы модулей: Inertia-компонент `module::Path` → <modulePath>/resources/js/pages/Path.tsx.
         $this->app->extend('inertia.view-finder', fn ($finder, $app) => new ModulePageFinder(

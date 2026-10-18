@@ -15,6 +15,7 @@ use Ladcms\Core\Models\Complaint;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Notifications\ComplaintFiled;
 use Ladcms\Core\Settings\ModerationSettings;
+use Ladcms\Core\Support\UserModel;
 
 class FileComplaint
 {
@@ -64,7 +65,7 @@ class FileComplaint
         ]);
         $complaint->setRelation('author', $author);
 
-        Notification::send(User::permission('complaints.review')->get(), new ComplaintFiled($complaint));
+        Notification::send(UserModel::query()->permission('complaints.review')->get(), new ComplaintFiled($complaint));
 
         return $complaint;
     }
