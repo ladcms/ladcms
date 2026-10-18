@@ -11,9 +11,9 @@ use Illuminate\Support\Str;
 use Ladcms\Core\Models\Complaint;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Module\Contracts\HasAdminPanel;
-use Ladcms\Core\Module\Contracts\HasSettings;
 use Ladcms\Core\Module\ModuleRegistry;
 use Ladcms\Core\Module\ModuleServiceProvider;
+use Ladcms\Core\Settings\SettingsGroups;
 
 /**
  * Собирает меню админки: разделы ядра (из CoreServiceProvider::adminMenu()), затем по секции на каждый
@@ -27,7 +27,7 @@ class AdminMenu
     /** Число pending-жалоб на время одного `build()`: `false` — ещё не считали. */
     private int|false|null $pendingComplaints = false;
 
-    public function __construct(private readonly ModuleRegistry $modules) {}
+    public function __construct(private readonly ModuleRegistry $modules, private readonly SettingsGroups $settingsGroups) {}
 
     /** @return list<MenuItem> */
     public function build(User $user, Request $request): array
@@ -159,27 +159,19 @@ class AdminMenu
     }
 
     /**
-     * Группы настроек всех HasSettings-модулей; роут `admin.settings.edit` появляется в задаче настроек.
+     * Группы настроек всех HasSettings-модулей.
      *
      * @return list<AdminMenuChild>
      */
     private function settingsChildren(): array
     {
-        $children = [];
-        foreach ($this->modules->implementing(HasSettings::class) as $name => $module) {
-            foreach ($module->settings() as $class) {
-                $group = $class::group();
-                $children[] = [
-                    'key' => $group,
-                    'label' => $this->translate("{$name}::settings.{$group}.title", Str::ucfirst($group)),
-                    'route' => 'admin.settings.edit',
-                    'path' => '/admin/settings/'.$group,
-                    'params' => ['group' => $group],
-                ];
-            }
-        }
-
-        return $children;
+        return array_map(fn (array $group): array => [
+            'key' => $group['key'],
+            'label' => $group['label'],
+            'route' => 'admin.settings.edit',
+            'path' => '/admin/settings/'.$group['key'],
+            'params' => ['group' => $group['key']],
+        ], $this->settingsGroups->all());
     }
 
     /** @param  AdminMenuEntry|AdminMenuChild  $entry */

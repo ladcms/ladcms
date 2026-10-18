@@ -7,6 +7,7 @@ use Ladcms\Core\Http\Controllers\Admin\BansController;
 use Ladcms\Core\Http\Controllers\Admin\ComplaintsController;
 use Ladcms\Core\Http\Controllers\Admin\DashboardController;
 use Ladcms\Core\Http\Controllers\Admin\RolesController;
+use Ladcms\Core\Http\Controllers\Admin\SettingsController;
 use Ladcms\Core\Http\Controllers\Admin\UserBanController;
 use Ladcms\Core\Http\Controllers\Admin\UserController;
 use Ladcms\Core\Http\Controllers\Admin\UserRolesController;
@@ -40,4 +41,9 @@ Route::prefix('/moderation')->name('moderation.')->group(function (): void {
     Route::get('/complaints', [ComplaintsController::class, 'index'])->middleware('can:complaints.review')->name('complaints.index');
     Route::patch('/complaints/{complaint}', [ComplaintsController::class, 'review'])->name('complaints.review');
     Route::get('/bans', [BansController::class, 'index'])->middleware('can:users.ban')->name('bans.index');
+});
+
+Route::prefix('/settings/{group}')->name('settings.')->middleware('can:settings.manage')->group(function (): void {
+    Route::get('/', [SettingsController::class, 'edit'])->name('edit');
+    Route::put('/', [SettingsController::class, 'update'])->name('update');
 });
