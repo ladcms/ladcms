@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 return [
+    'saved' => 'Сохранено',
+    'user_deleted' => 'Пользователь удалён',
     'menu' => [
         'dashboard' => 'Панель управления',
         'users' => 'Пользователи',

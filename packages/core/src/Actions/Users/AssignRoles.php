@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ladcms\Core\Actions\Users;
 
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
@@ -41,21 +42,11 @@ class AssignRoles
             throw ValidationException::withMessages(['roles' => 'Unknown roles: '.implode(', ', $missing).'.']);
         }
 
-        if (! $actor->isCreator()) {
-            $actorLevel = $actor->level();
-            $tooHigh = $roles->filter(fn (Role $role): bool => ($role->level ?? 0) >= $actorLevel);
+        $actorPermissions = $actor->isCreator() ? [] : self::permissionsOf($actor);
+        $forbidden = $roles->reject(fn (Role $role): bool => self::mayAssign($actor, $role, $actorPermissions));
 
-            if ($tooHigh->isNotEmpty()) {
-                throw new AuthorizationException('You cannot assign roles at or above your own level.');
-            }
-
-            // Роль не должна давать прав, которых нет у самого актора (иначе — эскалация через роль без уровня/ниже уровня).
-            $actorPermissions = $actor->getAllPermissions()->pluck('name')->all();
-            $escalating = $roles->filter(fn (Role $role): bool => array_diff($role->permissions->pluck('name')->all(), $actorPermissions) !== []);
-
-            if ($escalating->isNotEmpty()) {
-                throw new AuthorizationException('You cannot assign roles with permissions you do not have.');
-            }
+        if ($forbidden->isNotEmpty()) {
+            throw new AuthorizationException('You cannot assign roles at or above your own level or with permissions you do not have.');
         }
 
         $previous = $target->getRoleNames()->values()->all();
@@ -63,5 +54,36 @@ class AssignRoles
         Audit::log('roles.assigned', $actor, $target, ['roles' => $roles->pluck('name')->values()->all(), 'previous' => $previous]);
 
         return $target;
+    }
+
+    /**
+     * Roles the actor may hand out: all for a creator; otherwise roles strictly below the actor's
+     * level whose permissions are a subset of the actor's own (no escalation through a role).
+     *
+     * @return Collection<int, Role>
+     */
+    public static function assignableBy(User $actor): Collection
+    {
+        $roles = Role::query()->with('permissions')->where('guard_name', 'web')->orderBy('level')->orderBy('name')->get();
+        $actorPermissions = $actor->isCreator() ? [] : self::permissionsOf($actor);
+
+        return $roles->filter(fn (Role $role): bool => self::mayAssign($actor, $role, $actorPermissions))->values();
+    }
+
+    /** @param  list<string>  $actorPermissions */
+    private static function mayAssign(User $actor, Role $role, array $actorPermissions): bool
+    {
+        if ($actor->isCreator()) {
+            return true;
+        }
+
+        return ($role->level ?? 0) < $actor->level()
+            && array_diff($role->permissions->pluck('name')->all(), $actorPermissions) === [];
+    }
+
+    /** @return list<string> */
+    private static function permissionsOf(User $actor): array
+    {
+        return $actor->getAllPermissions()->pluck('name')->values()->all();
     }
 }

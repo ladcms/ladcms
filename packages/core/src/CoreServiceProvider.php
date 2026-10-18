@@ -7,11 +7,13 @@ namespace Ladcms\Core;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Ladcms\Core\Admin\AdminMenu;
 use Ladcms\Core\Admin\MenuItem;
@@ -224,6 +226,15 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
         // Морф-алиас пользователя (см. User::getMorphClass): роли, уведомления и журнал хранят `user`,
         // а при чтении morphTo получает модель приложения из `auth.providers.users.model`.
         Relation::morphMap([UserModel::MORPH_ALIAS => UserModel::class()]);
+
+        // `{user}` в роутах — модель приложения (`auth.providers.users.model`), мягко удалённые → 404.
+        Route::bind('user', function (string $value): User {
+            if (! ctype_digit($value)) {
+                throw (new ModelNotFoundException)->setModel(UserModel::class(), [$value]);
+            }
+
+            return UserModel::query()->findOrFail((int) $value);
+        });
 
         // Страницы модулей: Inertia-компонент `module::Path` → <modulePath>/resources/js/pages/Path.tsx.
         $this->app->extend('inertia.view-finder', fn ($finder, $app) => new ModulePageFinder(

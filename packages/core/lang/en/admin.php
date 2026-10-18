@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 return [
+    'saved' => 'Saved',
+    'user_deleted' => 'User deleted',
     'menu' => [
         'dashboard' => 'Dashboard',
         'users' => 'Users',
