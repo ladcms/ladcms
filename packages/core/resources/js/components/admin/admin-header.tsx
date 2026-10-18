@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
-import { Bell, ChevronRight, Menu } from 'lucide-react';
+import { ChevronRight, Menu } from 'lucide-react';
 import { useState } from 'react';
+import { NotificationBell } from '@ladcms/core/components/notification-bell';
 import { AdminBreadcrumbs } from '@ladcms/core/components/admin/admin-breadcrumbs';
 import { SectionLinks } from '@ladcms/core/components/admin/section-panel';
 import { UserMenu } from '@ladcms/core/components/admin/user-menu';
@@ -24,7 +25,6 @@ const t = {
     openMenu: 'Открыть меню',
     menu: 'Меню админки',
     menuDescription: 'Разделы панели управления',
-    notifications: 'Уведомления',
 };
 
 /** Мобильная навигация: секции аккордеоном, тап раскрывает подпункты. */
@@ -143,14 +143,7 @@ export function AdminHeader({ menu, user, breadcrumbs }: AdminHeaderProps) {
             </div>
 
             <div className="flex items-center gap-1">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled
-                    aria-label={t.notifications}
-                >
-                    <Bell aria-hidden />
-                </Button>
+                <NotificationBell />
                 <UserMenu user={user} />
             </div>
         </header>
