@@ -1,4 +1,5 @@
-import type { AdminI18n, AdminShared } from '@ladcms/core/types/admin';
+import type { AdminShared } from '@ladcms/core/types/admin';
+import type { I18nMap, LayoutShared } from '@ladcms/core/types/layout';
 import type { Auth } from '@/types/auth';
 
 declare module 'react' {
@@ -14,7 +15,8 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             admin?: AdminShared | null;
-            i18n?: AdminI18n | null;
+            layout?: LayoutShared | null;
+            i18n?: I18nMap | null;
             [key: string]: unknown;
         };
     }

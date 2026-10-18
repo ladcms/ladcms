@@ -9,6 +9,7 @@ import {
     PopoverTrigger,
 } from '@ladcms/core/components/ui/popover';
 import { useT } from '@ladcms/core/lib/i18n';
+import { relativeTime } from '@ladcms/core/lib/relative-time';
 import type { Translate } from '@ladcms/core/lib/i18n';
 import { cn } from '@ladcms/core/lib/utils';
 import { index, read, readAll } from '@/routes/notifications';
@@ -45,30 +46,6 @@ function messageOf(item: NotificationItem): string | null {
     const message = item.data.message;
 
     return typeof message === 'string' && message !== '' ? message : null;
-}
-
-const units: [Intl.RelativeTimeFormatUnit, number][] = [
-    ['day', 86_400],
-    ['hour', 3_600],
-    ['minute', 60],
-];
-
-function relativeTime(iso: string, locale: string): string {
-    const timestamp = new Date(iso).getTime();
-    if (Number.isNaN(timestamp)) {
-        return '';
-    }
-
-    const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
-    const seconds = Math.round((timestamp - Date.now()) / 1000);
-
-    for (const [unit, size] of units) {
-        if (Math.abs(seconds) >= size) {
-            return formatter.format(Math.round(seconds / size), unit);
-        }
-    }
-
-    return formatter.format(0, 'second');
 }
 
 /** Колокольчик уведомлений: не зависит от admin-пропсов, пригоден для публичной шапки. */
