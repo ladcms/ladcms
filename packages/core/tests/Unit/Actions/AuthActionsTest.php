@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Ladcms\Core\Actions\Auth\AuthenticateByLoginOrEmail;
 use Ladcms\Core\Actions\Auth\RegisterUser;
+use Ladcms\Core\Contracts\InviteValidator;
 use Ladcms\Core\Database\Seeders\PermissionsSeeder;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Http\Resources\CurrentUserResource;
@@ -105,6 +106,78 @@ it('refuses registration when it is closed', function () {
 
     app(RegisterUser::class)->handle(registrationInput());
 })->throws(AuthorizationException::class);
+
+/** Регистрация только по инвайтам; без валидатора — закрыта. */
+function inviteOnly(): void
+{
+    $settings = app(RegistrationSettings::class);
+    $settings->invite_only = true;
+    $settings->save();
+}
+
+/** Фейковый валидатор: действителен только `GOOD` для new@example.com; запоминает погашенные коды. */
+function fakeInviteValidator(): InviteValidator
+{
+    $validator = new class implements InviteValidator
+    {
+        /** @var list<array{string, int}> */
+        public array $consumed = [];
+
+        public function validate(string $code, string $email): bool
+        {
+            return $code === 'GOOD' && $email === 'new@example.com';
+        }
+
+        public function consume(string $code, User $user): void
+        {
+            $this->consumed[] = [$code, $user->id];
+        }
+    };
+
+    app()->instance(InviteValidator::class, $validator);
+
+    return $validator;
+}
+
+it('closes invite-only registration when no invite validator is bound', function () {
+    inviteOnly();
+
+    expect(fn () => app(RegisterUser::class)->handle(registrationInput(['invite_code' => 'GOOD'])))->toThrow(AuthorizationException::class)
+        ->and(User::query()->count())->toBe(0);
+});
+
+it('requires a valid invite code and consumes it when registration is invite-only', function () {
+    inviteOnly();
+    $invites = fakeInviteValidator();
+
+    expect(fn () => app(RegisterUser::class)->handle(registrationInput()))->toThrow(ValidationException::class)
+        ->and(fn () => app(RegisterUser::class)->handle(registrationInput(['invite_code' => 'BAD'])))->toThrow(ValidationException::class)
+        ->and($invites->consumed)->toBe([]);
+
+    $user = app(RegisterUser::class)->handle(registrationInput(['invite_code' => 'GOOD']));
+
+    expect($invites->consumed)->toBe([['GOOD', $user->id]]);
+});
+
+it('ignores invite codes when registration is not invite-only', function () {
+    $invites = fakeInviteValidator();
+
+    app(RegisterUser::class)->handle(registrationInput());
+
+    expect($invites->consumed)->toBe([]);
+});
+
+it('leaves new users unverified when email verification is required', function () {
+    expect(app(RegisterUser::class)->handle(registrationInput())->email_verified_at)->toBeNull();
+});
+
+it('auto-verifies new users when email verification is disabled', function () {
+    $settings = app(RegistrationSettings::class);
+    $settings->require_email_verification = false;
+    $settings->save();
+
+    expect(app(RegisterUser::class)->handle(registrationInput())->fresh()?->email_verified_at)->not->toBeNull();
+});
 
 it('rejects a duplicate login or email', function () {
     User::factory()->create(['login' => 'new_user', 'email' => 'other@example.com']);

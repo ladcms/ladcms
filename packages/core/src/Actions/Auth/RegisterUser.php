@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Ladcms\Core\Actions\Auth;
 
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
+use Ladcms\Core\Contracts\InviteValidator;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Settings\GeneralSettings;
 use Ladcms\Core\Settings\RegistrationSettings;
@@ -28,12 +31,15 @@ class RegisterUser
      * @param  array<string, mixed>  $input
      *
      * @throws AuthorizationException
+     * @throws ValidationException
      */
     public function handle(array $input, ?string $ip = null): User
     {
         if (! $this->registration->open) {
             throw new AuthorizationException('Registration is closed.');
         }
+
+        $invites = $this->inviteValidator();
 
         if (is_string($input['login'] ?? null)) {
             $input['login'] = LoginRules::normalize($input['login']);
@@ -54,16 +60,55 @@ class RegisterUser
             $rules['rules_accepted'] = ['accepted'];
         }
 
-        /** @var array{login: string, name: string, email: string, password: string} $data */
+        if ($invites instanceof InviteValidator) {
+            $rules['invite_code'] = ['required', 'string', 'max:255'];
+        }
+
+        /** @var array{login: string, name: string, email: string, password: string, invite_code?: string} $data */
         $data = Validator::make($input, $rules)->validate();
 
-        return UserModel::query()->create([
-            'login' => $data['login'],
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => $data['password'],
-            'registered_ip' => $ip,
-            'language' => $this->general->default_language,
-        ]);
+        if ($invites instanceof InviteValidator && ! $invites->validate($data['invite_code'] ?? '', $data['email'])) {
+            throw ValidationException::withMessages(['invite_code' => 'The invite code is invalid.']);
+        }
+
+        return DB::transaction(function () use ($data, $ip, $invites): User {
+            $user = UserModel::query()->create([
+                'login' => $data['login'],
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => $data['password'],
+                'registered_ip' => $ip,
+                'language' => $this->general->default_language,
+            ]);
+
+            // Подтверждение email отключено — аккаунт сразу считается подтверждённым.
+            if (! $this->registration->require_email_verification) {
+                $user->forceFill(['email_verified_at' => now()])->save();
+            }
+
+            if ($invites instanceof InviteValidator) {
+                $invites->consume($data['invite_code'] ?? '', $user);
+            }
+
+            return $user;
+        });
+    }
+
+    /**
+     * Валидатор инвайтов, если регистрация только по приглашениям.
+     *
+     * @throws AuthorizationException без биндинга InviteValidator (некому проверить код)
+     */
+    private function inviteValidator(): ?InviteValidator
+    {
+        if (! $this->registration->invite_only) {
+            return null;
+        }
+
+        if (! app()->bound(InviteValidator::class)) {
+            throw new AuthorizationException('Registration is by invitation only.');
+        }
+
+        return app(InviteValidator::class);
     }
 }

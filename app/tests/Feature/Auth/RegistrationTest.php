@@ -80,4 +80,42 @@ class RegistrationTest extends TestCase
         $this->assertGuest();
         $this->assertDatabaseMissing('users', ['login' => 'test_user']);
     }
+
+    public function test_registration_auto_verifies_when_email_verification_is_disabled()
+    {
+        $settings = app(RegistrationSettings::class);
+        $settings->require_email_verification = false;
+        $settings->save();
+
+        $this->post(route('register.store'), [
+            'login' => 'test_user',
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $this->assertNotNull(User::query()->where('login', 'test_user')->sole()->email_verified_at);
+        $this->get(route('dashboard'))->assertOk();
+    }
+
+    public function test_invite_only_registration_is_closed_without_an_invite_validator()
+    {
+        $settings = app(RegistrationSettings::class);
+        $settings->invite_only = true;
+        $settings->save();
+
+        $this->post(route('register.store'), [
+            'login' => 'test_user',
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'invite_code' => 'anything',
+        ])->assertForbidden();
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['login' => 'test_user']);
+    }
 }

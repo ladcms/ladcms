@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Ladcms\Core\Actions\Users\PruneUnverifiedUsers;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Settings\RegistrationSettings;
 
 uses(RefreshDatabase::class);
 
@@ -62,4 +63,20 @@ it('deletes every match across several chunks', function () {
 
     expect(app(PruneUnverifiedUsers::class)->handle(7, chunk: 2))->toBe(5)
         ->and(User::withTrashed()->count())->toBe(0);
+});
+
+it('does nothing when email verification is disabled', function () {
+    $settings = app(RegistrationSettings::class);
+    $settings->require_email_verification = false;
+    $settings->save();
+    $old = User::factory()->unverified()->create(['created_at' => now()->subDays(10)]);
+
+    expect(app(PruneUnverifiedUsers::class)->handle(7))->toBe(0)
+        ->and(User::find($old->id))->not->toBeNull();
+
+    $this->artisan('ladcms:prune-unverified', ['--days' => 7])
+        ->expectsOutput('Email verification is disabled; nothing to prune.')
+        ->assertSuccessful();
+
+    expect(User::find($old->id))->not->toBeNull();
 });
