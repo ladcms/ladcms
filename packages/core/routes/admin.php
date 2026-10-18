@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Ladcms\Core\Http\Controllers\Admin\DashboardController;
+use Ladcms\Core\Http\Controllers\Admin\RolesController;
 use Ladcms\Core\Http\Controllers\Admin\UserBanController;
 use Ladcms\Core\Http\Controllers\Admin\UserController;
 use Ladcms\Core\Http\Controllers\Admin\UserRolesController;
@@ -22,4 +23,13 @@ Route::prefix('/users/{user}')->name('users.')->scopeBindings()->group(function 
     Route::put('/roles', [UserRolesController::class, 'update'])->name('roles');
     Route::post('/ban', [UserBanController::class, 'store'])->name('ban');
     Route::delete('/ban/{ban}', [UserBanController::class, 'destroy'])->name('ban.lift');
+});
+
+Route::prefix('/roles')->name('roles.')->group(function (): void {
+    Route::get('/', [RolesController::class, 'index'])->middleware('can:roles.manage')->name('index');
+    Route::post('/', [RolesController::class, 'store'])->name('store');
+    Route::get('/{role}/edit', [RolesController::class, 'edit'])->middleware('can:roles.manage')->name('edit');
+    Route::put('/{role}', [RolesController::class, 'update'])->name('update');
+    Route::put('/{role}/permissions', [RolesController::class, 'permissions'])->name('permissions');
+    Route::delete('/{role}', [RolesController::class, 'destroy'])->name('destroy');
 });
