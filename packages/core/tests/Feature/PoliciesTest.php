@@ -110,3 +110,40 @@ it('keeps creator abilities over lower ranks under model policies', function (st
 
     expect(Gate::forUser($creator)->allows($ability, userWithRole('admin')))->toBeTrue();
 })->with(['update', 'ban', 'assignRoles', 'delete']);
+
+it('lets non-creators manage only roles below their own level', function () {
+    $main = userWithRole('main_admin');
+    $custom = Role::create(['name' => 'editor', 'guard_name' => 'web', 'level' => null]);
+
+    expect(Gate::forUser($main)->allows('update', Role::findByName('admin')))->toBeTrue()
+        ->and(Gate::forUser($main)->allows('update', $custom))->toBeTrue()
+        ->and(Gate::forUser($main)->allows('update', Role::findByName('main_admin')))->toBeFalse()
+        ->and(Gate::forUser($main)->allows('update', Role::findByName('creator')))->toBeFalse()
+        ->and(Gate::forUser($main)->allows('rename', $custom))->toBeTrue()
+        ->and(Gate::forUser($main)->allows('rename', Role::findByName('admin')))->toBeFalse();
+});
+
+it('keeps new and changed role levels below the actor level', function () {
+    $main = userWithRole('main_admin');
+    $custom = Role::create(['name' => 'editor', 'guard_name' => 'web', 'level' => null]);
+    $gate = Gate::forUser($main);
+
+    expect($gate->allows('assignLevel', [Role::class, null]))->toBeTrue()
+        ->and($gate->allows('assignLevel', [Role::class, 4]))->toBeTrue()
+        ->and($gate->allows('assignLevel', [Role::class, 5]))->toBeFalse()
+        ->and($gate->allows('assignLevel', [Role::class, 6]))->toBeFalse()
+        ->and($gate->allows('assignLevel', [Role::class, 3, $custom]))->toBeTrue()
+        ->and($gate->allows('assignLevel', [Role::class, 5, $custom]))->toBeFalse()
+        ->and(Gate::forUser(userWithRole('admin'))->allows('assignLevel', [Role::class, 1]))->toBeFalse();
+});
+
+it('keeps system role names and levels immutable, even for creators', function () {
+    $creator = Gate::forUser(userWithRole('creator'));
+    $admin = Role::findByName('admin');
+
+    expect($creator->allows('update', Role::findByName('creator')))->toBeTrue()
+        ->and($creator->allows('rename', $admin))->toBeFalse()
+        ->and($creator->allows('assignLevel', [Role::class, 2, $admin]))->toBeFalse()
+        ->and($creator->allows('assignLevel', [Role::class, 4, $admin]))->toBeTrue()
+        ->and($creator->allows('assignLevel', [Role::class, 6]))->toBeFalse();
+});

@@ -10,6 +10,7 @@ use Ladcms\Core\Actions\Users\DeleteUser;
 use Ladcms\Core\Actions\Users\MarkSuspicious;
 use Ladcms\Core\Database\Seeders\PermissionsSeeder;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
+use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 
 uses(RefreshDatabase::class);
@@ -120,4 +121,29 @@ it('does not let creators change roles of other creators', function () {
 
     expect(fn () => app(AssignRoles::class)->handle($this->creator, $second, ['user']))->toThrow(AuthorizationException::class);
     expect($second->fresh()->isCreator())->toBeTrue();
+});
+
+it('forbids assigning a role that grants permissions the actor lacks', function () {
+    $escalating = Role::create(['name' => 'helper', 'guard_name' => 'web'])->givePermissionTo('roles.manage');
+
+    expect(fn () => app(AssignRoles::class)->handle($this->admin, $this->target, [$escalating->name]))
+        ->toThrow(AuthorizationException::class);
+
+    expect($this->target->fresh()->getRoleNames()->all())->toBe(['user']);
+});
+
+it('lets admin assign a role whose permissions they hold', function () {
+    Role::create(['name' => 'helper', 'guard_name' => 'web'])->givePermissionTo('users.view');
+
+    app(AssignRoles::class)->handle($this->admin, $this->target, ['helper']);
+
+    expect($this->target->fresh()->getRoleNames()->all())->toBe(['helper']);
+});
+
+it('lets the creator assign roles with any permissions', function () {
+    Role::create(['name' => 'helper', 'guard_name' => 'web'])->givePermissionTo('roles.manage');
+
+    app(AssignRoles::class)->handle($this->creator, $this->target, ['helper']);
+
+    expect($this->target->fresh()->hasPermissionTo('roles.manage'))->toBeTrue();
 });
