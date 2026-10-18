@@ -6,3 +6,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | packages/*/src/Actions/** | .ai/rules/actions.md |
 | packages/*/src/*ServiceProvider.php | .ai/rules/modules.md |
+| packages/*/resources/js/pages/admin/**, packages/*/resources/js/components/admin/**, packages/*/src/Http/Controllers/Admin/**, packages/*/src/Http/Requests/Admin/** | .ai/rules/admin-ui.md |

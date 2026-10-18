@@ -19,34 +19,9 @@ import type {
     Paginator,
     SortDirection,
 } from '@ladcms/core/types/table';
+import { useT } from '@ladcms/core/lib/i18n';
 
 type BanStatus = 'active' | 'expired' | 'all';
-
-const t = {
-    title: 'Баны',
-    total: 'Всего',
-    status: 'Статус',
-    statuses: {
-        active: 'Активные',
-        expired: 'Истёкшие',
-        all: 'Все',
-    } satisfies Record<BanStatus, string>,
-    columns: {
-        user: 'Пользователь',
-        banned_by: 'Кем',
-        type: 'Тип',
-        reason: 'Код',
-        starts_at: 'Начало',
-        expires_at: 'Истекает',
-        comment: 'Комментарий',
-        actions: 'Действия',
-    },
-    permanent: 'Бессрочно',
-    lift: 'Снять',
-    liftTitle: 'Снять бан?',
-    liftDescription: 'Пользователь снова получит доступ.',
-    empty: 'Банов нет',
-};
 
 const STATUSES: BanStatus[] = ['active', 'expired', 'all'];
 
@@ -93,6 +68,7 @@ function UserLink({ user }: { user: UserRef | null }) {
 }
 
 export default function BansIndex({ bans, filters, can }: Props) {
+    const t = useT();
     const { url, props } = usePage();
     const locale = typeof props.locale === 'string' ? props.locale : 'ru';
     const path = url.split('?')[0] ?? url;
@@ -118,40 +94,43 @@ export default function BansIndex({ bans, filters, can }: Props) {
     const columns: Column<BanRow>[] = [
         {
             key: 'user',
-            label: t.columns.user,
+            label: t('core::admin.moderation.bans.columns.user'),
             render: (ban) => <UserLink user={ban.user} />,
         },
         {
             key: 'banned_by',
-            label: t.columns.banned_by,
+            label: t('core::admin.moderation.bans.columns.banned_by'),
             render: (ban) => <UserLink user={ban.banned_by} />,
         },
         {
             key: 'type',
-            label: t.columns.type,
+            label: t('core::admin.moderation.bans.columns.type'),
             render: (ban) => <Badge variant="outline">{ban.type}</Badge>,
         },
-        { key: 'reason_code', label: t.columns.reason },
+        {
+            key: 'reason_code',
+            label: t('core::admin.moderation.bans.columns.reason'),
+        },
         {
             key: 'starts_at',
-            label: t.columns.starts_at,
+            label: t('core::admin.moderation.bans.columns.starts_at'),
             sortable: true,
             className: 'whitespace-nowrap',
             render: (ban) => formatDate(ban.starts_at),
         },
         {
             key: 'expires_at',
-            label: t.columns.expires_at,
+            label: t('core::admin.moderation.bans.columns.expires_at'),
             sortable: true,
             className: 'whitespace-nowrap',
             render: (ban) =>
                 ban.expires_at === null
-                    ? t.permanent
+                    ? t('core::admin.moderation.bans.permanent')
                     : formatDate(ban.expires_at),
         },
         {
             key: 'comment',
-            label: t.columns.comment,
+            label: t('core::admin.moderation.bans.columns.comment'),
             className: 'max-w-xs whitespace-normal break-words',
             render: (ban) => ban.comment ?? '—',
         },
@@ -160,18 +139,20 @@ export default function BansIndex({ bans, filters, can }: Props) {
     if (can.lift) {
         columns.push({
             key: 'actions',
-            label: t.columns.actions,
+            label: t('core::admin.moderation.bans.columns.actions'),
             render: (ban) =>
                 ban.is_active && ban.user !== null ? (
                     <ConfirmDialog
                         trigger={
                             <Button size="sm" variant="outline">
-                                {t.lift}
+                                {t('core::admin.moderation.bans.lift')}
                             </Button>
                         }
-                        title={t.liftTitle}
-                        description={t.liftDescription}
-                        confirmLabel={t.lift}
+                        title={t('core::admin.moderation.bans.lift_title')}
+                        description={t(
+                            'core::admin.moderation.bans.lift_description',
+                        )}
+                        confirmLabel={t('core::admin.moderation.bans.lift')}
                         destructive
                         onConfirm={() =>
                             router.delete(
@@ -190,21 +171,28 @@ export default function BansIndex({ bans, filters, can }: Props) {
     return (
         <div className="space-y-6">
             <PageHeader
-                title={t.title}
-                description={`${t.total}: ${bans.meta.total}`}
+                title={t('core::admin.moderation.bans.title')}
+                description={`${t('core::admin.moderation.bans.total')}: ${bans.meta.total}`}
             />
 
             <Select
                 value={filters.status}
                 onValueChange={(status) => visit(status as BanStatus)}
             >
-                <SelectTrigger aria-label={t.status} className="sm:w-48">
-                    <SelectValue placeholder={t.status} />
+                <SelectTrigger
+                    aria-label={t('core::admin.moderation.bans.status')}
+                    className="sm:w-48"
+                >
+                    <SelectValue
+                        placeholder={t('core::admin.moderation.bans.status')}
+                    />
                 </SelectTrigger>
                 <SelectContent>
                     {STATUSES.map((status) => (
                         <SelectItem key={status} value={status}>
-                            {t.statuses[status]}
+                            {t(
+                                `core::admin.moderation.bans.statuses.${status}`,
+                            )}
                         </SelectItem>
                     ))}
                 </SelectContent>
@@ -215,7 +203,7 @@ export default function BansIndex({ bans, filters, can }: Props) {
                 rows={bans.data}
                 pagination={bans.meta}
                 sort={{ column: filters.sort, direction: filters.direction }}
-                emptyText={t.empty}
+                emptyText={t('core::admin.moderation.bans.empty')}
                 rowKey={(ban) => ban.id}
             />
         </div>
@@ -223,6 +211,6 @@ export default function BansIndex({ bans, filters, can }: Props) {
 }
 
 BansIndex.layout = {
-    title: t.title,
-    breadcrumbs: [{ title: t.title }],
+    title: 'core::admin.moderation.bans.title',
+    breadcrumbs: [{ title: 'core::admin.moderation.bans.title' }],
 };

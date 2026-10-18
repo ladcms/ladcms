@@ -10,6 +10,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@ladcms/core/components/ui/alert-dialog';
+import { useT } from '@ladcms/core/lib/i18n';
 
 type ConfirmDialogProps = {
     trigger: ReactNode;
@@ -18,7 +19,7 @@ type ConfirmDialogProps = {
     confirmLabel: ReactNode;
     cancelLabel?: ReactNode;
     destructive?: boolean;
-    onConfirm(): void;
+    onConfirm: () => void;
 };
 
 export function ConfirmDialog({
@@ -26,10 +27,12 @@ export function ConfirmDialog({
     title,
     description,
     confirmLabel,
-    cancelLabel = 'Отмена',
+    cancelLabel,
     destructive = false,
     onConfirm,
 }: ConfirmDialogProps) {
+    const t = useT();
+
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
@@ -42,7 +45,7 @@ export function ConfirmDialog({
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel className="rounded-full">
-                        {cancelLabel}
+                        {cancelLabel ?? t('core::admin.common.cancel')}
                     </AlertDialogCancel>
                     <AlertDialogAction
                         variant={destructive ? 'destructive' : 'default'}

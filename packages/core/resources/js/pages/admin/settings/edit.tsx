@@ -1,23 +1,20 @@
 import { Head, Link, setLayoutProps, useForm } from '@inertiajs/react';
 import { useEffect } from 'react';
 import SettingsController from '@/actions/Ladcms/Core/Http/Controllers/Admin/SettingsController';
-import { FieldRenderer, initialValue } from '@ladcms/core/components/admin/settings/field-renderer';
-import type { FieldValue, SchemaField } from '@ladcms/core/components/admin/settings/field-renderer';
+import {
+    FieldRenderer,
+    initialValue,
+} from '@ladcms/core/components/admin/settings/field-renderer';
+import type {
+    FieldValue,
+    SchemaField,
+} from '@ladcms/core/components/admin/settings/field-renderer';
 import { PageHeader } from '@ladcms/core/components/page-header';
 import { Button } from '@ladcms/core/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardFooter,
-} from '@ladcms/core/components/ui/card';
+import { Card, CardContent, CardFooter } from '@ladcms/core/components/ui/card';
 import { cn } from '@ladcms/core/lib/utils';
 import type { AdminBreadcrumb } from '@ladcms/core/types/admin';
-
-const t = {
-    title: 'Настройки',
-    save: 'Сохранить',
-    tabs: 'Группы настроек',
-};
+import { useT } from '@ladcms/core/lib/i18n';
 
 type Props = {
     group: string;
@@ -28,6 +25,7 @@ type Props = {
 type LayoutProps = { title: string; breadcrumbs: AdminBreadcrumb[] };
 
 export default function SettingsEdit({ group, groups, schema }: Props) {
+    const t = useT();
     const form = useForm<Record<string, FieldValue>>(
         Object.fromEntries(
             schema.fields.map((field) => [field.name, initialValue(field)]),
@@ -37,7 +35,10 @@ export default function SettingsEdit({ group, groups, schema }: Props) {
     useEffect(() => {
         setLayoutProps<LayoutProps>({
             title: schema.label,
-            breadcrumbs: [{ title: t.title }, { title: schema.label }],
+            breadcrumbs: [
+                { title: t('core::admin.settings.title') },
+                { title: schema.label },
+            ],
         });
     }, [schema.label]);
 
@@ -45,11 +46,13 @@ export default function SettingsEdit({ group, groups, schema }: Props) {
 
     return (
         <div className="space-y-6">
-            <Head title={`${t.title}: ${schema.label}`} />
-            <PageHeader title={t.title} />
+            <Head
+                title={`${t('core::admin.settings.title')}: ${schema.label}`}
+            />
+            <PageHeader title={t('core::admin.settings.title')} />
 
             <nav
-                aria-label={t.tabs}
+                aria-label={t('core::admin.settings.tabs')}
                 className="flex flex-wrap gap-1 border-b"
             >
                 {groups.map((item) => (
@@ -93,7 +96,7 @@ export default function SettingsEdit({ group, groups, schema }: Props) {
                     </CardContent>
                     <CardFooter className="justify-end pt-6">
                         <Button type="submit" disabled={form.processing}>
-                            {t.save}
+                            {t('core::admin.settings.save')}
                         </Button>
                     </CardFooter>
                 </form>
@@ -103,6 +106,6 @@ export default function SettingsEdit({ group, groups, schema }: Props) {
 }
 
 SettingsEdit.layout = {
-    title: t.title,
-    breadcrumbs: [{ title: t.title }],
+    title: 'core::admin.settings.title',
+    breadcrumbs: [{ title: 'core::admin.settings.title' }],
 };

@@ -12,17 +12,7 @@ import {
 import { Checkbox } from '@ladcms/core/components/ui/checkbox';
 import { Label } from '@ladcms/core/components/ui/label';
 import type { RoleItem, UserDetail } from '@ladcms/core/pages/admin/users/show';
-
-const t = {
-    title: 'Роли',
-    description: 'Отметьте роли пользователя. Набор ролей заменяется целиком.',
-    readonly: 'У вас нет прав на изменение ролей этого пользователя.',
-    unavailable:
-        'Недоступно: роль не ниже вашего уровня или даёт права, которых у вас нет.',
-    level: 'Уровень',
-    noLevel: 'без уровня',
-    save: 'Сохранить роли',
-};
+import { roleName, useT } from '@ladcms/core/lib/i18n';
 
 export function RolesForm({
     user,
@@ -35,6 +25,7 @@ export function RolesForm({
     assignable: string[];
     disabled: boolean;
 }) {
+    const t = useT();
     const form = useForm<{ roles: string[] }>({
         roles: user.roles.map((role) => role.name),
     });
@@ -61,9 +52,11 @@ export function RolesForm({
         <Card>
             <form onSubmit={submit}>
                 <CardHeader>
-                    <CardTitle>{t.title}</CardTitle>
+                    <CardTitle>{t('core::admin.users.roles.title')}</CardTitle>
                     <CardDescription>
-                        {disabled ? t.readonly : t.description}
+                        {disabled
+                            ? t('core::admin.users.roles.readonly')
+                            : t('core::admin.users.roles.description')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -108,18 +101,24 @@ export function RolesForm({
                                                     }}
                                                 />
                                             )}
-                                            {role.name}
+                                            {roleName(t, role.name)}
                                         </Label>
                                         <span className="text-xs text-muted-foreground">
-                                            {t.level}:{' '}
-                                            {role.level ?? t.noLevel}
+                                            {t('core::admin.users.roles.level')}
+                                            :{' '}
+                                            {role.level ??
+                                                t(
+                                                    'core::admin.users.roles.no_level',
+                                                )}
                                         </span>
                                         {locked && !disabled && (
                                             <span
                                                 id={`${id}-hint`}
                                                 className="text-xs text-muted-foreground"
                                             >
-                                                {t.unavailable}
+                                                {t(
+                                                    'core::admin.users.roles.unavailable',
+                                                )}
                                             </span>
                                         )}
                                     </div>
@@ -136,7 +135,7 @@ export function RolesForm({
                 {!disabled && (
                     <CardFooter className="justify-end pt-6">
                         <Button type="submit" disabled={form.processing}>
-                            {t.save}
+                            {t('core::admin.users.roles.save')}
                         </Button>
                     </CardFooter>
                 )}

@@ -11,29 +11,9 @@ import {
     TableHeader,
     TableRow,
 } from '@ladcms/core/components/ui/table';
+import { useT } from '@ladcms/core/lib/i18n';
 
 type ModuleStatus = 'active' | 'failed' | 'disabled' | 'not_installed';
-
-const t = {
-    title: 'Модули',
-    updateHint: 'Для обновления модулей выполните',
-    columns: {
-        name: 'Модуль',
-        version: 'Версия',
-        installed: 'Установлена',
-        status: 'Статус',
-        enabled: 'Включён',
-    },
-    statuses: {
-        active: 'Активен',
-        failed: 'Ошибка',
-        disabled: 'Выключен',
-        not_installed: 'Не установлен',
-    } satisfies Record<ModuleStatus, string>,
-    needsUpdate: 'требуется обновление',
-    core: 'ядро',
-    dependsOn: 'Зависит от',
-};
 
 const VARIANTS: Record<
     ModuleStatus,
@@ -62,6 +42,7 @@ type Props = {
 };
 
 export default function ModulesIndex({ modules }: Props) {
+    const t = useT();
     const toggle = (name: string, isEnabled: boolean) => {
         router.patch(
             ModulesController.toggle.url(name),
@@ -72,11 +53,11 @@ export default function ModulesIndex({ modules }: Props) {
 
     return (
         <div className="space-y-6">
-            <PageHeader title={t.title} />
+            <PageHeader title={t('core::admin.modules.title')} />
 
             {modules.some((module) => module.needs_update) && (
                 <p className="text-sm text-muted-foreground">
-                    {t.updateHint}{' '}
+                    {t('core::admin.modules.update_hint')}{' '}
                     <code className="rounded bg-muted px-1.5 py-0.5">
                         php artisan ladcms:update
                     </code>
@@ -86,11 +67,21 @@ export default function ModulesIndex({ modules }: Props) {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>{t.columns.name}</TableHead>
-                        <TableHead>{t.columns.version}</TableHead>
-                        <TableHead>{t.columns.installed}</TableHead>
-                        <TableHead>{t.columns.status}</TableHead>
-                        <TableHead>{t.columns.enabled}</TableHead>
+                        <TableHead>
+                            {t('core::admin.modules.columns.name')}
+                        </TableHead>
+                        <TableHead>
+                            {t('core::admin.modules.columns.version')}
+                        </TableHead>
+                        <TableHead>
+                            {t('core::admin.modules.columns.installed')}
+                        </TableHead>
+                        <TableHead>
+                            {t('core::admin.modules.columns.status')}
+                        </TableHead>
+                        <TableHead>
+                            {t('core::admin.modules.columns.enabled')}
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -104,13 +95,13 @@ export default function ModulesIndex({ modules }: Props) {
                                             variant="outline"
                                             className="ml-2"
                                         >
-                                            {t.core}
+                                            {t('core::admin.modules.core')}
                                         </Badge>
                                     )}
                                 </div>
                                 {module.dependencies.length > 0 && (
                                     <div className="text-xs text-muted-foreground">
-                                        {t.dependsOn}:{' '}
+                                        {t('core::admin.modules.depends_on')}:{' '}
                                         {module.dependencies.join(', ')}
                                     </div>
                                 )}
@@ -122,13 +113,15 @@ export default function ModulesIndex({ modules }: Props) {
                                 {module.installed_version ?? '—'}
                                 {module.needs_update && (
                                     <div className="text-xs text-amber-600">
-                                        {t.needsUpdate}
+                                        {t('core::admin.modules.needs_update')}
                                     </div>
                                 )}
                             </TableCell>
                             <TableCell className="align-top whitespace-normal">
                                 <Badge variant={VARIANTS[module.status]}>
-                                    {t.statuses[module.status]}
+                                    {t(
+                                        `core::admin.modules.statuses.${module.status}`,
+                                    )}
                                 </Badge>
                                 {module.reason !== null && (
                                     <div className="mt-1 max-w-md text-xs break-words text-muted-foreground">
@@ -158,6 +151,6 @@ export default function ModulesIndex({ modules }: Props) {
 }
 
 ModulesIndex.layout = {
-    title: t.title,
-    breadcrumbs: [{ title: t.title }],
+    title: 'core::admin.modules.title',
+    breadcrumbs: [{ title: 'core::admin.modules.title' }],
 };

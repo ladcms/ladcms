@@ -24,24 +24,7 @@ import {
     TableHeader,
     TableRow,
 } from '@ladcms/core/components/ui/table';
-
-const t = {
-    title: 'Роли',
-    description: 'Роли, их уровни и права доступа.',
-    create: 'Создать роль',
-    createDescription:
-        'Название — латиницей в нижнем регистре. Права назначаются на странице роли.',
-    name: 'Название',
-    level: 'Уровень',
-    noLevel: '—',
-    levelHint: '0–6, необязательно',
-    color: 'Цвет',
-    users: 'Пользователей',
-    permissions: 'Прав',
-    system: 'Системная',
-    default: 'По умолчанию',
-    submit: 'Создать',
-};
+import { roleName, useT } from '@ladcms/core/lib/i18n';
 
 /** `RoleResource` с подсчётами. */
 type RoleRow = {
@@ -67,6 +50,7 @@ function FieldError({ message }: { message?: string }) {
 }
 
 function CreateRoleDialog() {
+    const t = useT();
     const [open, setOpen] = useState(false);
 
     return (
@@ -74,7 +58,7 @@ function CreateRoleDialog() {
             <DialogTrigger asChild>
                 <Button>
                     <Plus aria-hidden />
-                    {t.create}
+                    {t('core::admin.roles.create')}
                 </Button>
             </DialogTrigger>
             <DialogContent>
@@ -82,32 +66,42 @@ function CreateRoleDialog() {
                     {({ errors, processing }) => (
                         <>
                             <DialogHeader>
-                                <DialogTitle>{t.create}</DialogTitle>
+                                <DialogTitle>
+                                    {t('core::admin.roles.create')}
+                                </DialogTitle>
                                 <DialogDescription>
-                                    {t.createDescription}
+                                    {t('core::admin.roles.create_description')}
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-2">
-                                <Label htmlFor="role-name">{t.name}</Label>
+                                <Label htmlFor="role-name">
+                                    {t('core::admin.roles.name')}
+                                </Label>
                                 <Input
                                     id="role-name"
                                     name="name"
                                     autoComplete="off"
                                     required
                                     pattern="[a-z][a-z0-9_]*"
-                                    aria-invalid={errors.name ? true : undefined}
+                                    aria-invalid={
+                                        errors.name ? true : undefined
+                                    }
                                 />
                                 <FieldError message={errors.name} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="role-level">{t.level}</Label>
+                                <Label htmlFor="role-level">
+                                    {t('core::admin.roles.level')}
+                                </Label>
                                 <Input
                                     id="role-level"
                                     name="level"
                                     type="number"
                                     min={0}
                                     max={6}
-                                    placeholder={t.levelHint}
+                                    placeholder={t(
+                                        'core::admin.roles.level_hint',
+                                    )}
                                     aria-invalid={
                                         errors.level ? true : undefined
                                     }
@@ -115,7 +109,9 @@ function CreateRoleDialog() {
                                 <FieldError message={errors.level} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="role-color">{t.color}</Label>
+                                <Label htmlFor="role-color">
+                                    {t('core::admin.roles.color')}
+                                </Label>
                                 <Input
                                     id="role-color"
                                     name="color"
@@ -128,7 +124,7 @@ function CreateRoleDialog() {
                             <FieldError message={errors.general} />
                             <DialogFooter>
                                 <Button type="submit" disabled={processing}>
-                                    {t.submit}
+                                    {t('core::admin.roles.submit')}
                                 </Button>
                             </DialogFooter>
                         </>
@@ -140,12 +136,13 @@ function CreateRoleDialog() {
 }
 
 export default function RolesIndex({ roles, can }: Props) {
+    const t = useT();
 
     return (
         <div className="space-y-6">
             <PageHeader
-                title={t.title}
-                description={t.description}
+                title={t('core::admin.roles.title')}
+                description={t('core::admin.roles.description')}
                 actions={can.create ? <CreateRoleDialog /> : undefined}
             />
 
@@ -153,10 +150,16 @@ export default function RolesIndex({ roles, can }: Props) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>{t.name}</TableHead>
-                            <TableHead>{t.level}</TableHead>
-                            <TableHead>{t.users}</TableHead>
-                            <TableHead>{t.permissions}</TableHead>
+                            <TableHead>{t('core::admin.roles.name')}</TableHead>
+                            <TableHead>
+                                {t('core::admin.roles.level')}
+                            </TableHead>
+                            <TableHead>
+                                {t('core::admin.roles.users')}
+                            </TableHead>
+                            <TableHead>
+                                {t('core::admin.roles.permissions')}
+                            </TableHead>
                             <TableHead />
                         </TableRow>
                     </TableHeader>
@@ -180,22 +183,25 @@ export default function RolesIndex({ roles, can }: Props) {
                                                     : undefined
                                             }
                                         />
-                                        {role.name}
+                                        {roleName(t, role.name)}
                                     </Link>
                                 </TableCell>
-                                <TableCell>{role.level ?? t.noLevel}</TableCell>
+                                <TableCell>
+                                    {role.level ??
+                                        t('core::admin.roles.no_level')}
+                                </TableCell>
                                 <TableCell>{role.users_count}</TableCell>
                                 <TableCell>{role.permissions_count}</TableCell>
                                 <TableCell>
                                     <div className="flex justify-end gap-1.5">
                                         {role.is_system && (
                                             <Badge variant="secondary">
-                                                {t.system}
+                                                {t('core::admin.roles.system')}
                                             </Badge>
                                         )}
                                         {role.is_default && (
                                             <Badge variant="outline">
-                                                {t.default}
+                                                {t('core::admin.roles.default')}
                                             </Badge>
                                         )}
                                     </div>
@@ -210,6 +216,6 @@ export default function RolesIndex({ roles, can }: Props) {
 }
 
 RolesIndex.layout = {
-    title: t.title,
-    breadcrumbs: [{ title: t.title }],
+    title: 'core::admin.roles.title',
+    breadcrumbs: [{ title: 'core::admin.roles.title' }],
 };

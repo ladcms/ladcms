@@ -1,4 +1,10 @@
-import { Form, router, setLayoutProps, useForm, usePage } from '@inertiajs/react';
+import {
+    Form,
+    router,
+    setLayoutProps,
+    useForm,
+    usePage,
+} from '@inertiajs/react';
 import { AlertCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import RolesController from '@/actions/Ladcms/Core/Http/Controllers/Admin/RolesController';
@@ -28,38 +34,7 @@ import {
     TooltipTrigger,
 } from '@ladcms/core/components/ui/tooltip';
 import type { AdminBreadcrumb } from '@ladcms/core/types/admin';
-
-const t = {
-    title: 'Роль',
-    roles: 'Роли',
-    error: 'Не удалось выполнить действие',
-    form: {
-        title: 'Основные настройки',
-        description: 'Название и уровень системных ролей изменить нельзя.',
-        name: 'Название',
-        level: 'Уровень',
-        levelHint: '0–6, необязательно',
-        color: 'Цвет',
-        isDefault: 'Роль по умолчанию для новых пользователей',
-        save: 'Сохранить',
-    },
-    matrix: {
-        title: 'Права роли',
-        description: 'Отметьте права, которые получают пользователи роли.',
-        readonly: 'У вас нет прав на изменение этой роли.',
-        notGrantable: 'У вас нет этого права, поэтому изменить его нельзя.',
-        save: 'Сохранить права',
-    },
-    delete: {
-        title: 'Удаление роли',
-        description:
-            'Пользователи с этой ролью потеряют её. Системную и дефолтную роль удалить нельзя.',
-        submit: 'Удалить роль',
-        confirmTitle: 'Удалить роль?',
-        confirmDescription: (name: string) =>
-            `Роль «${name}» будет удалена, пользователи её потеряют.`,
-    },
-};
+import { roleName, useT } from '@ladcms/core/lib/i18n';
 
 /** `RoleResource`. */
 type RoleDetail = {
@@ -98,6 +73,7 @@ function FieldError({ message }: { message?: string }) {
 }
 
 function RoleForm({ role, can }: Pick<Props, 'role' | 'can'>) {
+    const t = useT();
     return (
         <Card>
             <Form
@@ -107,14 +83,18 @@ function RoleForm({ role, can }: Pick<Props, 'role' | 'can'>) {
                 {({ errors, processing }) => (
                     <>
                         <CardHeader>
-                            <CardTitle>{t.form.title}</CardTitle>
+                            <CardTitle>
+                                {t('core::admin.roles.edit.form.title')}
+                            </CardTitle>
                             <CardDescription>
-                                {t.form.description}
+                                {t('core::admin.roles.edit.form.description')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-4 sm:max-w-md">
                             <div className="grid gap-2">
-                                <Label htmlFor="role-name">{t.form.name}</Label>
+                                <Label htmlFor="role-name">
+                                    {t('core::admin.roles.edit.form.name')}
+                                </Label>
                                 <Input
                                     id="role-name"
                                     name="name"
@@ -126,7 +106,7 @@ function RoleForm({ role, can }: Pick<Props, 'role' | 'can'>) {
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="role-level">
-                                    {t.form.level}
+                                    {t('core::admin.roles.edit.form.level')}
                                 </Label>
                                 <Input
                                     id="role-level"
@@ -135,14 +115,16 @@ function RoleForm({ role, can }: Pick<Props, 'role' | 'can'>) {
                                     min={0}
                                     max={6}
                                     defaultValue={role.level ?? ''}
-                                    placeholder={t.form.levelHint}
+                                    placeholder={t(
+                                        'core::admin.roles.edit.form.level_hint',
+                                    )}
                                     disabled={!can.assignLevel}
                                 />
                                 <FieldError message={errors.level} />
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="role-color">
-                                    {t.form.color}
+                                    {t('core::admin.roles.edit.form.color')}
                                 </Label>
                                 <Input
                                     id="role-color"
@@ -164,7 +146,9 @@ function RoleForm({ role, can }: Pick<Props, 'role' | 'can'>) {
                                     disabled={!can.update || role.is_default}
                                 />
                                 <Label htmlFor="role-default">
-                                    {t.form.isDefault}
+                                    {t(
+                                        'core::admin.roles.edit.form.is_default',
+                                    )}
                                 </Label>
                             </div>
                             <FieldError message={errors.is_default} />
@@ -172,7 +156,7 @@ function RoleForm({ role, can }: Pick<Props, 'role' | 'can'>) {
                         {can.update && (
                             <CardFooter className="justify-end pt-6">
                                 <Button type="submit" disabled={processing}>
-                                    {t.form.save}
+                                    {t('core::admin.roles.edit.form.save')}
                                 </Button>
                             </CardFooter>
                         )}
@@ -190,6 +174,7 @@ function PermissionsMatrix({
     grantable,
     can,
 }: Props) {
+    const t = useT();
     const form = useForm<{ permissions: string[] }>({ permissions: granted });
 
     const toggle = (name: string, checked: boolean) => {
@@ -216,9 +201,13 @@ function PermissionsMatrix({
                 }}
             >
                 <CardHeader>
-                    <CardTitle>{t.matrix.title}</CardTitle>
+                    <CardTitle>
+                        {t('core::admin.roles.edit.matrix.title')}
+                    </CardTitle>
                     <CardDescription>
-                        {can.update ? t.matrix.description : t.matrix.readonly}
+                        {can.update
+                            ? t('core::admin.roles.edit.matrix.description')
+                            : t('core::admin.roles.edit.matrix.readonly')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -263,10 +252,9 @@ function PermissionsMatrix({
                                                             </span>
                                                         </TooltipTrigger>
                                                         <TooltipContent>
-                                                            {
-                                                                t.matrix
-                                                                    .notGrantable
-                                                            }
+                                                            {t(
+                                                                'core::admin.roles.edit.matrix.not_grantable',
+                                                            )}
                                                         </TooltipContent>
                                                     </Tooltip>
                                                 ) : (
@@ -296,7 +284,7 @@ function PermissionsMatrix({
                 {can.update && (
                     <CardFooter className="justify-end pt-6">
                         <Button type="submit" disabled={form.processing}>
-                            {t.matrix.save}
+                            {t('core::admin.roles.edit.matrix.save')}
                         </Button>
                     </CardFooter>
                 )}
@@ -306,31 +294,35 @@ function PermissionsMatrix({
 }
 
 export default function RoleEdit(props: Props) {
+    const t = useT();
     const { role, can } = props;
     const { props: page } = usePage<{ errors: Record<string, string> }>();
     const general = page.errors.general;
 
     useEffect(() => {
         setLayoutProps<LayoutProps>({
-            title: `${t.title} ${role.name}`,
+            title: `${t('core::admin.roles.edit.title')} ${roleName(t, role.name)}`,
             breadcrumbs: [
-                { title: t.roles, href: RolesController.index.url() },
-                { title: role.name },
+                {
+                    title: t('core::admin.roles.edit.roles'),
+                    href: RolesController.index.url(),
+                },
+                { title: roleName(t, role.name) },
             ],
         });
-    }, [role.name]);
+    }, [role.name, t]);
 
     return (
         <div className="space-y-6">
             <PageHeader
-                title={role.name}
-                description={`${t.form.level}: ${role.level ?? '—'}`}
+                title={roleName(t, role.name)}
+                description={`${t('core::admin.roles.edit.form.level')}: ${role.level ?? '—'}`}
             />
 
             {general && (
                 <Alert variant="destructive">
                     <AlertCircle aria-hidden />
-                    <AlertTitle>{t.error}</AlertTitle>
+                    <AlertTitle>{t('core::admin.roles.edit.error')}</AlertTitle>
                     <AlertDescription>{general}</AlertDescription>
                 </Alert>
             )}
@@ -342,20 +334,29 @@ export default function RoleEdit(props: Props) {
                 <Card className="border-destructive/50">
                     <CardHeader>
                         <CardTitle className="text-destructive">
-                            {t.delete.title}
+                            {t('core::admin.roles.edit.delete.title')}
                         </CardTitle>
-                        <CardDescription>{t.delete.description}</CardDescription>
+                        <CardDescription>
+                            {t('core::admin.roles.edit.delete.description')}
+                        </CardDescription>
                     </CardHeader>
                     <CardFooter className="justify-end">
                         <ConfirmDialog
                             trigger={
                                 <Button variant="destructive">
-                                    {t.delete.submit}
+                                    {t('core::admin.roles.edit.delete.submit')}
                                 </Button>
                             }
-                            title={t.delete.confirmTitle}
-                            description={t.delete.confirmDescription(role.name)}
-                            confirmLabel={t.delete.submit}
+                            title={t(
+                                'core::admin.roles.edit.delete.confirm_title',
+                            )}
+                            description={t(
+                                'core::admin.roles.edit.delete.confirm_description',
+                                { name: role.name },
+                            )}
+                            confirmLabel={t(
+                                'core::admin.roles.edit.delete.submit',
+                            )}
                             destructive
                             onConfirm={() =>
                                 router.delete(
@@ -371,9 +372,9 @@ export default function RoleEdit(props: Props) {
 }
 
 RoleEdit.layout = {
-    title: t.title,
+    title: 'core::admin.roles.edit.title',
     breadcrumbs: [
-        { title: t.roles, href: '/admin/roles' },
-        { title: t.title },
+        { title: 'core::admin.roles.edit.roles', href: '/admin/roles' },
+        { title: 'core::admin.roles.edit.title' },
     ],
 };

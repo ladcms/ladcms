@@ -28,29 +28,7 @@ import {
     TabsTrigger,
 } from '@ladcms/core/components/ui/tabs';
 import type { AdminBreadcrumb } from '@ladcms/core/types/admin';
-
-const t = {
-    title: 'Пользователь',
-    users: 'Пользователи',
-    error: 'Не удалось выполнить действие',
-    registered: 'Регистрация',
-    lastActivity: 'Активность',
-    bans: 'Банов',
-    complaints: 'Жалоб',
-    statuses: {
-        online: 'Онлайн',
-        banned: 'Забанен',
-        readonly: 'Только чтение',
-        suspicious: 'Подозрительный',
-        unverified: 'Email не подтверждён',
-    },
-    tabs: {
-        profile: 'Профиль',
-        roles: 'Роли',
-        moderation: 'Модерация',
-        danger: 'Опасная зона',
-    },
-};
+import { roleName, useT } from '@ladcms/core/lib/i18n';
 
 /** `BanResource`. */
 export type BanItem = {
@@ -157,15 +135,19 @@ export default function UserShow({
     bans,
     can,
 }: Props) {
+    const t = useT();
     const { props } = usePage<{ errors: Record<string, string> }>();
     const general = props.errors.general;
     const formatDate = useDateFormat();
 
     useEffect(() => {
         setLayoutProps<LayoutProps>({
-            title: `${t.title} ${user.login}`,
+            title: `${t('core::admin.users.show.title')} ${user.login}`,
             breadcrumbs: [
-                { title: t.users, href: '/admin/users' },
+                {
+                    title: t('core::admin.users.show.users'),
+                    href: '/admin/users',
+                },
                 { title: user.login },
             ],
         });
@@ -201,7 +183,7 @@ export default function UserShow({
                                         : undefined
                                 }
                             >
-                                {role.name}
+                                {roleName(t, role.name)}
                             </Badge>
                         ))}
                         {user.is_online && (
@@ -210,14 +192,18 @@ export default function UserShow({
                                     aria-hidden
                                     className="size-2 rounded-full bg-emerald-500"
                                 />
-                                {t.statuses.online}
+                                {t('core::admin.users.show.statuses.online')}
                             </Badge>
                         )}
                         {user.active_ban && (
                             <Badge variant="destructive">
                                 {user.active_ban.type === 'readonly'
-                                    ? t.statuses.readonly
-                                    : t.statuses.banned}
+                                    ? t(
+                                          'core::admin.users.show.statuses.readonly',
+                                      )
+                                    : t(
+                                          'core::admin.users.show.statuses.banned',
+                                      )}
                             </Badge>
                         )}
                         {user.is_suspicious && (
@@ -225,30 +211,36 @@ export default function UserShow({
                                 variant="outline"
                                 className="border-amber-500/50 text-amber-600 dark:text-amber-400"
                             >
-                                {t.statuses.suspicious}
+                                {t(
+                                    'core::admin.users.show.statuses.suspicious',
+                                )}
                             </Badge>
                         )}
                         {user.email_verified_at === null && (
                             <Badge variant="outline">
-                                {t.statuses.unverified}
+                                {t(
+                                    'core::admin.users.show.statuses.unverified',
+                                )}
                             </Badge>
                         )}
                     </div>
                     <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
                         <div className="flex gap-1">
-                            <dt>{t.registered}:</dt>
+                            <dt>{t('core::admin.users.show.registered')}:</dt>
                             <dd>{formatDate(user.created_at)}</dd>
                         </div>
                         <div className="flex gap-1">
-                            <dt>{t.lastActivity}:</dt>
+                            <dt>
+                                {t('core::admin.users.show.last_activity')}:
+                            </dt>
                             <dd>{formatDate(user.last_activity_at)}</dd>
                         </div>
                         <div className="flex gap-1">
-                            <dt>{t.bans}:</dt>
+                            <dt>{t('core::admin.users.show.bans')}:</dt>
                             <dd>{user.bans_count}</dd>
                         </div>
                         <div className="flex gap-1">
-                            <dt>{t.complaints}:</dt>
+                            <dt>{t('core::admin.users.show.complaints')}:</dt>
                             <dd>{user.complaints_count}</dd>
                         </div>
                     </dl>
@@ -258,21 +250,25 @@ export default function UserShow({
             {general && (
                 <Alert variant="destructive">
                     <AlertCircle aria-hidden />
-                    <AlertTitle>{t.error}</AlertTitle>
+                    <AlertTitle>{t('core::admin.users.show.error')}</AlertTitle>
                     <AlertDescription>{general}</AlertDescription>
                 </Alert>
             )}
 
             <Tabs defaultValue="profile">
                 <TabsList>
-                    <TabsTrigger value="profile">{t.tabs.profile}</TabsTrigger>
-                    <TabsTrigger value="roles">{t.tabs.roles}</TabsTrigger>
+                    <TabsTrigger value="profile">
+                        {t('core::admin.users.show.tabs.profile')}
+                    </TabsTrigger>
+                    <TabsTrigger value="roles">
+                        {t('core::admin.users.show.tabs.roles')}
+                    </TabsTrigger>
                     <TabsTrigger value="moderation">
-                        {t.tabs.moderation}
+                        {t('core::admin.users.show.tabs.moderation')}
                     </TabsTrigger>
                     {(can.update || can.delete) && (
                         <TabsTrigger value="danger">
-                            {t.tabs.danger}
+                            {t('core::admin.users.show.tabs.danger')}
                         </TabsTrigger>
                     )}
                 </TabsList>
@@ -315,6 +311,9 @@ export default function UserShow({
 }
 
 UserShow.layout = {
-    title: t.title,
-    breadcrumbs: [{ title: t.users, href: '/admin/users' }, { title: t.title }],
+    title: 'core::admin.users.show.title',
+    breadcrumbs: [
+        { title: 'core::admin.users.show.users', href: '/admin/users' },
+        { title: 'core::admin.users.show.title' },
+    ],
 };

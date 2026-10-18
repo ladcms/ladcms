@@ -22,29 +22,9 @@ import type {
     Paginator,
     SortDirection,
 } from '@ladcms/core/types/table';
+import { useT } from '@ladcms/core/lib/i18n';
 
 const ALL = '__all__';
-
-const t = {
-    title: 'Журнал действий',
-    columns: {
-        created_at: 'Время',
-        causer: 'Кто',
-        event: 'Событие',
-        subject: 'Субъект',
-        properties: 'Свойства',
-    },
-    causer: 'Кто (логин)',
-    event: 'Событие',
-    allEvents: 'Все события',
-    from: 'С',
-    to: 'По',
-    apply: 'Применить',
-    reset: 'Сбросить',
-    show: 'Показать',
-    empty: 'Записей нет',
-    system: 'система',
-};
 
 type ActivityRow = {
     id: number;
@@ -79,6 +59,7 @@ function hasProperties(properties: ActivityRow['properties']): boolean {
 }
 
 export default function ActivityIndex({ activity, filters, events }: Props) {
+    const t = useT();
     const { url } = usePage();
     const path = url.split('?')[0] ?? url;
 
@@ -121,7 +102,7 @@ export default function ActivityIndex({ activity, filters, events }: Props) {
     const columns: Column<ActivityRow>[] = [
         {
             key: 'created_at',
-            label: t.columns.created_at,
+            label: t('core::admin.activity.columns.created_at'),
             sortable: true,
             className: 'whitespace-nowrap',
             render: (row) =>
@@ -131,18 +112,19 @@ export default function ActivityIndex({ activity, filters, events }: Props) {
         },
         {
             key: 'causer',
-            label: t.columns.causer,
-            render: (row) => row.causer?.login ?? t.system,
+            label: t('core::admin.activity.columns.causer'),
+            render: (row) =>
+                row.causer?.login ?? t('core::admin.activity.system'),
         },
         {
             key: 'event',
-            label: t.columns.event,
+            label: t('core::admin.activity.columns.event'),
             sortable: true,
             render: (row) => <code>{row.event}</code>,
         },
         {
             key: 'subject',
-            label: t.columns.subject,
+            label: t('core::admin.activity.columns.subject'),
             render: (row) =>
                 row.subject === null
                     ? '—'
@@ -158,14 +140,14 @@ export default function ActivityIndex({ activity, filters, events }: Props) {
         },
         {
             key: 'properties',
-            label: t.columns.properties,
+            label: t('core::admin.activity.columns.properties'),
             className: 'max-w-md whitespace-normal',
             render: (row) =>
                 hasProperties(row.properties) ? (
                     <Collapsible>
                         <CollapsibleTrigger asChild>
                             <Button size="sm" variant="ghost">
-                                {t.show}
+                                {t('core::admin.activity.show')}
                             </Button>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
@@ -182,25 +164,32 @@ export default function ActivityIndex({ activity, filters, events }: Props) {
 
     return (
         <div className="space-y-6">
-            <PageHeader title={t.title} />
+            <PageHeader title={t('core::admin.activity.title')} />
 
             <form
                 onSubmit={submit}
                 className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
             >
                 <Input
-                    aria-label={t.causer}
-                    placeholder={t.causer}
+                    aria-label={t('core::admin.activity.causer')}
+                    placeholder={t('core::admin.activity.causer')}
                     value={causer}
                     onChange={(e) => setCauser(e.target.value)}
                     className="sm:w-48"
                 />
                 <Select value={event} onValueChange={setEvent}>
-                    <SelectTrigger aria-label={t.event} className="sm:w-56">
-                        <SelectValue placeholder={t.event} />
+                    <SelectTrigger
+                        aria-label={t('core::admin.activity.event')}
+                        className="sm:w-56"
+                    >
+                        <SelectValue
+                            placeholder={t('core::admin.activity.event')}
+                        />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value={ALL}>{t.allEvents}</SelectItem>
+                        <SelectItem value={ALL}>
+                            {t('core::admin.activity.all_events')}
+                        </SelectItem>
                         {events.map((name) => (
                             <SelectItem key={name} value={name}>
                                 {name}
@@ -210,21 +199,21 @@ export default function ActivityIndex({ activity, filters, events }: Props) {
                 </Select>
                 <Input
                     type="date"
-                    aria-label={t.from}
+                    aria-label={t('core::admin.activity.from')}
                     value={from}
                     onChange={(e) => setFrom(e.target.value)}
                     className="sm:w-40"
                 />
                 <Input
                     type="date"
-                    aria-label={t.to}
+                    aria-label={t('core::admin.activity.to')}
                     value={to}
                     onChange={(e) => setTo(e.target.value)}
                     className="sm:w-40"
                 />
-                <Button type="submit">{t.apply}</Button>
+                <Button type="submit">{t('core::admin.activity.apply')}</Button>
                 <Button type="button" variant="outline" onClick={reset}>
-                    {t.reset}
+                    {t('core::admin.activity.reset')}
                 </Button>
             </form>
 
@@ -233,7 +222,7 @@ export default function ActivityIndex({ activity, filters, events }: Props) {
                 rows={activity.data}
                 pagination={activity.meta}
                 sort={{ column: filters.sort, direction: filters.direction }}
-                emptyText={t.empty}
+                emptyText={t('core::admin.activity.empty')}
                 rowKey={(row) => row.id}
             />
         </div>
@@ -241,6 +230,6 @@ export default function ActivityIndex({ activity, filters, events }: Props) {
 }
 
 ActivityIndex.layout = {
-    title: t.title,
-    breadcrumbs: [{ title: t.title }],
+    title: 'core::admin.activity.title',
+    breadcrumbs: [{ title: 'core::admin.activity.title' }],
 };

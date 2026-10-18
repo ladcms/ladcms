@@ -16,13 +16,7 @@ import {
     DropdownMenuTrigger,
 } from '@ladcms/core/components/ui/dropdown-menu';
 import type { CurrentUser } from '@ladcms/core/types/admin';
-
-const t = {
-    menu: 'Меню пользователя',
-    profile: 'Профиль',
-    settings: 'Настройки',
-    logout: 'Выйти',
-};
+import { roleName, useT } from '@ladcms/core/lib/i18n';
 
 function initials(name: string): string {
     const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -33,13 +27,14 @@ function initials(name: string): string {
 }
 
 export function UserMenu({ user }: { user: CurrentUser }) {
+    const t = useT();
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={t.menu}
+                    aria-label={t('core::admin.user_menu.menu')}
                     className="rounded-full"
                 >
                     <Avatar className="size-8">
@@ -63,7 +58,9 @@ export function UserMenu({ user }: { user: CurrentUser }) {
                         </span>
                         {user.roles.length > 0 && (
                             <span className="truncate text-xs text-muted-foreground">
-                                {user.roles.join(', ')}
+                                {user.roles
+                                    .map((name) => roleName(t, name))
+                                    .join(', ')}
                             </span>
                         )}
                     </div>
@@ -73,13 +70,13 @@ export function UserMenu({ user }: { user: CurrentUser }) {
                     <DropdownMenuItem asChild>
                         <Link href={`/u/${user.login}`}>
                             <User aria-hidden />
-                            {t.profile}
+                            {t('core::admin.user_menu.profile')}
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                         <Link href="/settings/profile">
                             <Settings aria-hidden />
-                            {t.settings}
+                            {t('core::admin.user_menu.settings')}
                         </Link>
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
@@ -93,7 +90,7 @@ export function UserMenu({ user }: { user: CurrentUser }) {
                         onClick={() => router.flushAll()}
                     >
                         <LogOut aria-hidden />
-                        {t.logout}
+                        {t('core::admin.user_menu.logout')}
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuContent>

@@ -24,29 +24,7 @@ import type {
     UserDetail,
     ViolationCode,
 } from '@ladcms/core/pages/admin/users/show';
-
-const t = {
-    title: 'Забанить',
-    description: 'Бан действует сразу; пользователь получит уведомление.',
-    type: 'Тип',
-    types: { full: 'Полный', readonly: 'Только чтение' },
-    reason: 'Нарушение',
-    days: 'Срок, дней',
-    range: (min: number, max: number | null) =>
-        max === null ? `от ${min}` : `от ${min} до ${max}`,
-    permanent: 'Бессрочно',
-    comment: 'Комментарий',
-    submit: 'Забанить',
-    noCodes: 'Коды нарушений не настроены.',
-    suspicious: {
-        title: 'Подозрительный пользователь',
-        description: 'Отметка видна только администрации.',
-        readonly: 'У вас нет прав менять эту отметку.',
-        flag: 'Подозрительный',
-        note: 'Заметка',
-        save: 'Сохранить',
-    },
-};
+import { useT } from '@ladcms/core/lib/i18n';
 
 type BanData = {
     type: 'full' | 'readonly';
@@ -71,6 +49,7 @@ export function BanForm({
     user: UserDetail;
     codes: ViolationCode[];
 }) {
+    const t = useT();
     const first = codes[0];
     const form = useForm<BanData>({
         type: 'full',
@@ -111,8 +90,10 @@ export function BanForm({
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>{t.title}</CardTitle>
-                    <CardDescription>{t.noCodes}</CardDescription>
+                    <CardTitle>{t('core::admin.users.ban.title')}</CardTitle>
+                    <CardDescription>
+                        {t('core::admin.users.ban.no_codes')}
+                    </CardDescription>
                 </CardHeader>
             </Card>
         );
@@ -124,19 +105,20 @@ export function BanForm({
         <Card>
             <form onSubmit={submit}>
                 <CardHeader>
-                    <CardTitle>{t.title}</CardTitle>
-                    <CardDescription>{t.description}</CardDescription>
+                    <CardTitle>{t('core::admin.users.ban.title')}</CardTitle>
+                    <CardDescription>
+                        {t('core::admin.users.ban.description')}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
                     <div className="grid gap-2">
-                        <Label htmlFor="ban-type">{t.type}</Label>
+                        <Label htmlFor="ban-type">
+                            {t('core::admin.users.ban.type')}
+                        </Label>
                         <Select
                             value={form.data.type}
                             onValueChange={(value) =>
-                                form.setData(
-                                    'type',
-                                    value as BanData['type'],
-                                )
+                                form.setData('type', value as BanData['type'])
                             }
                         >
                             <SelectTrigger
@@ -147,17 +129,19 @@ export function BanForm({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="full">
-                                    {t.types.full}
+                                    {t('core::admin.users.ban.types.full')}
                                 </SelectItem>
                                 <SelectItem value="readonly">
-                                    {t.types.readonly}
+                                    {t('core::admin.users.ban.types.readonly')}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                         <FieldError id="ban-type-error" message={errors.type} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="ban-reason">{t.reason}</Label>
+                        <Label htmlFor="ban-reason">
+                            {t('core::admin.users.ban.reason')}
+                        </Label>
                         <Select
                             value={form.data.reason_code}
                             onValueChange={selectCode}
@@ -185,10 +169,23 @@ export function BanForm({
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="ban-days">
-                            {t.days}
+                            {t('core::admin.users.ban.days')}
                             {code && (
                                 <span className="font-normal text-muted-foreground">
-                                    ({t.range(code.min_days, code.max_days)})
+                                    (
+                                    {code.max_days === null
+                                        ? t(
+                                              'core::admin.users.ban.range_from',
+                                              { min: code.min_days },
+                                          )
+                                        : t(
+                                              'core::admin.users.ban.range_between',
+                                              {
+                                                  min: code.min_days,
+                                                  max: code.max_days,
+                                              },
+                                          )}
+                                    )
                                 </span>
                             )}
                         </Label>
@@ -208,7 +205,10 @@ export function BanForm({
                                 durationError ? 'ban-days-error' : undefined
                             }
                         />
-                        <FieldError id="ban-days-error" message={durationError} />
+                        <FieldError
+                            id="ban-days-error"
+                            message={durationError}
+                        />
                     </div>
                     {permanentAllowed && (
                         <div className="flex items-center gap-3 self-end pb-2">
@@ -219,11 +219,15 @@ export function BanForm({
                                     form.setData('permanent', checked)
                                 }
                             />
-                            <Label htmlFor="ban-permanent">{t.permanent}</Label>
+                            <Label htmlFor="ban-permanent">
+                                {t('core::admin.users.ban.permanent')}
+                            </Label>
                         </div>
                     )}
                     <div className="grid gap-2 md:col-span-2">
-                        <Label htmlFor="ban-comment">{t.comment}</Label>
+                        <Label htmlFor="ban-comment">
+                            {t('core::admin.users.ban.comment')}
+                        </Label>
                         <Textarea
                             id="ban-comment"
                             rows={3}
@@ -246,7 +250,7 @@ export function BanForm({
                         variant="destructive"
                         disabled={form.processing}
                     >
-                        {t.submit}
+                        {t('core::admin.users.ban.submit')}
                     </Button>
                 </CardFooter>
             </form>
@@ -261,6 +265,7 @@ export function SuspiciousForm({
     user: UserDetail;
     disabled: boolean;
 }) {
+    const t = useT();
     const form = useForm<{ is_suspicious: boolean; note: string }>({
         is_suspicious: user.is_suspicious,
         note: user.suspicious_note ?? '',
@@ -277,11 +282,13 @@ export function SuspiciousForm({
         <Card>
             <form onSubmit={submit}>
                 <CardHeader>
-                    <CardTitle>{t.suspicious.title}</CardTitle>
+                    <CardTitle>
+                        {t('core::admin.users.ban.suspicious.title')}
+                    </CardTitle>
                     <CardDescription>
                         {disabled
-                            ? t.suspicious.readonly
-                            : t.suspicious.description}
+                            ? t('core::admin.users.ban.suspicious.readonly')
+                            : t('core::admin.users.ban.suspicious.description')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -296,13 +303,13 @@ export function SuspiciousForm({
                                 }
                             />
                             <Label htmlFor="suspicious-flag">
-                                {t.suspicious.flag}
+                                {t('core::admin.users.ban.suspicious.flag')}
                             </Label>
                         </div>
                         {form.data.is_suspicious && (
                             <div className="grid gap-2">
                                 <Label htmlFor="suspicious-note">
-                                    {t.suspicious.note}
+                                    {t('core::admin.users.ban.suspicious.note')}
                                 </Label>
                                 <Input
                                     id="suspicious-note"
@@ -326,7 +333,7 @@ export function SuspiciousForm({
                 {!disabled && (
                     <CardFooter className="justify-end pt-6">
                         <Button type="submit" disabled={form.processing}>
-                            {t.suspicious.save}
+                            {t('core::admin.users.ban.suspicious.save')}
                         </Button>
                     </CardFooter>
                 )}

@@ -6,8 +6,10 @@
         "build": "vp build",
         "build:ssr": "vp build && vp build --ssr",
         "dev": "vp dev",
-        "check": "vp check",
-        "check:fix": "vp check --fix",
+        "check": "vp check && npm run check:packages",
+        "check:fix": "vp check --fix && npm run check:packages:fix",
+        "check:packages": "scripts/packages-js.sh lint && scripts/packages-js.sh fmt --check",
+        "check:packages:fix": "scripts/packages-js.sh lint --fix && scripts/packages-js.sh fmt",
         "types:check": "tsc --noEmit"
     },
     "dependencies": {

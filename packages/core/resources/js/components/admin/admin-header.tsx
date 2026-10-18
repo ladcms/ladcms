@@ -20,12 +20,7 @@ import type {
     CurrentUser,
     MenuItem,
 } from '@ladcms/core/types/admin';
-
-const t = {
-    openMenu: 'Открыть меню',
-    menu: 'Меню админки',
-    menuDescription: 'Разделы панели управления',
-};
+import { useT } from '@ladcms/core/lib/i18n';
 
 /** Мобильная навигация: секции аккордеоном, тап раскрывает подпункты. */
 function MobileNav({
@@ -35,12 +30,16 @@ function MobileNav({
     menu: MenuItem[];
     onNavigate: () => void;
 }) {
+    const t = useT();
     const [expanded, setExpanded] = useState<string | null>(
         () => menu.find((section) => section.active)?.key ?? null,
     );
 
     return (
-        <nav aria-label={t.menu} className="flex-1 overflow-y-auto px-2 pb-4">
+        <nav
+            aria-label={t('core::admin.header.menu')}
+            className="flex-1 overflow-y-auto px-2 pb-4"
+        >
             <ul className="flex flex-col gap-1">
                 {menu.map((section) => {
                     const Icon = resolveIcon(section.icon);
@@ -111,6 +110,7 @@ type AdminHeaderProps = {
 };
 
 export function AdminHeader({ menu, user, breadcrumbs }: AdminHeaderProps) {
+    const t = useT();
     const [open, setOpen] = useState(false);
 
     return (
@@ -120,7 +120,7 @@ export function AdminHeader({ menu, user, breadcrumbs }: AdminHeaderProps) {
                     variant="ghost"
                     size="icon"
                     className="lg:hidden"
-                    aria-label={t.openMenu}
+                    aria-label={t('core::admin.header.open_menu')}
                     aria-expanded={open}
                     onClick={() => setOpen(true)}
                 >
@@ -128,9 +128,9 @@ export function AdminHeader({ menu, user, breadcrumbs }: AdminHeaderProps) {
                 </Button>
                 <SheetContent side="left" className="w-72 gap-0 bg-sidebar p-0">
                     <SheetHeader>
-                        <SheetTitle>{t.menu}</SheetTitle>
+                        <SheetTitle>{t('core::admin.header.menu')}</SheetTitle>
                         <SheetDescription className="sr-only">
-                            {t.menuDescription}
+                            {t('core::admin.header.menu_description')}
                         </SheetDescription>
                     </SheetHeader>
                     {/* Контент Sheet монтируется заново при каждом открытии — аккордеон стартует с активной секции. */}

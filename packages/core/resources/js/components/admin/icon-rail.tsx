@@ -8,10 +8,7 @@ import {
 import { resolveIcon } from '@ladcms/core/lib/icons';
 import { cn } from '@ladcms/core/lib/utils';
 import type { MenuItem } from '@ladcms/core/types/admin';
-
-const t = {
-    sections: 'Разделы админки',
-};
+import { useT } from '@ladcms/core/lib/i18n';
 
 /** Куда ведёт клик по секции: первый дочерний пункт или сама секция. */
 export function sectionTarget(section: MenuItem): string {
@@ -35,6 +32,7 @@ export function IconRail({
     onHover,
     onSelect,
 }: IconRailProps) {
+    const t = useT();
     const handleClick = (event: MouseEvent, section: MenuItem) => {
         // Тач: тап по секции с подпунктами только открывает панель, без перехода.
         if (!isFine && section.children.length > 0) {
@@ -46,7 +44,7 @@ export function IconRail({
 
     return (
         <nav
-            aria-label={t.sections}
+            aria-label={t('core::admin.rail.sections')}
             className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-sidebar-border bg-sidebar py-3"
         >
             {menu.map((section) => {

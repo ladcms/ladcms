@@ -23,6 +23,7 @@ import {
     TableHeader,
     TableRow,
 } from '@ladcms/core/components/ui/table';
+import { useT } from '@ladcms/core/lib/i18n';
 import { cn } from '@ladcms/core/lib/utils';
 import type {
     Column,
@@ -37,9 +38,9 @@ type DataTableProps<T extends object> = {
     rows: T[];
     pagination: Paginator;
     sort?: TableSort;
-    onSort?(column: string): void;
+    onSort?: (column: string) => void;
     emptyText?: ReactNode;
-    rowKey?(row: T, index: number): string | number;
+    rowKey?: (row: T, index: number) => string | number;
 };
 
 type QueryParams = Record<string, string | number | null>;
@@ -194,9 +195,10 @@ export function DataTable<T extends object>({
     pagination,
     sort,
     onSort,
-    emptyText = 'Ничего не найдено',
+    emptyText,
     rowKey,
 }: DataTableProps<T>) {
+    const t = useT();
     const currentUrl = usePage().url;
 
     const renderHead = (column: Column<T>) => {
@@ -246,7 +248,9 @@ export function DataTable<T extends object>({
         <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
                 {rows.length === 0 ? (
-                    <EmptyState title={emptyText} />
+                    <EmptyState
+                        title={emptyText ?? t('core::admin.table.empty')}
+                    />
                 ) : (
                     <Table>
                         <TableHeader>

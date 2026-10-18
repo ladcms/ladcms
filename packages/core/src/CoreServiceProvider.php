@@ -11,8 +11,10 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Ladcms\Core\Admin\AdminMenu;
@@ -203,6 +205,26 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
                 ),
                 'user' => CurrentUserResource::make($user)->resolve($request),
             ];
+        });
+
+        // Переводы админки (`<module>::admin.*`) для текущей локали — плоской картой, только на админ-роутах.
+        // Собирается на каждый запрос, без кэша: набор модулей и локаль меняются между запросами.
+        Inertia::share('i18n', function (): ?array {
+            if (! $this->app->make(Request::class)->routeIs('admin.*')) {
+                return null;
+            }
+
+            $map = [];
+            foreach ($this->app->make(ModuleRegistry::class)->names() as $name) {
+                $lines = Lang::get("{$name}::admin");
+                if (is_array($lines)) {
+                    foreach (Arr::dot($lines) as $key => $value) {
+                        $map["{$name}::admin.{$key}"] = $value;
+                    }
+                }
+            }
+
+            return $map;
         });
 
         // Ежедневная чистка: неподтверждённые аккаунты и старые записи журнала активности.

@@ -78,7 +78,7 @@ export function FieldRenderer({ field, value, onChange, errors }: Props) {
                     <Input
                         id={id}
                         type="number"
-                        value={String(value ?? '')}
+                        value={typeof value === 'number' ? String(value) : text}
                         onChange={(event) => onChange(event.target.value)}
                     />
                 );
@@ -107,7 +107,11 @@ export function FieldRenderer({ field, value, onChange, errors }: Props) {
                             type="color"
                             aria-label={field.label}
                             className="h-9 w-12 cursor-pointer rounded-md border bg-transparent p-1"
-                            value={/^#[0-9a-fA-F]{6}$/.test(text) ? text : '#000000'}
+                            value={
+                                /^#[0-9a-fA-F]{6}$/.test(text)
+                                    ? text
+                                    : '#000000'
+                            }
                             onChange={(event) => onChange(event.target.value)}
                         />
                         <Input
@@ -143,7 +147,11 @@ export function FieldRenderer({ field, value, onChange, errors }: Props) {
                 return (
                     <ViolationCodesEditor
                         name={field.name}
-                        value={Array.isArray(value) ? (value as ViolationCodeRow[]) : []}
+                        value={
+                            Array.isArray(value)
+                                ? (value as ViolationCodeRow[])
+                                : []
+                        }
                         onChange={onChange}
                         errors={errors}
                     />
@@ -166,7 +174,9 @@ export function FieldRenderer({ field, value, onChange, errors }: Props) {
         <div className="grid gap-2">
             <div
                 className={
-                    inline ? 'flex items-center justify-between gap-4' : 'grid gap-2'
+                    inline
+                        ? 'flex items-center justify-between gap-4'
+                        : 'grid gap-2'
                 }
             >
                 <div className="grid gap-1">

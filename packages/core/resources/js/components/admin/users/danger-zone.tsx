@@ -16,28 +16,7 @@ import type {
     UserAbilities,
     UserDetail,
 } from '@ladcms/core/pages/admin/users/show';
-
-const t = {
-    login: {
-        title: 'Смена логина',
-        description:
-            'Старый логин сохранится в истории и некоторое время будет недоступен для регистрации.',
-        label: 'Новый логин',
-        submit: 'Сменить логин',
-        confirmTitle: 'Сменить логин?',
-        confirmDescription: (from: string, to: string) =>
-            `Логин «${from}» будет заменён на «${to}».`,
-    },
-    delete: {
-        title: 'Удаление пользователя',
-        description:
-            'Аккаунт будет удалён (мягкое удаление): пользователь не сможет войти.',
-        submit: 'Удалить пользователя',
-        confirmTitle: 'Удалить пользователя?',
-        confirmDescription: (login: string) =>
-            `Пользователь «${login}» будет удалён.`,
-    },
-};
+import { useT } from '@ladcms/core/lib/i18n';
 
 export function DangerZone({
     user,
@@ -46,6 +25,7 @@ export function DangerZone({
     user: UserDetail;
     can: UserAbilities;
 }) {
+    const t = useT();
     const loginForm = useForm<{ login: string }>({ login: user.login });
     const deleteForm = useForm<Record<string, never>>({});
 
@@ -69,14 +49,18 @@ export function DangerZone({
                 <Card>
                     <form onSubmit={submitLogin}>
                         <CardHeader>
-                            <CardTitle>{t.login.title}</CardTitle>
+                            <CardTitle>
+                                {t('core::admin.users.danger.login.title')}
+                            </CardTitle>
                             <CardDescription>
-                                {t.login.description}
+                                {t(
+                                    'core::admin.users.danger.login.description',
+                                )}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-2 sm:max-w-sm">
                             <Label htmlFor="danger-login">
-                                {t.login.label}
+                                {t('core::admin.users.danger.login.label')}
                             </Label>
                             <Input
                                 id="danger-login"
@@ -113,15 +97,26 @@ export function DangerZone({
                                             unchanged || loginForm.processing
                                         }
                                     >
-                                        {t.login.submit}
+                                        {t(
+                                            'core::admin.users.danger.login.submit',
+                                        )}
                                     </Button>
                                 }
-                                title={t.login.confirmTitle}
-                                description={t.login.confirmDescription(
-                                    user.login,
-                                    loginForm.data.login.trim().toLowerCase(),
+                                title={t(
+                                    'core::admin.users.danger.login.confirm_title',
                                 )}
-                                confirmLabel={t.login.submit}
+                                description={t(
+                                    'core::admin.users.danger.login.confirm_description',
+                                    {
+                                        from: user.login,
+                                        to: loginForm.data.login
+                                            .trim()
+                                            .toLowerCase(),
+                                    },
+                                )}
+                                confirmLabel={t(
+                                    'core::admin.users.danger.login.submit',
+                                )}
                                 onConfirm={changeLogin}
                             />
                         </CardFooter>
@@ -133,9 +128,11 @@ export function DangerZone({
                 <Card className="border-destructive/50">
                     <CardHeader>
                         <CardTitle className="text-destructive">
-                            {t.delete.title}
+                            {t('core::admin.users.danger.delete.title')}
                         </CardTitle>
-                        <CardDescription>{t.delete.description}</CardDescription>
+                        <CardDescription>
+                            {t('core::admin.users.danger.delete.description')}
+                        </CardDescription>
                     </CardHeader>
                     <CardFooter className="justify-end">
                         <ConfirmDialog
@@ -144,14 +141,21 @@ export function DangerZone({
                                     variant="destructive"
                                     disabled={deleteForm.processing}
                                 >
-                                    {t.delete.submit}
+                                    {t(
+                                        'core::admin.users.danger.delete.submit',
+                                    )}
                                 </Button>
                             }
-                            title={t.delete.confirmTitle}
-                            description={t.delete.confirmDescription(
-                                user.login,
+                            title={t(
+                                'core::admin.users.danger.delete.confirm_title',
                             )}
-                            confirmLabel={t.delete.submit}
+                            description={t(
+                                'core::admin.users.danger.delete.confirm_description',
+                                { login: user.login },
+                            )}
+                            confirmLabel={t(
+                                'core::admin.users.danger.delete.submit',
+                            )}
                             destructive
                             onConfirm={() =>
                                 deleteForm.delete(`/admin/users/${user.id}`)

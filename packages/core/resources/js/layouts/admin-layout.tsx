@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AdminHeader } from '@ladcms/core/components/admin/admin-header';
 import { IconRail } from '@ladcms/core/components/admin/icon-rail';
 import { SectionPanel } from '@ladcms/core/components/admin/section-panel';
+import { useT } from '@ladcms/core/lib/i18n';
 import type { AdminBreadcrumb, AdminShared } from '@ladcms/core/types/admin';
 
 /** Задержка возврата панели к закреплённой секции после ухода курсора. */
@@ -39,6 +40,7 @@ export default function AdminLayout({
     title,
     breadcrumbs,
 }: AdminLayoutProps) {
+    const t = useT();
     const { admin } = usePage<{ admin?: AdminShared | null }>().props;
     const menu = admin?.menu ?? [];
     const isFine = useFinePointer();
@@ -76,11 +78,16 @@ export default function AdminLayout({
 
     const displayedKey = hovered ?? pinned;
     const displayed = menu.find((section) => section.key === displayedKey);
-    const crumbs = breadcrumbs ?? (title ? [{ title }] : []);
+    // Заголовок и крошки могут быть ключами `<module>::admin.*` — незнакомая строка остаётся как есть.
+    const heading = title ? t(title) : undefined;
+    const crumbs = (breadcrumbs ?? (title ? [{ title }] : [])).map((crumb) => ({
+        ...crumb,
+        title: t(crumb.title),
+    }));
 
     return (
         <div className="flex min-h-svh bg-background text-foreground">
-            {title && <Head title={title} />}
+            {heading && <Head title={heading} />}
 
             {menu.length > 0 && (
                 <aside

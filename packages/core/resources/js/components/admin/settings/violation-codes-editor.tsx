@@ -9,17 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from '@ladcms/core/components/ui/table';
-
-const t = {
-    code: 'Код',
-    label: 'Название',
-    minDays: 'Мин. дней',
-    maxDays: 'Макс. дней',
-    maxHint: 'без лимита',
-    add: 'Добавить код',
-    remove: 'Удалить строку',
-    empty: 'Кодов нет.',
-};
+import { useT } from '@ladcms/core/lib/i18n';
 
 /** Строка настройки `violation_codes`; пустые числа — пустая строка до отправки. */
 export type ViolationCodeRow = {
@@ -37,6 +27,7 @@ type Props = {
 };
 
 export function ViolationCodesEditor({ name, value, onChange, errors }: Props) {
+    const t = useT();
     const update = (index: number, patch: Partial<ViolationCodeRow>) =>
         onChange(
             value.map((row, i) => (i === index ? { ...row, ...patch } : row)),
@@ -52,10 +43,18 @@ export function ViolationCodesEditor({ name, value, onChange, errors }: Props) {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>{t.code}</TableHead>
-                        <TableHead>{t.label}</TableHead>
-                        <TableHead className="w-28">{t.minDays}</TableHead>
-                        <TableHead className="w-28">{t.maxDays}</TableHead>
+                        <TableHead>
+                            {t('core::admin.settings.violation_codes.code')}
+                        </TableHead>
+                        <TableHead>
+                            {t('core::admin.settings.violation_codes.label')}
+                        </TableHead>
+                        <TableHead className="w-28">
+                            {t('core::admin.settings.violation_codes.min_days')}
+                        </TableHead>
+                        <TableHead className="w-28">
+                            {t('core::admin.settings.violation_codes.max_days')}
+                        </TableHead>
                         <TableHead className="w-12" />
                     </TableRow>
                 </TableHeader>
@@ -66,7 +65,9 @@ export function ViolationCodesEditor({ name, value, onChange, errors }: Props) {
                                 colSpan={5}
                                 className="text-center text-muted-foreground"
                             >
-                                {t.empty}
+                                {t(
+                                    'core::admin.settings.violation_codes.empty',
+                                )}
                             </TableCell>
                         </TableRow>
                     )}
@@ -74,7 +75,9 @@ export function ViolationCodesEditor({ name, value, onChange, errors }: Props) {
                         <TableRow key={index} className="align-top">
                             <TableCell>
                                 <Input
-                                    aria-label={t.code}
+                                    aria-label={t(
+                                        'core::admin.settings.violation_codes.code',
+                                    )}
                                     value={row.code}
                                     onChange={(event) =>
                                         update(index, {
@@ -86,7 +89,9 @@ export function ViolationCodesEditor({ name, value, onChange, errors }: Props) {
                             </TableCell>
                             <TableCell>
                                 <Input
-                                    aria-label={t.label}
+                                    aria-label={t(
+                                        'core::admin.settings.violation_codes.label',
+                                    )}
                                     value={row.label}
                                     onChange={(event) =>
                                         update(index, {
@@ -98,7 +103,9 @@ export function ViolationCodesEditor({ name, value, onChange, errors }: Props) {
                             </TableCell>
                             <TableCell>
                                 <Input
-                                    aria-label={t.minDays}
+                                    aria-label={t(
+                                        'core::admin.settings.violation_codes.min_days',
+                                    )}
                                     type="number"
                                     min={0}
                                     value={row.min_days}
@@ -111,10 +118,14 @@ export function ViolationCodesEditor({ name, value, onChange, errors }: Props) {
                             </TableCell>
                             <TableCell>
                                 <Input
-                                    aria-label={t.maxDays}
+                                    aria-label={t(
+                                        'core::admin.settings.violation_codes.max_days',
+                                    )}
                                     type="number"
                                     min={0}
-                                    placeholder={t.maxHint}
+                                    placeholder={t(
+                                        'core::admin.settings.violation_codes.max_hint',
+                                    )}
                                     value={row.max_days ?? ''}
                                     onChange={(event) =>
                                         update(index, {
@@ -128,7 +139,9 @@ export function ViolationCodesEditor({ name, value, onChange, errors }: Props) {
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    aria-label={t.remove}
+                                    aria-label={t(
+                                        'core::admin.settings.violation_codes.remove',
+                                    )}
                                     onClick={() =>
                                         onChange(
                                             value.filter((_, i) => i !== index),
@@ -164,7 +177,7 @@ export function ViolationCodesEditor({ name, value, onChange, errors }: Props) {
                 }
             >
                 <Plus aria-hidden />
-                {t.add}
+                {t('core::admin.settings.violation_codes.add')}
             </Button>
         </div>
     );

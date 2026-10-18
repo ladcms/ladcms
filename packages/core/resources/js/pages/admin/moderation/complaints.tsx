@@ -18,38 +18,10 @@ import type {
     Paginator,
     SortDirection,
 } from '@ladcms/core/types/table';
+import { useT } from '@ladcms/core/lib/i18n';
 
 type ComplaintStatus = 'pending' | 'reviewed' | 'resolved' | 'rejected';
 type StatusFilter = ComplaintStatus | 'all';
-
-const t = {
-    title: 'Жалобы',
-    total: 'Всего',
-    status: 'Статус',
-    statuses: {
-        pending: 'Ожидает',
-        reviewed: 'Рассмотрена',
-        resolved: 'Решена',
-        rejected: 'Отклонена',
-        all: 'Все',
-    } satisfies Record<StatusFilter, string>,
-    columns: {
-        author: 'Автор',
-        target: 'Цель',
-        object: 'Объект',
-        reason: 'Код',
-        comment: 'Комментарий',
-        status: 'Статус',
-        created_at: 'Создана',
-        actions: 'Действия',
-    },
-    reviewActions: {
-        reviewed: 'Рассмотрена',
-        resolved: 'Решена',
-        rejected: 'Отклонить',
-    } satisfies Record<Exclude<ComplaintStatus, 'pending'>, string>,
-    empty: 'Жалоб нет',
-};
 
 type UserRef = { id: number; login: string };
 
@@ -103,6 +75,7 @@ export default function ComplaintsIndex({
     statuses,
     can,
 }: Props) {
+    const t = useT();
     const { url, props } = usePage();
     const locale = typeof props.locale === 'string' ? props.locale : 'ru';
     const path = url.split('?')[0] ?? url;
@@ -135,17 +108,17 @@ export default function ComplaintsIndex({
     const columns: Column<ComplaintRow>[] = [
         {
             key: 'author',
-            label: t.columns.author,
+            label: t('core::admin.moderation.complaints.columns.author'),
             render: (row) => <UserLink user={row.author} />,
         },
         {
             key: 'target',
-            label: t.columns.target,
+            label: t('core::admin.moderation.complaints.columns.target'),
             render: (row) => <UserLink user={row.target_user} />,
         },
         {
             key: 'object',
-            label: t.columns.object,
+            label: t('core::admin.moderation.complaints.columns.object'),
             render: (row) =>
                 row.reportable === null ? (
                     <span className="text-muted-foreground">—</span>
@@ -153,27 +126,32 @@ export default function ComplaintsIndex({
                     `${row.reportable.type} #${row.reportable.id ?? ''}`
                 ),
         },
-        { key: 'reason_code', label: t.columns.reason },
+        {
+            key: 'reason_code',
+            label: t('core::admin.moderation.complaints.columns.reason'),
+        },
         {
             key: 'comment',
-            label: t.columns.comment,
+            label: t('core::admin.moderation.complaints.columns.comment'),
             className: 'max-w-xs whitespace-normal break-words',
         },
         {
             key: 'status',
-            label: t.columns.status,
+            label: t('core::admin.moderation.complaints.columns.status'),
             sortable: true,
             render: (row) => (
                 <Badge
                     variant={row.status === 'pending' ? 'default' : 'secondary'}
                 >
-                    {t.statuses[row.status]}
+                    {t(
+                        `core::admin.moderation.complaints.statuses.${row.status}`,
+                    )}
                 </Badge>
             ),
         },
         {
             key: 'created_at',
-            label: t.columns.created_at,
+            label: t('core::admin.moderation.complaints.columns.created_at'),
             sortable: true,
             className: 'whitespace-nowrap',
             render: (row) =>
@@ -186,7 +164,7 @@ export default function ComplaintsIndex({
     if (can.review) {
         columns.push({
             key: 'actions',
-            label: t.columns.actions,
+            label: t('core::admin.moderation.complaints.columns.actions'),
             render: (row) =>
                 row.status === 'pending' ? (
                     <div className="flex flex-wrap gap-1.5">
@@ -201,7 +179,9 @@ export default function ComplaintsIndex({
                                 }
                                 onClick={() => review(row.id, status)}
                             >
-                                {t.reviewActions[status]}
+                                {t(
+                                    `core::admin.moderation.complaints.review_actions.${status}`,
+                                )}
                             </Button>
                         ))}
                     </div>
@@ -212,21 +192,30 @@ export default function ComplaintsIndex({
     return (
         <div className="space-y-6">
             <PageHeader
-                title={t.title}
-                description={`${t.total}: ${complaints.meta.total}`}
+                title={t('core::admin.moderation.complaints.title')}
+                description={`${t('core::admin.moderation.complaints.total')}: ${complaints.meta.total}`}
             />
 
             <Select
                 value={filters.status}
                 onValueChange={(status) => visit(status as StatusFilter)}
             >
-                <SelectTrigger aria-label={t.status} className="sm:w-48">
-                    <SelectValue placeholder={t.status} />
+                <SelectTrigger
+                    aria-label={t('core::admin.moderation.complaints.status')}
+                    className="sm:w-48"
+                >
+                    <SelectValue
+                        placeholder={t(
+                            'core::admin.moderation.complaints.status',
+                        )}
+                    />
                 </SelectTrigger>
                 <SelectContent>
                     {statuses.map((status) => (
                         <SelectItem key={status} value={status}>
-                            {t.statuses[status]}
+                            {t(
+                                `core::admin.moderation.complaints.statuses.${status}`,
+                            )}
                         </SelectItem>
                     ))}
                 </SelectContent>
@@ -237,7 +226,7 @@ export default function ComplaintsIndex({
                 rows={complaints.data}
                 pagination={complaints.meta}
                 sort={{ column: filters.sort, direction: filters.direction }}
-                emptyText={t.empty}
+                emptyText={t('core::admin.moderation.complaints.empty')}
                 rowKey={(row) => row.id}
             />
         </div>
@@ -245,6 +234,6 @@ export default function ComplaintsIndex({
 }
 
 ComplaintsIndex.layout = {
-    title: t.title,
-    breadcrumbs: [{ title: t.title }],
+    title: 'core::admin.moderation.complaints.title',
+    breadcrumbs: [{ title: 'core::admin.moderation.complaints.title' }],
 };

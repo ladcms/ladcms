@@ -52,6 +52,26 @@ Defaults are seeded by settings migrations (they run with `migrate`), not by cla
 - Subject-only actions (no `$actor`: `ChangeLogin`, `UpdateAvatar`, `RemoveAvatar`, `DeleteOwnAccount`) do not authorize; the caller must.
 - Actions never touch HTTP (no `request()`, Inertia, redirects); Actions authorize themselves (policies via `Gate::forUser($actor)->authorize(...)`, or `can()` + `outranks()`); controllers only translate exceptions (`AuthorizationException` -> 403, `ValidationException` -> 422, `InvalidArgumentException` -> 422/409).
 
+### Admin panel for modules
+- A module appears in the admin by implementing `HasAdminPanel::adminMenu()`: a list of sections `label` (translation key), `icon` (lucide name, kebab-case),
+  `route`, `order`, optional `permission` (item hidden without it), `children`, `key`, `path`, `params`. Core builds the two-level menu (`Admin\AdminMenu`) and shares it as the `admin` Inertia prop.
+- Admin routes go to `routes/admin.php`: the base class mounts them under `/admin/<module>` with names `admin.<module>.*` and middleware
+  `web, auth, admin, ladcms.password-confirm`. Protect each route with `can:<permission>`; mutations authorize again inside Actions.
+- Admin pages are Inertia components named `<module>::admin/<Path>` and live in `resources/js/pages/admin/<Path>.tsx` (e.g. `forum::admin/topics/index`).
+  Build them only from the core UI kit: `@ladcms/core/components/*` (`PageHeader`, `DataTable`, `EmptyState`, `ConfirmDialog`, `ui/*`) and `@ladcms/core/layouts/admin-layout`.
+  Set `Page.layout = { title: '<module>::admin.<key>', breadcrumbs: [{ title: '<module>::admin.<key>', href }] }` - the layout translates the keys.
+- Tables: return a paginator (`LengthAwarePaginator::toArray()` shape) and render with `<DataTable columns rows pagination sort />`.
+  Server side use `Admin\TableQuery::apply($query, $request, $sortable, $defaultSort, $searchable)` + `TableQuery::paginate()` (whitelisted sort, escaped search, `page`/`sort`/`direction`/`q` query params).
+- Settings forms are generated: list `Settings` classes in `settings()`; `SettingsSchema` infers the field type from the PHP type and `#[Field(type:, options:, description:)]`
+  refines it (`options` is a provider name: `locales`, `themes`, `timezones`). Labels come from `<module>::settings.<group>.title` / `.fields.<name>.label`.
+  The settings page `admin.settings.edit` gets a tab per group of every module.
+- Texts: never hard-code UI strings. Put them in `lang/<locale>/admin.php` of the module (both `ru` and `en`) and read them with `const t = useT()` from `@ladcms/core/lib/i18n`:
+  `t('<module>::admin.some.key', { name })` (`:name` placeholders, falls back to the key). Core shares a flat `i18n` map built from every module's `admin` lang namespace on `admin.*` routes only.
+  Server exception messages stay English; user-facing flash toasts use `Inertia::flash('toast', [...])` with translated text.
+- The admin can disable a module on the Modules page (`modules.is_enabled`); it is skipped on the next boot. Octane and queue workers keep the old module set in memory:
+  restart them (`octane:reload`, `queue:restart`) after toggling a module.
+- Admin lint: `npm run check:fix` in the app also lints `vendor/ladcms/*/resources/js` (UI kit `components/ui/**` is excluded).
+
 ### Conventions a module must follow
 - `name()` must equal the Composer package directory (`vendor/ladcms/<name>`): the frontend resolves
   `<name>::Page` to `vendor/ladcms/<name>/resources/js/pages/Page.tsx`.

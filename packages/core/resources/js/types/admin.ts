@@ -39,6 +39,9 @@ export type AdminShared = {
     user: CurrentUser;
 };
 
+/** Shared-проп `i18n` (только на роутах `admin.*`): плоская карта переводов текущей локали. */
+export type AdminI18n = Record<string, string>;
+
 export type AdminBreadcrumb = {
     title: string;
     href?: string;

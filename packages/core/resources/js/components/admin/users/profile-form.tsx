@@ -21,22 +21,7 @@ import {
 } from '@ladcms/core/components/ui/select';
 import { Textarea } from '@ladcms/core/components/ui/textarea';
 import type { UserDetail } from '@ladcms/core/pages/admin/users/show';
-
-const t = {
-    title: 'Профиль',
-    description: 'Основные данные пользователя.',
-    readonly: 'У вас нет прав на изменение профиля этого пользователя.',
-    name: 'Имя',
-    email: 'Email',
-    sex: 'Пол',
-    sexes: { none: 'Не указан', male: 'Мужской', female: 'Женский' },
-    birthDate: 'Дата рождения',
-    about: 'О себе',
-    signature: 'Подпись',
-    language: 'Язык',
-    timezone: 'Часовой пояс',
-    save: 'Сохранить',
-};
+import { useT } from '@ladcms/core/lib/i18n';
 
 /** Значение Select для «не указан»: у Radix Select не может быть пустого значения. */
 const NO_SEX = 'none';
@@ -67,6 +52,7 @@ export function ProfileForm({
     user: UserDetail;
     disabled: boolean;
 }) {
+    const t = useT();
     const { props } = usePage();
     const locales =
         typeof props.locales === 'object' && props.locales !== null
@@ -117,9 +103,13 @@ export function ProfileForm({
         <Card>
             <form onSubmit={submit}>
                 <CardHeader>
-                    <CardTitle>{t.title}</CardTitle>
+                    <CardTitle>
+                        {t('core::admin.users.profile.title')}
+                    </CardTitle>
                     <CardDescription>
-                        {disabled ? t.readonly : t.description}
+                        {disabled
+                            ? t('core::admin.users.profile.readonly')
+                            : t('core::admin.users.profile.description')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -129,7 +119,7 @@ export function ProfileForm({
                     >
                         {field(
                             'name',
-                            t.name,
+                            t('core::admin.users.profile.name'),
                             <Input
                                 id="profile-name"
                                 value={form.data.name}
@@ -141,7 +131,7 @@ export function ProfileForm({
                         )}
                         {field(
                             'email',
-                            t.email,
+                            t('core::admin.users.profile.email'),
                             <Input
                                 id="profile-email"
                                 type="email"
@@ -154,10 +144,14 @@ export function ProfileForm({
                         )}
                         {field(
                             'sex',
-                            t.sex,
+                            t('core::admin.users.profile.sex'),
                             <Select
                                 disabled={disabled}
-                                value={form.data.sex === '' ? NO_SEX : form.data.sex}
+                                value={
+                                    form.data.sex === ''
+                                        ? NO_SEX
+                                        : form.data.sex
+                                }
                                 onValueChange={(value) =>
                                     form.setData(
                                         'sex',
@@ -175,20 +169,26 @@ export function ProfileForm({
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value={NO_SEX}>
-                                        {t.sexes.none}
+                                        {t(
+                                            'core::admin.users.profile.sexes.none',
+                                        )}
                                     </SelectItem>
                                     <SelectItem value="male">
-                                        {t.sexes.male}
+                                        {t(
+                                            'core::admin.users.profile.sexes.male',
+                                        )}
                                     </SelectItem>
                                     <SelectItem value="female">
-                                        {t.sexes.female}
+                                        {t(
+                                            'core::admin.users.profile.sexes.female',
+                                        )}
                                     </SelectItem>
                                 </SelectContent>
                             </Select>,
                         )}
                         {field(
                             'birth_date',
-                            t.birthDate,
+                            t('core::admin.users.profile.birth_date'),
                             <Input
                                 id="profile-birth_date"
                                 type="date"
@@ -201,7 +201,7 @@ export function ProfileForm({
                         )}
                         {field(
                             'language',
-                            t.language,
+                            t('core::admin.users.profile.language'),
                             <Select
                                 disabled={disabled}
                                 value={form.data.language}
@@ -228,7 +228,7 @@ export function ProfileForm({
                         )}
                         {field(
                             'timezone',
-                            t.timezone,
+                            t('core::admin.users.profile.timezone'),
                             <>
                                 <Input
                                     id="profile-timezone"
@@ -249,7 +249,7 @@ export function ProfileForm({
                         <div className="md:col-span-2">
                             {field(
                                 'about',
-                                t.about,
+                                t('core::admin.users.profile.about'),
                                 <Textarea
                                     id="profile-about"
                                     rows={4}
@@ -264,7 +264,7 @@ export function ProfileForm({
                         <div className="md:col-span-2">
                             {field(
                                 'signature',
-                                t.signature,
+                                t('core::admin.users.profile.signature'),
                                 <Textarea
                                     id="profile-signature"
                                     rows={2}
@@ -284,7 +284,7 @@ export function ProfileForm({
                 {!disabled && (
                     <CardFooter className="justify-end pt-6">
                         <Button type="submit" disabled={form.processing}>
-                            {t.save}
+                            {t('core::admin.users.profile.save')}
                         </Button>
                     </CardFooter>
                 )}

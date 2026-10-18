@@ -16,20 +16,7 @@ import {
     type UserDetail,
     type ViolationCode,
 } from '@ladcms/core/pages/admin/users/show';
-
-const t = {
-    title: 'История банов',
-    empty: 'Банов не было.',
-    active: 'Активен',
-    expired: 'Истёк',
-    types: { full: 'Полный', readonly: 'Только чтение' },
-    period: 'Период',
-    forever: 'бессрочно',
-    by: 'Выдал',
-    lift: 'Снять',
-    liftTitle: 'Снять бан?',
-    liftDescription: 'Бан закончится сейчас. Действие попадёт в журнал.',
-};
+import { useT } from '@ladcms/core/lib/i18n';
 
 export function BansHistory({
     user,
@@ -42,6 +29,7 @@ export function BansHistory({
     codes: ViolationCode[];
     canLift: boolean;
 }) {
+    const t = useT();
     const formatDate = useDateFormat();
     const [lifting, setLifting] = useState<number | null>(null);
     const label = (code: string) =>
@@ -58,9 +46,13 @@ export function BansHistory({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{t.title}</CardTitle>
+                <CardTitle>
+                    {t('core::admin.users.bans_history.title')}
+                </CardTitle>
                 {bans.length === 0 && (
-                    <CardDescription>{t.empty}</CardDescription>
+                    <CardDescription>
+                        {t('core::admin.users.bans_history.empty')}
+                    </CardDescription>
                 )}
             </CardHeader>
             {bans.length > 0 && (
@@ -84,21 +76,31 @@ export function BansHistory({
                                             }
                                         >
                                             {ban.is_active
-                                                ? t.active
-                                                : t.expired}
+                                                ? t(
+                                                      'core::admin.users.bans_history.active',
+                                                  )
+                                                : t(
+                                                      'core::admin.users.bans_history.expired',
+                                                  )}
                                         </Badge>
                                         <Badge variant="outline">
-                                            {t.types[ban.type]}
+                                            {t(
+                                                `core::admin.users.bans_history.types.${ban.type}`,
+                                            )}
                                         </Badge>
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        {t.period}: {formatDate(ban.starts_at)}{' '}
-                                        —{' '}
+                                        {t(
+                                            'core::admin.users.bans_history.period',
+                                        )}
+                                        : {formatDate(ban.starts_at)} —{' '}
                                         {ban.expires_at === null
-                                            ? t.forever
+                                            ? t(
+                                                  'core::admin.users.bans_history.forever',
+                                              )
                                             : formatDate(ban.expires_at)}
                                         {ban.banned_by &&
-                                            ` · ${t.by}: ${ban.banned_by.login}`}
+                                            ` · ${t('core::admin.users.bans_history.by')}: ${ban.banned_by.login}`}
                                     </p>
                                     {ban.comment && (
                                         <p className="text-sm">{ban.comment}</p>
@@ -112,12 +114,20 @@ export function BansHistory({
                                                 size="sm"
                                                 disabled={lifting === ban.id}
                                             >
-                                                {t.lift}
+                                                {t(
+                                                    'core::admin.users.bans_history.lift',
+                                                )}
                                             </Button>
                                         }
-                                        title={t.liftTitle}
-                                        description={t.liftDescription}
-                                        confirmLabel={t.lift}
+                                        title={t(
+                                            'core::admin.users.bans_history.lift_title',
+                                        )}
+                                        description={t(
+                                            'core::admin.users.bans_history.lift_description',
+                                        )}
+                                        confirmLabel={t(
+                                            'core::admin.users.bans_history.lift',
+                                        )}
                                         onConfirm={() => lift(ban)}
                                     />
                                 )}

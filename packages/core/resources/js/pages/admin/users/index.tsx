@@ -22,31 +22,7 @@ import type {
     Paginator,
     SortDirection,
 } from '@ladcms/core/types/table';
-
-const t = {
-    title: 'Пользователи',
-    total: 'Всего',
-    search: 'Поиск по логину, имени или email',
-    role: 'Роль',
-    allRoles: 'Все роли',
-    status: 'Статус',
-    statuses: {
-        all: 'Все',
-        online: 'Онлайн',
-        banned: 'Забанен',
-        suspicious: 'Подозрительный',
-    },
-    columns: {
-        login: 'Логин',
-        name: 'Имя',
-        email: 'Email',
-        roles: 'Роли',
-        status: 'Статус',
-        created_at: 'Регистрация',
-        last_activity_at: 'Активность',
-    },
-    empty: 'Пользователи не найдены',
-};
+import { roleName, useT } from '@ladcms/core/lib/i18n';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -124,6 +100,7 @@ function queryFrom(filters: Filters): Record<string, string> {
 }
 
 function StatusBadges({ user }: { user: UserRow }) {
+    const t = useT();
     if (!user.is_online && !user.is_banned && !user.is_suspicious) {
         return <span className="text-muted-foreground">—</span>;
     }
@@ -136,18 +113,20 @@ function StatusBadges({ user }: { user: UserRow }) {
                         aria-hidden
                         className="size-2 rounded-full bg-emerald-500"
                     />
-                    {t.statuses.online}
+                    {t('core::admin.users.statuses.online')}
                 </Badge>
             )}
             {user.is_banned && (
-                <Badge variant="destructive">{t.statuses.banned}</Badge>
+                <Badge variant="destructive">
+                    {t('core::admin.users.statuses.banned')}
+                </Badge>
             )}
             {user.is_suspicious && (
                 <Badge
                     variant="outline"
                     className="border-amber-500/50 text-amber-600 dark:text-amber-400"
                 >
-                    {t.statuses.suspicious}
+                    {t('core::admin.users.statuses.suspicious')}
                 </Badge>
             )}
         </div>
@@ -155,6 +134,7 @@ function StatusBadges({ user }: { user: UserRow }) {
 }
 
 export default function UsersIndex({ users, filters, roles }: Props) {
+    const t = useT();
     const { url, props } = usePage();
     const locale = typeof props.locale === 'string' ? props.locale : 'ru';
     const path = url.split('?')[0] ?? url;
@@ -199,7 +179,7 @@ export default function UsersIndex({ users, filters, roles }: Props) {
     const columns: Column<UserRow>[] = [
         {
             key: 'login',
-            label: t.columns.login,
+            label: t('core::admin.users.columns.login'),
             sortable: true,
             render: (user) => (
                 <Link
@@ -221,11 +201,19 @@ export default function UsersIndex({ users, filters, roles }: Props) {
                 </Link>
             ),
         },
-        { key: 'name', label: t.columns.name, sortable: true },
-        { key: 'email', label: t.columns.email, sortable: true },
+        {
+            key: 'name',
+            label: t('core::admin.users.columns.name'),
+            sortable: true,
+        },
+        {
+            key: 'email',
+            label: t('core::admin.users.columns.email'),
+            sortable: true,
+        },
         {
             key: 'roles',
-            label: t.columns.roles,
+            label: t('core::admin.users.columns.roles'),
             render: (user) => (
                 <div className="flex flex-wrap gap-1">
                     {user.roles.map((role) => (
@@ -238,7 +226,7 @@ export default function UsersIndex({ users, filters, roles }: Props) {
                                     : undefined
                             }
                         >
-                            {role.name}
+                            {roleName(t, role.name)}
                         </Badge>
                     ))}
                 </div>
@@ -246,19 +234,19 @@ export default function UsersIndex({ users, filters, roles }: Props) {
         },
         {
             key: 'status',
-            label: t.columns.status,
+            label: t('core::admin.users.columns.status'),
             render: (user) => <StatusBadges user={user} />,
         },
         {
             key: 'created_at',
-            label: t.columns.created_at,
+            label: t('core::admin.users.columns.created_at'),
             sortable: true,
             className: 'whitespace-nowrap',
             render: (user) => formatDate(user.created_at),
         },
         {
             key: 'last_activity_at',
-            label: t.columns.last_activity_at,
+            label: t('core::admin.users.columns.last_activity_at'),
             sortable: true,
             className: 'whitespace-nowrap',
             render: (user) => formatDate(user.last_activity_at),
@@ -268,8 +256,8 @@ export default function UsersIndex({ users, filters, roles }: Props) {
     return (
         <div className="space-y-6">
             <PageHeader
-                title={t.title}
-                description={`${t.total}: ${users.meta.total}`}
+                title={t('core::admin.users.title')}
+                description={`${t('core::admin.users.total')}: ${users.meta.total}`}
             />
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -282,8 +270,8 @@ export default function UsersIndex({ users, filters, roles }: Props) {
                         type="search"
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
-                        placeholder={t.search}
-                        aria-label={t.search}
+                        placeholder={t('core::admin.users.search')}
+                        aria-label={t('core::admin.users.search')}
                         className="pl-8"
                     />
                 </div>
@@ -291,14 +279,21 @@ export default function UsersIndex({ users, filters, roles }: Props) {
                     value={filters.role}
                     onValueChange={(role) => visit({ role })}
                 >
-                    <SelectTrigger aria-label={t.role} className="sm:w-48">
-                        <SelectValue placeholder={t.role} />
+                    <SelectTrigger
+                        aria-label={t('core::admin.users.role')}
+                        className="sm:w-48"
+                    >
+                        <SelectValue
+                            placeholder={t('core::admin.users.role')}
+                        />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">{t.allRoles}</SelectItem>
+                        <SelectItem value="all">
+                            {t('core::admin.users.all_roles')}
+                        </SelectItem>
                         {roles.map((role) => (
                             <SelectItem key={role.id} value={role.name}>
-                                {role.name}
+                                {roleName(t, role.name)}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -309,13 +304,18 @@ export default function UsersIndex({ users, filters, roles }: Props) {
                         visit({ status: status as UserStatus })
                     }
                 >
-                    <SelectTrigger aria-label={t.status} className="sm:w-48">
-                        <SelectValue placeholder={t.status} />
+                    <SelectTrigger
+                        aria-label={t('core::admin.users.status')}
+                        className="sm:w-48"
+                    >
+                        <SelectValue
+                            placeholder={t('core::admin.users.status')}
+                        />
                     </SelectTrigger>
                     <SelectContent>
                         {STATUSES.map((status) => (
                             <SelectItem key={status} value={status}>
-                                {t.statuses[status]}
+                                {t(`core::admin.users.statuses.${status}`)}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -327,7 +327,7 @@ export default function UsersIndex({ users, filters, roles }: Props) {
                 rows={users.data}
                 pagination={users.meta}
                 sort={{ column: filters.sort, direction: filters.direction }}
-                emptyText={t.empty}
+                emptyText={t('core::admin.users.empty')}
                 rowKey={(user) => user.id}
             />
         </div>
@@ -335,6 +335,6 @@ export default function UsersIndex({ users, filters, roles }: Props) {
 }
 
 UsersIndex.layout = {
-    title: t.title,
-    breadcrumbs: [{ title: t.title }],
+    title: 'core::admin.users.title',
+    breadcrumbs: [{ title: 'core::admin.users.title' }],
 };

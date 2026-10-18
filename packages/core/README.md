@@ -10,6 +10,14 @@ LADCMS core: users, roles, admin, module system.
 - Middleware appended to `web`: `CheckBan`, `TrackOnline`, `EnsureRegistrationOpen`, `SetLocale`. `AdminAccess` is only the route alias `admin` (used by module `routes/admin.php`); `ladcms.ban` is an alias for `CheckBan`.
 - `MentionService`, `LocaleManager`, notifications (`ComplaintFiled`, `UserMentioned`, `UserBanned`), `GET /api/users/mention-search`, `/banned`.
 
+## Admin panel
+- `/admin` (permission `admin.access`, password re-confirmation with the TTL from settings): dashboard, users (list, profile, roles, bans, suspicious flag, login change, delete),
+  roles and permission matrix, moderation (complaints, bans), settings forms generated from `Settings` classes, modules (status, enable/disable), activity log, notification bell.
+- Two-level menu: an icon rail plus a section panel (hover on desktop, tap on touch). Modules add sections through `HasAdminPanel::adminMenu()`.
+- UI kit lives in `resources/js` (`components/ui/*`, `DataTable`, `PageHeader`, `ConfirmDialog`, ...) and is imported as `@ladcms/core/*`.
+- Admin texts: `lang/{ru,en}/admin.php` + `useT()` (`@ladcms/core/lib/i18n`); the `i18n` Inertia prop is shared on admin routes only.
+- Octane/queue workers must be restarted after toggling a module. JS lint/format of the packages: `cd app && npm run check:fix`.
+
 ## Install flow
 ```
 composer require ladcms/core

@@ -47,7 +47,11 @@ export default defineConfig({
     },
     lint: {
         ignorePatterns: [
-            'vendor/**',
+            // vendor/ladcms/* — наши пакеты (симлинки на packages/*), их JS линтуется; чужой vendor — нет.
+            'vendor/!(ladcms)/**',
+            'vendor/ladcms/*/vendor/**',
+            'vendor/ladcms/*/node_modules/**',
+            'vendor/ladcms/*/tests/**',
             'node_modules/**',
             'public/**',
             'bootstrap/ssr/**',
@@ -74,6 +78,10 @@ export default defineConfig({
             '.github/**',
             'compose.yaml',
             'composer.json',
+            'vendor/!(ladcms)/**',
+            'vendor/ladcms/*/vendor/**',
+            'vendor/ladcms/*/node_modules/**',
+            'vendor/ladcms/*/tests/**',
             'resources/js/components/ui/*',
             'vendor/ladcms/*/resources/js/components/ui/*',
             'resources/views/mail/*',
