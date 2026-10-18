@@ -7,10 +7,17 @@ namespace Ladcms\Core\Ui;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Module\Contracts\HasHeaderActions;
 use Ladcms\Core\Module\ModuleRegistry;
+use Ladcms\Core\Ui\Concerns\UiRegistry;
+use Throwable;
 
-/** Иконки-действия шапки публичного layout: ядро и модули с HasHeaderActions; `auth` скрывает действие от гостей. */
+/**
+ * Иконки-действия шапки публичного layout: ядро и модули с HasHeaderActions; `auth` скрывает действие от гостей.
+ * Сломанный элемент или компонент без файла пропускается с предупреждением, а не роняет страницу.
+ */
 class HeaderActions
 {
+    use UiRegistry;
+
     public function __construct(private readonly ModuleRegistry $modules) {}
 
     /** @return list<array{key: string, icon: string, component: string, order: int}> */
@@ -18,23 +25,42 @@ class HeaderActions
     {
         $items = [];
 
-        foreach ($this->modules->implementing(HasHeaderActions::class) as $module) {
-            foreach ($module->headerActions() as $action) {
-                if (($action['auth'] ?? false) && ! $user instanceof User) {
+        foreach ($this->modules->implementing(HasHeaderActions::class) as $name => $module) {
+            try {
+                $actions = $module->headerActions();
+            } catch (Throwable $e) {
+                $this->warnOnce("module:{$name}", "Module [{$name}] headerActions() failed: {$e->getMessage()}");
+
+                continue;
+            }
+
+            foreach ($actions as $action) {
+                try {
+                    $this->requireFields($action, ['key', 'icon', 'component', 'order']);
+
+                    if (($action['auth'] ?? false) && ! $user instanceof User) {
+                        continue;
+                    }
+
+                    $item = [
+                        'key' => $action['key'],
+                        'icon' => $action['icon'],
+                        'component' => $action['component'],
+                        'order' => $action['order'],
+                    ];
+                } catch (Throwable $e) {
+                    $this->warnOnce("entry:{$name}", "Module [{$name}] has a malformed header action: {$e->getMessage()}");
+
                     continue;
                 }
 
-                $items[] = [
-                    'key' => $action['key'],
-                    'icon' => $action['icon'],
-                    'component' => $action['component'],
-                    'order' => $action['order'],
-                ];
+                if ($this->componentExists($this->modules, $item['component'], 'header-actions')) {
+                    $items[] = $item;
+                }
             }
         }
 
-        usort($items, fn (array $a, array $b): int => $a['order'] <=> $b['order']);
-
-        return $items;
+        /** @var list<array{key: string, icon: string, component: string, order: int}> */
+        return $this->sortItems($items, 'key');
     }
 }

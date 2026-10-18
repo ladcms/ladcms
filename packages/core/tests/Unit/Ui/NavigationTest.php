@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Ladcms\Core\Database\Seeders\PermissionsSeeder;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Module\Contracts\HasNavigation;
+use Ladcms\Core\Module\ModuleRegistry;
+use Ladcms\Core\Module\ModuleServiceProvider;
 use Ladcms\Core\Tests\Fixtures\DummyModule\DummyServiceProvider;
 use Ladcms\Core\Ui\Navigation;
 
@@ -80,4 +84,65 @@ it('marks the fallback-path item active by url prefix', function () {
     $items = app(Navigation::class)->items(null, navRequest('/users/abc'));
 
     expect(array_column($items, 'active', 'key')['users'])->toBeTrue();
+});
+
+/** Anonymous module with the given navigation entries. */
+function brokenNavModule(string $name, array $entries): ModuleServiceProvider
+{
+    return new class(app(), $name, $entries) extends ModuleServiceProvider implements HasNavigation
+    {
+        public function __construct($app, private readonly string $moduleName, private readonly array $entries)
+        {
+            parent::__construct($app);
+        }
+
+        public function name(): string
+        {
+            return $this->moduleName;
+        }
+
+        public function version(): string
+        {
+            return '1.0.0';
+        }
+
+        public function navigation(): array
+        {
+            return $this->entries;
+        }
+
+        protected function moduleRoot(): string
+        {
+            return sys_get_temp_dir().'/ladcms-nav-'.$this->moduleName;
+        }
+    };
+}
+
+it('skips malformed and unroutable module entries with a single warning each', function () {
+    Log::shouldReceive('warning')->times(3);
+    Route::get('/needs-param/{id}', fn () => 'x')->name('needs.param');
+
+    app(ModuleRegistry::class)->register(brokenNavModule('shaky', [
+        ['label' => 'No key', 'icon' => 'x', 'route' => 'home', 'order' => 1],
+        ['key' => 'ghost', 'label' => 'Ghost', 'icon' => 'x', 'route' => 'nope.nowhere', 'order' => 2],
+        ['key' => 'param', 'label' => 'Param', 'icon' => 'x', 'route' => 'needs.param', 'order' => 3],
+        ['key' => 'fine', 'label' => 'Fine', 'icon' => 'x', 'route' => 'home', 'order' => 4],
+    ]));
+
+    $nav = app(Navigation::class);
+    $keys = array_column($nav->items(null, navRequest('/')), 'key');
+    $nav->items(null, navRequest('/'));
+
+    expect($keys)->toContain('fine', 'home')->not->toContain('ghost', 'param');
+});
+
+it('sorts equal orders by key', function () {
+    app(ModuleRegistry::class)->register(brokenNavModule('ties', [
+        ['key' => 'zeta', 'label' => 'Z', 'icon' => 'x', 'route' => 'home', 'order' => 5],
+        ['key' => 'alpha', 'label' => 'A', 'icon' => 'x', 'route' => 'home', 'order' => 5],
+    ]));
+
+    $keys = array_column(app(Navigation::class)->items(null, navRequest('/')), 'key');
+
+    expect(array_slice($keys, array_search('alpha', $keys), 2))->toBe(['alpha', 'zeta']);
 });

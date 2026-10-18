@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Ladcms\Core\Ui;
 
 use Closure;
+use Illuminate\Support\Arr;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Module\Contracts\HasWidgets;
 use Ladcms\Core\Module\ModuleRegistry;
-use Ladcms\Core\Module\ModuleServiceProvider;
+use Ladcms\Core\Ui\Concerns\UiRegistry;
+use Throwable;
 
 /**
  * Виджеты слота публичного layout. Props считаются лениво, только для запрошенного слота;
@@ -16,8 +18,7 @@ use Ladcms\Core\Module\ModuleServiceProvider;
  */
 class Widgets
 {
-    /** @var array<string, true> */
-    private array $warned = [];
+    use UiRegistry;
 
     public function __construct(private readonly ModuleRegistry $modules) {}
 
@@ -29,46 +30,43 @@ class Widgets
     {
         $widgets = [];
 
-        foreach ($this->modules->implementing(HasWidgets::class) as $module) {
-            foreach ($module->widgets() as $widget) {
-                if ($widget['slot'] !== $slot || ! $this->exists($widget['component'])) {
-                    continue;
+        foreach ($this->modules->implementing(HasWidgets::class) as $moduleName => $module) {
+            try {
+                $entries = $module->widgets();
+            } catch (Throwable $e) {
+                $this->warnOnce("module:{$moduleName}", "Module [{$moduleName}] widgets() failed: {$e->getMessage()}");
+
+                continue;
+            }
+
+            foreach ($entries as $widget) {
+                try {
+                    $this->requireFields($widget, ['name', 'component', 'slot', 'order']);
+                    if ($widget['slot'] !== $slot) {
+                        continue;
+                    }
+
+                    $component = $widget['component'];
+                    if (! $this->componentExists($this->modules, $component, 'widgets')) {
+                        continue;
+                    }
+
+                    $props = $widget['props'] ?? [];
+
+                    $widgets[] = [
+                        'name' => $widget['name'],
+                        'component' => $component,
+                        'module' => $module->name(),
+                        'order' => $widget['order'],
+                        'props' => $props instanceof Closure ? $props($user) : $props,
+                    ];
+                } catch (Throwable $e) {
+                    $this->warnOnce("entry:{$moduleName}:".Arr::get($widget, 'name', '?'), "Module [{$moduleName}] widget skipped: {$e->getMessage()}");
                 }
-
-                $props = $widget['props'] ?? [];
-
-                $widgets[] = [
-                    'name' => $widget['name'],
-                    'component' => $widget['component'],
-                    'module' => $module->name(),
-                    'order' => $widget['order'],
-                    'props' => $props instanceof Closure ? $props($user) : $props,
-                ];
             }
         }
 
-        usort($widgets, fn (array $a, array $b): int => $a['order'] <=> $b['order']);
-
-        return $widgets;
-    }
-
-    private function exists(string $component): bool
-    {
-        [$name, $file] = array_pad(explode('::', $component, 2), 2, '');
-        $module = $this->modules->get($name);
-
-        if ($module instanceof ModuleServiceProvider
-            && $file !== ''
-            && ! str_contains($file, '/')
-            && is_file($module->modulePath("resources/js/widgets/{$file}.tsx"))) {
-            return true;
-        }
-
-        if (! isset($this->warned[$component])) {
-            $this->warned[$component] = true;
-            logger()->warning("Widget component [{$component}] has no file under resources/js/widgets/; widget skipped.");
-        }
-
-        return false;
+        /** @var list<array{name: string, component: string, module: string, order: int, props: array<string, mixed>}> */
+        return $this->sortItems($widgets, 'name');
     }
 }

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Ladcms\Core\Ui;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Route;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Module\Contracts\HasNavigation;
 use Ladcms\Core\Module\ModuleRegistry;
+use Ladcms\Core\Ui\Concerns\UiRegistry;
+use Throwable;
 
 /**
  * Навигация публичного layout: пункты ядра и модулей с HasNavigation. Пункты с недостающим правом
@@ -19,6 +22,8 @@ use Ladcms\Core\Module\ModuleRegistry;
  */
 class Navigation
 {
+    use UiRegistry;
+
     public function __construct(private readonly ModuleRegistry $modules) {}
 
     /** @return list<NavItem> */
@@ -27,33 +32,46 @@ class Navigation
         $items = [];
 
         foreach ($this->modules->implementing(HasNavigation::class) as $name => $module) {
-            foreach ($module->navigation() as $entry) {
-                $permission = $entry['permission'] ?? null;
-                if ($permission !== null && (! $user instanceof User || ! $user->can($permission))) {
-                    continue;
+            try {
+                $entries = $module->navigation();
+            } catch (Throwable $e) {
+                $this->warnOnce("module:{$name}", "Module [{$name}] navigation() failed: {$e->getMessage()}");
+
+                continue;
+            }
+
+            foreach ($entries as $entry) {
+                try {
+                    $this->requireFields($entry, ['key', 'label', 'icon', 'route', 'order']);
+                    $permission = $entry['permission'] ?? null;
+                    if ($permission !== null && (! $user instanceof User || ! $user->can($permission))) {
+                        continue;
+                    }
+
+                    if (! Route::has($entry['route']) && ! isset($entry['path'])) {
+                        $this->warnOnce("entry:{$name}:{$entry['key']}", "Module [{$name}] navigation item [{$entry['key']}] has no route or path; skipped.");
+
+                        continue;
+                    }
+
+                    $key = "{$name}::public.nav.{$entry['key']}";
+
+                    $items[] = [
+                        'key' => $entry['key'],
+                        'label' => Lang::has($key) ? (string) __($key) : $entry['label'],
+                        'icon' => $entry['icon'],
+                        'url' => $this->url($entry),
+                        'order' => $entry['order'],
+                        'active' => $this->active($entry, $request),
+                    ];
+                } catch (Throwable $e) {
+                    $this->warnOnce("entry:{$name}:".Arr::get($entry, 'key', '?'), "Module [{$name}] navigation item skipped: {$e->getMessage()}");
                 }
-
-                $route = $entry['route'];
-                if (! Route::has($route) && ! isset($entry['path'])) {
-                    continue;
-                }
-
-                $key = "{$name}::public.nav.{$entry['key']}";
-
-                $items[] = [
-                    'key' => $entry['key'],
-                    'label' => Lang::has($key) ? (string) __($key) : $entry['label'],
-                    'icon' => $entry['icon'],
-                    'url' => $this->url($entry),
-                    'order' => $entry['order'],
-                    'active' => $this->active($entry, $request),
-                ];
             }
         }
 
-        usort($items, fn (array $a, array $b): int => $a['order'] <=> $b['order']);
-
-        return $items;
+        /** @var list<NavItem> */
+        return $this->sortItems($items, 'key');
     }
 
     /** @param  array{route: string, params?: array<string, scalar>, path?: string}  $entry */

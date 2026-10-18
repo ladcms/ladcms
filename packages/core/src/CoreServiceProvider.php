@@ -52,6 +52,8 @@ use Ladcms\Core\Settings\GeneralSettings;
 use Ladcms\Core\Settings\ModerationSettings;
 use Ladcms\Core\Settings\RegistrationSettings;
 use Ladcms\Core\Support\UserModel;
+use Ladcms\Core\Ui\HeaderActions;
+use Ladcms\Core\Ui\Navigation;
 use Ladcms\Core\Ui\Widgets;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\Permission\Middleware\PermissionMiddleware;
@@ -235,6 +237,8 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
         }
 
         $this->app->scoped(Widgets::class);
+        $this->app->scoped(Navigation::class);
+        $this->app->scoped(HeaderActions::class);
 
         Inertia::share('locale', fn (): string => app()->getLocale());
         Inertia::share('locales', fn (): array => $this->app->make(LocaleManager::class)->available());

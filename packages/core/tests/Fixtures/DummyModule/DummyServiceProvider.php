@@ -68,7 +68,10 @@ class DummyServiceProvider extends ModuleServiceProvider implements HasAdminPane
 
     public function headerActions(): array
     {
-        return [['key' => 'dummy', 'icon' => 'box', 'component' => 'dummy::Action', 'order' => 50, 'auth' => false]];
+        return [
+            ['key' => 'dummy', 'icon' => 'box', 'component' => 'dummy::Action', 'order' => 50, 'auth' => false],
+            ['key' => 'ghost', 'icon' => 'ghost', 'component' => 'dummy::MissingAction', 'order' => 60, 'auth' => false],
+        ];
     }
 
     protected function moduleRoot(): string

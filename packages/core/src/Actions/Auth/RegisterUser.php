@@ -35,8 +35,8 @@ class RegisterUser
      */
     public function handle(array $input, ?string $ip = null): User
     {
-        if (! $this->registration->open) {
-            throw new AuthorizationException('Registration is closed.');
+        if (! $this->registration->isAvailable()) {
+            throw new AuthorizationException($this->registration->open ? 'Registration is by invitation only.' : 'Registration is closed.');
         }
 
         $invites = $this->inviteValidator();

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia;
 use Ladcms\Core\Contracts\InviteValidator;
@@ -50,7 +51,7 @@ it('does not share the layout on admin routes', function () {
 
     $this->actingAs($creator)->withSession(['auth.password_confirmed_at' => time()])
         ->get('/admin')
-        ->assertInertia(fn (AssertableInertia $page) => $page->missing('layout'));
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('layout', null));
 });
 
 it('shares site data from settings', function () {
@@ -106,4 +107,49 @@ it('shares both public and admin i18n keys on admin routes', function () {
         ->get('/admin')
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->where('i18n', fn ($map) => $map['core::public.nav.home'] === 'Главная' && $map['core::admin.saved'] === 'Сохранено'));
+});
+
+it('does not leak the public layout share into a later admin request on the same app', function () {
+    $creator = User::factory()->create()->assignRole('creator');
+
+    $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->has('layout'));
+
+    $this->actingAs($creator)->withSession(['auth.password_confirmed_at' => time()])
+        ->get('/admin')
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('layout', null));
+});
+
+it('runs at most 3 widget queries (count, top-10 online, latest 5) for the guest home layout', function () {
+    User::factory()->count(3)->create(['last_activity_at' => now()]);
+
+    DB::enableQueryLog();
+    $this->get('/')->assertOk();
+    $users = collect(DB::getQueryLog())->filter(fn (array $q): bool => str_starts_with($q['query'], 'select') && str_contains($q['query'], 'from "users"'));
+    DB::disableQueryLog();
+
+    expect($users->count())->toBeLessThanOrEqual(3);
+})->group('queries');
+
+it('closes registration routes when invite_only has no validator', function () {
+    $registration = app(RegistrationSettings::class);
+    $registration->open = true;
+    $registration->invite_only = true;
+    $registration->save();
+    Route::get('/register', fn () => 'form')->name('register')->middleware('web');
+
+    $this->get('/register')->assertNotFound();
+});
+
+it('reports availability through RegistrationSettings::isAvailable', function () {
+    $registration = app(RegistrationSettings::class);
+    $registration->open = true;
+    $registration->invite_only = true;
+
+    expect($registration->isAvailable())->toBeFalse();
+
+    $this->app->bind(InviteValidator::class, fn () => Mockery::mock(InviteValidator::class));
+    expect($registration->isAvailable())->toBeTrue();
+
+    $registration->open = false;
+    expect($registration->isAvailable())->toBeFalse();
 });

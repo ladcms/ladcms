@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Module\Contracts\HasWidgets;
@@ -130,4 +131,77 @@ it('lists the five latest registered users', function () {
 
     expect($props['users'])->toHaveCount(5)
         ->and($props['users'][0])->toHaveKeys(['id', 'login', 'display_name', 'avatar_url', 'created_at']);
+});
+
+/** Anonymous module whose widgets() returns the given entries; touches the listed component files. */
+function widgetModule(string $name, array $entries, array $files = []): ModuleServiceProvider
+{
+    $module = new class(app(), $name, $entries) extends ModuleServiceProvider implements HasWidgets
+    {
+        public function __construct($app, private readonly string $moduleName, private readonly array $entries)
+        {
+            parent::__construct($app);
+        }
+
+        public function name(): string
+        {
+            return $this->moduleName;
+        }
+
+        public function version(): string
+        {
+            return '1.0.0';
+        }
+
+        public function widgets(): array
+        {
+            return $this->entries;
+        }
+
+        protected function moduleRoot(): string
+        {
+            return File::isDirectory(sys_get_temp_dir()) ? sys_get_temp_dir().'/ladcms-w-'.$this->moduleName : '';
+        }
+    };
+
+    foreach ($files as $file) {
+        @mkdir($module->modulePath('resources/js/widgets'), 0777, true);
+        touch($module->modulePath("resources/js/widgets/{$file}.tsx"));
+    }
+    app(ModuleRegistry::class)->register($module);
+
+    return $module;
+}
+
+it('skips a widget with a throwing props closure and warns once', function () {
+    Log::shouldReceive('warning')->once();
+    widgetModule('boomw', [
+        ['name' => 'boom', 'component' => 'boomw::Boom', 'slot' => 'sidebar', 'order' => 1, 'props' => fn () => throw new RuntimeException('nope')],
+        ['name' => 'ok', 'component' => 'boomw::Ok', 'slot' => 'sidebar', 'order' => 2],
+    ], ['Boom', 'Ok']);
+
+    $widgets = app(Widgets::class);
+    $widgets->for('sidebar', null);
+    $names = array_column($widgets->for('sidebar', null), 'name');
+
+    expect($names)->toContain('ok')->not->toContain('boom');
+});
+
+it('skips malformed widget entries', function () {
+    Log::shouldReceive('warning')->once();
+    widgetModule('shakyw', [['component' => 'shakyw::A', 'slot' => 'sidebar', 'order' => 1]], ['A']);
+
+    expect(array_column(app(Widgets::class)->for('sidebar', null), 'name'))->not->toContain(null);
+});
+
+it('sorts equal orders by name', function () {
+    widgetModule('tiesw', [
+        ['name' => 'zeta', 'component' => 'tiesw::Z', 'slot' => 'main', 'order' => 5],
+        ['name' => 'alpha', 'component' => 'tiesw::A', 'slot' => 'main', 'order' => 5],
+    ], ['Z', 'A']);
+    Log::shouldReceive('warning')->atLeast()->once();
+
+    $names = array_column(app(Widgets::class)->for('main', null), 'name');
+
+    expect($names)->toBe(['alpha', 'zeta', 'hello']);
 });

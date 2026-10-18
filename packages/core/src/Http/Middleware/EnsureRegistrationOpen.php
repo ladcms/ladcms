@@ -15,7 +15,7 @@ class EnsureRegistrationOpen
     /** @param  Closure(Request): Response  $next */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->routeIs('register', 'register.store') && ! app(RegistrationSettings::class)->open) {
+        if ($request->routeIs('register', 'register.store') && ! app(RegistrationSettings::class)->isAvailable()) {
             abort($request->isMethod('GET') || $request->isMethod('HEAD') ? 404 : 403);
         }
 
