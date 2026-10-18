@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ladcms\Core\Settings;
 
+use Ladcms\Core\Settings\Schema\Field;
 use Spatie\LaravelSettings\Settings;
 
 class RegistrationSettings extends Settings
@@ -16,6 +17,7 @@ class RegistrationSettings extends Settings
 
     public bool $invite_only;
 
+    #[Field(min: 0)]
     public int $readonly_hours;
 
     public static function group(): string

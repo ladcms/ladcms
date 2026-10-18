@@ -108,7 +108,11 @@ class RolesController
 
     public function permissions(SyncRolePermissionsRequest $request, #[CurrentUser] User $actor, Role $role, SyncRolePermissions $action): RedirectResponse
     {
-        $action->handle($actor, $role, $request->permissionNames());
+        try {
+            $action->handle($actor, $role, $request->permissionNames());
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['general' => $e->getMessage()]);
+        }
 
         return $this->saved();
     }

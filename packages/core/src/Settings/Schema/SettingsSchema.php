@@ -17,7 +17,7 @@ use Spatie\LaravelSettings\Settings;
 /**
  * Описание формы настроек, построенное рефлексией по Settings-классу.
  *
- * @phpstan-type SchemaField array{name: string, type: FieldType, label: string, description: ?string, nullable: bool, options: list<array{value: string, label: string}>|null, value: mixed}
+ * @phpstan-type SchemaField array{name: string, type: FieldType, label: string, description: ?string, nullable: bool, options: list<array{value: string, label: string}>|null, min: ?int, max: ?int, value: mixed}
  * @phpstan-type Schema array{group: string, label: string, fields: list<SchemaField>}
  */
 final class SettingsSchema
@@ -49,6 +49,9 @@ final class SettingsSchema
                 'description' => $attribute->description ?? self::translate("{$module}::settings.{$group}.fields.{$name}.description"),
                 'nullable' => $property->getType()?->allowsNull() ?? false,
                 'options' => $type === FieldType::Select ? self::options($attribute?->options) : null,
+                // Числа по умолчанию неотрицательны: отрицательные таймауты/лимиты в настройках — ошибка ввода.
+                'min' => $attribute->min ?? ($type === FieldType::Number ? 0 : null),
+                'max' => $attribute?->max,
                 'value' => $settings->{$name},
             ];
         }

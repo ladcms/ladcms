@@ -246,3 +246,18 @@ it('reports assignLevel ability for a custom level-less role', function () {
     rolesAs($this->mainAdmin)->get("/admin/roles/{$role->id}/edit")
         ->assertInertia(fn (AssertableInertia $page) => $page->where('can.assignLevel', true)->where('can.rename', true));
 });
+
+it('reports a privileged default role as a general error', function () {
+    $moderator = Role::findByName('moderator', 'web');
+    rolesAs($this->creator)->put("/admin/roles/{$moderator->id}", ['is_default' => '1'])->assertSessionHasErrors('general');
+    expect($moderator->fresh()->is_default)->toBeFalse();
+
+    // Уровни системных ролей уникальны — освобождаем 3 для новой роли.
+    Role::query()->where('name', 'super_moderator')->update(['level' => null]);
+    rolesAs($this->creator)->post('/admin/roles', ['name' => 'staff', 'level' => 3, 'is_default' => '1'])->assertSessionHasErrors('general');
+    expect(Role::query()->where('name', 'staff')->exists())->toBeFalse();
+
+    $default = Role::defaultForRegistration();
+    rolesAs($this->creator)->put("/admin/roles/{$default->id}/permissions", ['permissions' => ['admin.access']])->assertSessionHasErrors('general');
+    expect($default->fresh()->hasPermissionTo('admin.access'))->toBeFalse();
+});

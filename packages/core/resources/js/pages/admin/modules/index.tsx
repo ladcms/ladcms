@@ -1,6 +1,8 @@
 import { router } from '@inertiajs/react';
 import ModulesController from '@/actions/Ladcms/Core/Http/Controllers/Admin/ModulesController';
+import { TriangleAlert } from 'lucide-react';
 import { PageHeader } from '@ladcms/core/components/page-header';
+import { Alert, AlertDescription } from '@ladcms/core/components/ui/alert';
 import { Badge } from '@ladcms/core/components/ui/badge';
 import { Switch } from '@ladcms/core/components/ui/switch';
 import {
@@ -39,9 +41,10 @@ type ModuleRow = {
 
 type Props = {
     modules: ModuleRow[];
+    routes_cached: boolean;
 };
 
-export default function ModulesIndex({ modules }: Props) {
+export default function ModulesIndex({ modules, routes_cached }: Props) {
     const t = useT();
     const toggle = (name: string, isEnabled: boolean) => {
         router.patch(
@@ -54,6 +57,15 @@ export default function ModulesIndex({ modules }: Props) {
     return (
         <div className="space-y-6">
             <PageHeader title={t('core::admin.modules.title')} />
+
+            {routes_cached && (
+                <Alert variant="destructive">
+                    <TriangleAlert />
+                    <AlertDescription>
+                        {t('core::admin.modules.routes_cached')}
+                    </AlertDescription>
+                </Alert>
+            )}
 
             {modules.some((module) => module.needs_update) && (
                 <p className="text-sm text-muted-foreground">

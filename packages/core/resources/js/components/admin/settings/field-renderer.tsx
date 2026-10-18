@@ -39,6 +39,8 @@ export type SchemaField = {
     description: string | null;
     nullable: boolean;
     options: { value: string; label: string }[] | null;
+    min: number | null;
+    max: number | null;
     value: FieldValue;
 };
 
@@ -78,6 +80,8 @@ export function FieldRenderer({ field, value, onChange, errors }: Props) {
                     <Input
                         id={id}
                         type="number"
+                        min={field.min ?? undefined}
+                        max={field.max ?? undefined}
                         value={typeof value === 'number' ? String(value) : text}
                         onChange={(event) => onChange(event.target.value)}
                     />

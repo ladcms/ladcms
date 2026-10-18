@@ -138,3 +138,9 @@ it('is forbidden without modules.manage', function () {
     modulesAs($this->moderator)->get('/admin/modules')->assertForbidden();
     modulesAs($this->moderator)->patch('/admin/modules/dummy', ['is_enabled' => false])->assertForbidden();
 });
+
+it('tells the page whether routes are cached', function () {
+    modulesAs($this->admin)->get('/admin/modules')
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('routes_cached', false));
+});

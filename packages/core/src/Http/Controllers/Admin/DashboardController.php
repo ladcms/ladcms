@@ -17,18 +17,33 @@ class DashboardController
 {
     public function __invoke(Request $request, DashboardStats $stats): Response
     {
-        $recentActivity = Activity::query()->with('causer')->latest()->orderByDesc('id')->limit(10)->get();
-        ActivitySubjects::load($recentActivity);
-        $recentUsers = User::query()->latest()->orderByDesc('id')->limit(5)->get(['id', 'login', 'created_at']);
+        $user = $request->user();
 
         return Inertia::render('core::admin/dashboard', [
             'stats' => $stats->collect(),
-            'recent_activity' => ActivityResource::collection($recentActivity)->resolve($request),
-            'recent_users' => $recentUsers->map(fn (User $user): array => [
+            // Блоки с данными пользователей/журнала — только при соответствующих правах (admin.access их не даёт).
+            'recent_activity' => $user?->can('activity.view') ? $this->recentActivity($request) : null,
+            'recent_users' => $user?->can('users.view') ? $this->recentUsers() : null,
+        ]);
+    }
+
+    /** @return array<array-key, mixed> */
+    private function recentActivity(Request $request): array
+    {
+        $recentActivity = Activity::query()->with('causer')->latest()->orderByDesc('id')->limit(10)->get();
+        ActivitySubjects::load($recentActivity);
+
+        return ActivityResource::collection($recentActivity)->resolve($request);
+    }
+
+    /** @return list<array{id: int, login: string, created_at: ?string}> */
+    private function recentUsers(): array
+    {
+        return User::query()->latest()->orderByDesc('id')->limit(5)->get(['id', 'login', 'created_at'])
+            ->map(fn (User $user): array => [
                 'id' => $user->id,
                 'login' => $user->login,
                 'created_at' => $user->created_at?->toIso8601String(),
-            ])->all(),
-        ]);
+            ])->values()->all();
     }
 }

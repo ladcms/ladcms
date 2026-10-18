@@ -3,14 +3,18 @@
 declare(strict_types=1);
 
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
+use Ladcms\Core\Actions\Users\PruneUnverifiedUsers;
 use Ladcms\Core\Actions\Users\UpdateUserProfile;
 use Ladcms\Core\Database\Seeders\PermissionsSeeder;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Enums\Sex;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Settings\RegistrationSettings;
+use Ladcms\Core\Tests\Fixtures\VerifiableUser\VerifiableUser;
 use Spatie\Activitylog\Models\Activity;
 
 uses(RefreshDatabase::class);
@@ -109,4 +113,43 @@ it('does not touch verification when the email is unchanged', function () {
     app(UpdateUserProfile::class)->handle($this->admin, $this->target, ['name' => 'Another', 'email' => 'OLD@example.test']);
 
     expect($this->target->fresh()->email_verified_at?->toIso8601String())->toBe($verifiedAt?->toIso8601String());
+});
+
+it('sends the verification mail when the email changes and verification is required', function () {
+    Notification::fake();
+    $target = VerifiableUser::query()->findOrFail($this->target->id);
+
+    app(UpdateUserProfile::class)->handle($this->admin, $target, ['email' => 'changed@example.test']);
+
+    Notification::assertSentTo($target, VerifyEmail::class);
+    expect(Activity::query()->where('event', 'user.updated')->sole()->properties['changed'])->toBe(['email']);
+});
+
+it('does not send the verification mail when verification is disabled or the email is unchanged', function () {
+    Notification::fake();
+    $target = VerifiableUser::query()->findOrFail($this->target->id);
+
+    app(UpdateUserProfile::class)->handle($this->admin, $target, ['name' => 'Another', 'email' => 'OLD@example.test']);
+
+    $settings = app(RegistrationSettings::class);
+    $settings->require_email_verification = false;
+    $settings->save();
+    app(UpdateUserProfile::class)->handle($this->admin, $target, ['email' => 'changed@example.test']);
+
+    Notification::assertNothingSent();
+});
+
+it('keeps a once-verified user safe from the unverified prune after an email change', function () {
+    $settings = app(RegistrationSettings::class);
+    $settings->require_email_verification = true;
+    $settings->save();
+    $this->target->forceFill(['created_at' => now()->subDays(30)])->save();
+    $neverVerified = User::factory()->unverified()->create(['created_at' => now()->subDays(30)]);
+
+    app(UpdateUserProfile::class)->handle($this->admin, $this->target, ['email' => 'changed@example.test']);
+
+    expect($this->target->fresh()->email_verified_at)->toBeNull()
+        ->and(app(PruneUnverifiedUsers::class)->handle(7))->toBe(1)
+        ->and(User::withTrashed()->find($this->target->id))->not->toBeNull()
+        ->and(User::withTrashed()->find($neverVerified->id))->toBeNull();
 });

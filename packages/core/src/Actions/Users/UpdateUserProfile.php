@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ladcms\Core\Actions\Users;
 
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -44,15 +45,21 @@ class UpdateUserProfile
         $target->fill($data);
 
         // Новый адрес не подтверждён; если сайт не требует подтверждения — считаем его подтверждённым (как при регистрации).
-        if ($target->isDirty('email')) {
+        $emailChanged = $target->isDirty('email');
+        if ($emailChanged) {
             $target->forceFill(['email_verified_at' => $this->registration->require_email_verification ? null : now()]);
         }
 
-        $changed = array_values(array_diff(array_keys($target->getDirty()), ['email_verified_at']));
+        $changed = array_values(array_diff(array_keys($target->getDirty()), ['email_verified_at', 'first_verified_at']));
 
         if ($changed !== []) {
             $target->save();
             Audit::log('user.updated', $actor, $target, ['changed' => $changed]);
+        }
+
+        // Письмо — только модели с контрактом MustVerifyEmail (как делает слушатель Registered в Laravel).
+        if ($emailChanged && $this->registration->require_email_verification && $target instanceof MustVerifyEmail) {
+            $target->sendEmailVerificationNotification();
         }
 
         return $target;

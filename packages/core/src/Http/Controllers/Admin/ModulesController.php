@@ -18,7 +18,12 @@ class ModulesController
 {
     public function index(ModulesOverview $overview): Response
     {
-        return Inertia::render('core::admin/modules/index', ['modules' => $overview->rows()]);
+        return Inertia::render('core::admin/modules/index', [
+            'modules' => $overview->rows(),
+            // Роуты модулей регистрируются при загрузке; при route:cache переключение вступит в силу
+            // только после сброса кеша — Artisan из веб-запроса не вызываем, а предупреждаем.
+            'routes_cached' => app()->routesAreCached(),
+        ]);
     }
 
     public function toggle(ToggleModuleRequest $request, string $name, #[CurrentUser] User $actor, ToggleModule $action): RedirectResponse

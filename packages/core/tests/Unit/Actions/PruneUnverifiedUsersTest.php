@@ -80,3 +80,11 @@ it('does nothing when email verification is disabled', function () {
 
     expect(User::find($old->id))->not->toBeNull();
 });
+
+it('keeps old users that were verified once even if they are unverified now', function () {
+    $user = User::factory()->create(['created_at' => now()->subDays(30)]);
+    $user->forceFill(['email_verified_at' => null])->save();
+
+    expect(app(PruneUnverifiedUsers::class)->handle(7))->toBe(0)
+        ->and(User::find($user->id))->not->toBeNull();
+});

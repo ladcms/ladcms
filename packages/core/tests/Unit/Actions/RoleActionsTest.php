@@ -220,3 +220,58 @@ it('forbids deleting a role with permissions the actor lacks', function () {
     app(DeleteRole::class)->handle($this->creator, $role);
     expect(Role::query()->where('name', 'editor')->exists())->toBeFalse();
 });
+
+it('refuses to make a privileged role the default on update before writing anything', function () {
+    $panel = Role::create(['name' => 'panel', 'guard_name' => 'web']);
+    $panel->givePermissionTo('admin.access');
+    $high = Role::findByName('moderator', 'web');
+    $before = Role::query()->where('is_default', true)->pluck('name')->all();
+
+    expect(fn () => app(UpdateRole::class)->handle($this->creator, $panel, ['is_default' => true]))
+        ->toThrow(InvalidArgumentException::class, 'admin panel access')
+        ->and(fn () => app(UpdateRole::class)->handle($this->creator, $high, ['is_default' => true]))
+        ->toThrow(InvalidArgumentException::class, 'level above 1');
+
+    expect(Role::query()->where('is_default', true)->pluck('name')->all())->toBe($before)
+        ->and(Activity::query()->where('event', 'role.updated')->exists())->toBeFalse();
+});
+
+it('refuses to raise the level of the default role above 1', function () {
+    $role = app(CreateRole::class)->handle($this->creator, ['name' => 'members', 'is_default' => true]);
+
+    expect(fn () => app(UpdateRole::class)->handle($this->creator, $role, ['level' => 3]))
+        ->toThrow(InvalidArgumentException::class, 'level above 1');
+    expect($role->fresh()->level)->toBeNull();
+});
+
+it('refuses to create a default role with a level above 1', function () {
+    $before = Role::query()->where('is_default', true)->pluck('name')->all();
+
+    expect(fn () => app(CreateRole::class)->handle($this->creator, ['name' => 'staff', 'level' => 2, 'is_default' => true]))
+        ->toThrow(InvalidArgumentException::class, 'level above 1');
+
+    expect(Role::query()->where('name', 'staff')->exists())->toBeFalse()
+        ->and(Role::query()->where('is_default', true)->pluck('name')->all())->toBe($before);
+});
+
+it('allows a default role with level up to 1 and without admin.access', function () {
+    Role::query()->where('name', 'guest')->update(['level' => null]);
+    $created = app(CreateRole::class)->handle($this->creator, ['name' => 'newbies', 'level' => 0, 'is_default' => true]);
+    expect($created->fresh()->is_default)->toBeTrue();
+
+    $plain = Role::create(['name' => 'plain', 'guard_name' => 'web']);
+    $plain->givePermissionTo('users.view');
+    app(UpdateRole::class)->handle($this->creator, $plain, ['is_default' => true]);
+    expect($plain->fresh()->is_default)->toBeTrue();
+
+    app(UpdateRole::class)->handle($this->creator, Role::findByName('user', 'web'), ['is_default' => true]);
+    expect(Role::defaultForRegistration()->name)->toBe('user');
+});
+
+it('refuses to grant admin.access to the default role', function () {
+    $default = Role::defaultForRegistration();
+
+    expect(fn () => app(SyncRolePermissions::class)->handle($this->creator, $default, ['admin.access']))
+        ->toThrow(InvalidArgumentException::class, 'admin panel access');
+    expect($default->fresh()->hasPermissionTo('admin.access'))->toBeFalse();
+});

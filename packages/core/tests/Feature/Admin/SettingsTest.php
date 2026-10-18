@@ -131,6 +131,20 @@ it('rejects violation codes without a code', function () {
     $response->assertStatus(422)->assertJsonValidationErrors(['violation_codes.0.code']);
 });
 
+it('rejects password_confirm_minutes below 1 with 422', function (int $minutes) {
+    settingsAs($this->admin)->putJson('/admin/settings/moderation', ['password_confirm_minutes' => $minutes])
+        ->assertStatus(422)->assertJsonValidationErrors(['password_confirm_minutes']);
+
+    expect(app(ModerationSettings::class)->refresh()->password_confirm_minutes)->toBeGreaterThanOrEqual(1);
+})->with([0, -1]);
+
+it('rejects an empty violation codes list with 422', function () {
+    settingsAs($this->admin)->putJson('/admin/settings/moderation', ['violation_codes' => [], 'password_confirm_minutes' => 15])
+        ->assertStatus(422)->assertJsonValidationErrors(['violation_codes']);
+
+    expect(app(ModerationSettings::class)->refresh()->violation_codes)->not->toBeEmpty();
+});
+
 it('saves violation codes and BanUser accepts the new code', function () {
     settingsAs($this->admin)->put('/admin/settings/moderation', [
         'violation_codes' => [

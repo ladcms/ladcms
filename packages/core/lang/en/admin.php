@@ -244,6 +244,7 @@ return [
     'modules' => [
         'title' => 'Modules',
         'update_hint' => 'To update modules run',
+        'routes_cached' => 'Routes are cached: enabling or disabling a module takes effect only after running php artisan route:clear (or php artisan optimize:clear). Restart Octane and queue workers as well.',
         'columns' => [
             'name' => 'Module',
             'version' => 'Version',

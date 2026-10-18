@@ -10,6 +10,7 @@ use Ladcms\Core\Database\Seeders\PermissionsSeeder;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Enums\BanType;
 use Ladcms\Core\Models\Ban;
+use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 
 uses(RefreshDatabase::class);
@@ -66,7 +67,8 @@ it('renders the users list for moderators', function () {
                 ->where('status', 'all')
                 ->where('sort', 'created_at')
                 ->where('direction', 'desc'))
-            ->has('roles'));
+            ->has('roles', Role::query()->count())
+            ->where('roles.0.name', Role::query()->orderBy('level')->value('name')));
 });
 
 it('filters banned users', function () {

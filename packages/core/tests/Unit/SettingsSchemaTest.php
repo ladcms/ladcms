@@ -92,3 +92,14 @@ it('falls back to humanized names for modules without lang entries', function ()
         ->and(schemaField($schema, 'greeting')['description'])->toBeNull()
         ->and(schemaField($schema, 'greeting')['value'])->toBe('hello from settings');
 });
+
+it('exposes numeric and list bounds in the schema', function () {
+    $moderation = SettingsSchema::for(ModerationSettings::class);
+    $registration = SettingsSchema::for(RegistrationSettings::class);
+    $general = SettingsSchema::for(GeneralSettings::class);
+
+    expect(schemaField($moderation, 'password_confirm_minutes'))->toMatchArray(['min' => 1, 'max' => 1440])
+        ->and(schemaField($moderation, 'violation_codes'))->toMatchArray(['min' => 1, 'max' => null])
+        ->and(schemaField($registration, 'readonly_hours'))->toMatchArray(['min' => 0, 'max' => null])
+        ->and(schemaField($general, 'site_name'))->toMatchArray(['min' => null, 'max' => null]);
+});

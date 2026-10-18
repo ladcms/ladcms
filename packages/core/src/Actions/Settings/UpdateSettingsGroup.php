@@ -102,7 +102,7 @@ class UpdateSettingsGroup
     {
         $nullable = $field['nullable'];
 
-        return match ($field['type']) {
+        $rules = match ($field['type']) {
             FieldType::Text => [$name => ['sometimes', ...($nullable ? ['nullable'] : ['required']), 'string', 'max:255']],
             FieldType::Textarea, FieldType::Markdown => [$name => ['sometimes', 'nullable', 'string']],
             FieldType::Number => [$name => ['sometimes', ...($nullable ? ['nullable'] : ['required']), 'integer']],
@@ -119,6 +119,18 @@ class UpdateSettingsGroup
                 "{$name}.*.max_days" => ['nullable', 'integer', "gte:{$name}.*.min_days"],
             ],
         };
+
+        // min/max понимаются валидатором по типу: значение числа, длина строки, размер массива.
+        if (! in_array($field['type'], [FieldType::Boolean, FieldType::Select, FieldType::Color], true)) {
+            if ($field['min'] !== null) {
+                $rules[$name][] = 'min:'.$field['min'];
+            }
+            if ($field['max'] !== null) {
+                $rules[$name][] = 'max:'.$field['max'];
+            }
+        }
+
+        return $rules;
     }
 
     /** @param  SchemaField  $field */

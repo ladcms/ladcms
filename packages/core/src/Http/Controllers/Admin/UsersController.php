@@ -70,7 +70,7 @@ class UsersController
                 'sort' => $sort,
                 'direction' => $direction,
             ],
-            'roles' => RoleResource::collection($roles),
+            'roles' => RoleResource::collection($roles)->resolve($request),
         ]);
     }
 }

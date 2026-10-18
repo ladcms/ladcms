@@ -16,7 +16,7 @@ LADCMS core: users, roles, admin, module system.
 - Two-level menu: an icon rail plus a section panel (hover on desktop, tap on touch). Modules add sections through `HasAdminPanel::adminMenu()`.
 - UI kit lives in `resources/js` (`components/ui/*`, `DataTable`, `PageHeader`, `ConfirmDialog`, ...) and is imported as `@ladcms/core/*`.
 - Admin texts: `lang/{ru,en}/admin.php` + `useT()` (`@ladcms/core/lib/i18n`); the `i18n` Inertia prop is shared on admin routes only.
-- Octane/queue workers must be restarted after toggling a module. JS lint/format of the packages: `cd app && npm run check:fix`.
+- Toggling a module changes its routes only on the next boot: with `route:cache` run `php artisan route:clear` (or `optimize:clear`) afterwards, the Modules page shows a warning while routes are cached. Octane/queue workers must be restarted after toggling a module. JS lint/format of the packages: `cd app && npm run check:fix`.
 
 ## Install flow
 ```

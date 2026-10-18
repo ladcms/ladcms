@@ -31,8 +31,8 @@ type RecentUser = { id: number; login: string; created_at: string | null };
 
 type Props = {
     stats: Stats;
-    recent_activity: ActivityRow[];
-    recent_users: RecentUser[];
+    recent_activity: ActivityRow[] | null;
+    recent_users: RecentUser[] | null;
 };
 
 function formatDate(value: string | null): string {
@@ -87,82 +87,92 @@ export default function Dashboard({
                 ))}
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-3">
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle>
-                            {t('core::admin.dashboard.recent_activity')}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {recent_activity.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                                {t('core::admin.dashboard.empty')}
-                            </p>
-                        ) : (
-                            <ul className="divide-y text-sm">
-                                {recent_activity.map((item) => (
-                                    <li
-                                        key={item.id}
-                                        className="flex flex-wrap items-baseline justify-between gap-2 py-2"
-                                    >
-                                        <span>
-                                            <span className="font-medium">
-                                                {item.causer?.login ??
-                                                    t(
-                                                        'core::admin.dashboard.system',
+            {(recent_activity !== null || recent_users !== null) && (
+                <div className="grid gap-4 lg:grid-cols-3">
+                    {recent_activity !== null && (
+                        <Card className="lg:col-span-2">
+                            <CardHeader>
+                                <CardTitle>
+                                    {t('core::admin.dashboard.recent_activity')}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {recent_activity.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        {t('core::admin.dashboard.empty')}
+                                    </p>
+                                ) : (
+                                    <ul className="divide-y text-sm">
+                                        {recent_activity.map((item) => (
+                                            <li
+                                                key={item.id}
+                                                className="flex flex-wrap items-baseline justify-between gap-2 py-2"
+                                            >
+                                                <span>
+                                                    <span className="font-medium">
+                                                        {item.causer?.login ??
+                                                            t(
+                                                                'core::admin.dashboard.system',
+                                                            )}
+                                                    </span>{' '}
+                                                    <code className="text-muted-foreground">
+                                                        {item.event}
+                                                    </code>
+                                                </span>
+                                                <span className="text-muted-foreground">
+                                                    {formatDate(
+                                                        item.created_at,
                                                     )}
-                                            </span>{' '}
-                                            <code className="text-muted-foreground">
-                                                {item.event}
-                                            </code>
-                                        </span>
-                                        <span className="text-muted-foreground">
-                                            {formatDate(item.created_at)}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </CardContent>
-                </Card>
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>
-                            {t('core::admin.dashboard.recent_users')}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {recent_users.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                                {t('core::admin.dashboard.empty')}
-                            </p>
-                        ) : (
-                            <ul className="divide-y text-sm">
-                                {recent_users.map((user) => (
-                                    <li
-                                        key={user.id}
-                                        className="flex items-baseline justify-between gap-2 py-2"
-                                    >
-                                        <Link
-                                            href={UserController.show.url(
-                                                user.id,
-                                            )}
-                                            className="font-medium hover:underline"
-                                        >
-                                            {user.login}
-                                        </Link>
-                                        <span className="text-muted-foreground">
-                                            {formatDate(user.created_at)}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+                    {recent_users !== null && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>
+                                    {t('core::admin.dashboard.recent_users')}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {recent_users.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        {t('core::admin.dashboard.empty')}
+                                    </p>
+                                ) : (
+                                    <ul className="divide-y text-sm">
+                                        {recent_users.map((user) => (
+                                            <li
+                                                key={user.id}
+                                                className="flex items-baseline justify-between gap-2 py-2"
+                                            >
+                                                <Link
+                                                    href={UserController.show.url(
+                                                        user.id,
+                                                    )}
+                                                    className="font-medium hover:underline"
+                                                >
+                                                    {user.login}
+                                                </Link>
+                                                <span className="text-muted-foreground">
+                                                    {formatDate(
+                                                        user.created_at,
+                                                    )}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

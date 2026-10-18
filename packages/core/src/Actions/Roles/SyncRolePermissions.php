@@ -7,9 +7,11 @@ namespace Ladcms\Core\Actions\Roles;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
+use Ladcms\Core\Support\DefaultRoleGuard;
 use Ladcms\Core\Support\RolePermissionGuard;
 use Spatie\Permission\Models\Permission;
 
@@ -23,6 +25,7 @@ class SyncRolePermissions
      *
      * @throws AuthorizationException
      * @throws ValidationException
+     * @throws InvalidArgumentException
      */
     public function handle(User $actor, Role $role, array $permissionNames): Role
     {
@@ -33,6 +36,10 @@ class SyncRolePermissions
         $missing = array_diff($names, $known);
         if ($missing !== []) {
             throw ValidationException::withMessages(['permissions' => 'Unknown permissions: '.implode(', ', $missing).'.']);
+        }
+
+        if ($role->is_default) {
+            DefaultRoleGuard::ensureSafe(null, $names);
         }
 
         $current = $role->permissions()->pluck('name')->all();

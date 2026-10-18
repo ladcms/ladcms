@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia;
 use Ladcms\Core\Admin\DashboardStats;
@@ -13,6 +14,7 @@ use Ladcms\Core\Enums\ComplaintStatus;
 use Ladcms\Core\Models\Ban;
 use Ladcms\Core\Models\Complaint;
 use Ladcms\Core\Models\Module;
+use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
 use Ladcms\Core\Tests\Fixtures\BrokenModule\BrokenServiceProvider;
@@ -36,6 +38,9 @@ function dashboardAs(User $actor): mixed
 }
 
 it('collects stats from the data', function () {
+    // Фиксированный полдень: `users_today` и «час назад» не должны пересекать полночь.
+    $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+    $this->admin->forceFill(['created_at' => now()])->save();
     $online = User::factory()->create(['last_activity_at' => now()->subMinutes(5)]);
     User::factory()->create(['last_activity_at' => now()->subHour()]);
     User::factory()->create(['created_at' => now()->subDays(3)]);
@@ -43,8 +48,8 @@ it('collects stats from the data', function () {
 
     Complaint::query()->create(['user_id' => $online->id, 'target_user_id' => $target->id, 'reason_code' => 'spam', 'comment' => 'c', 'status' => ComplaintStatus::Pending]);
     Complaint::query()->create(['user_id' => $online->id, 'target_user_id' => $target->id, 'reason_code' => 'spam', 'comment' => 'c', 'status' => ComplaintStatus::Rejected]);
-    Ban::query()->create(['user_id' => $target->id, 'banned_by' => $this->admin->id, 'type' => BanType::Full, 'reason_code' => 'spam', 'starts_at' => now()->subDay(), 'expires_at' => null]);
-    Ban::query()->create(['user_id' => $online->id, 'banned_by' => $this->admin->id, 'type' => BanType::Full, 'reason_code' => 'spam', 'starts_at' => now()->subDays(3), 'expires_at' => now()->subDay()]);
+    Ban::query()->create(['user_id' => $target->id, 'banned_by_id' => $this->admin->id, 'type' => BanType::Full, 'reason_code' => 'spam', 'starts_at' => now()->subDay(), 'expires_at' => null]);
+    Ban::query()->create(['user_id' => $online->id, 'banned_by_id' => $this->admin->id, 'type' => BanType::Full, 'reason_code' => 'spam', 'starts_at' => now()->subDays(3), 'expires_at' => now()->subDay()]);
     Module::create(['name' => 'core', 'version' => '0.1.0', 'installed_at' => now(), 'is_enabled' => true]);
 
     $stats = app(DashboardStats::class)->collect();
@@ -79,6 +84,25 @@ it('lets a user with admin.access only see the dashboard', function () {
     $moderator = User::factory()->create()->assignRole('moderator');
 
     dashboardAs($moderator)->get('/admin')->assertOk();
+});
+
+it('hides recent activity and recent users without activity.view and users.view', function () {
+    Audit::log('test.event', $this->admin, null, []);
+    $role = Role::create(['name' => 'panel-only', 'guard_name' => 'web']);
+    $role->givePermissionTo('admin.access');
+    $viewer = User::factory()->create()->assignRole($role);
+
+    dashboardAs($viewer)->get('/admin')->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('stats')
+            ->where('recent_activity', null)
+            ->where('recent_users', null));
+
+    $role->givePermissionTo(['activity.view', 'users.view']);
+    dashboardAs($viewer->fresh())->get('/admin')->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('recent_activity', 1)
+            ->has('recent_users'));
 });
 
 it('counts admin-disabled modules separately from failed ones', function () {

@@ -16,6 +16,7 @@ use Ladcms\Core\Enums\ComplaintStatus;
 use Ladcms\Core\Models\Complaint;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Notifications\ComplaintFiled;
+use Spatie\Activitylog\Models\Activity;
 
 uses(RefreshDatabase::class);
 
@@ -106,4 +107,22 @@ it('refuses to review a complaint that is not pending', function () {
     $fresh = $complaint->fresh();
     expect($fresh->status)->toBe(ComplaintStatus::Rejected)
         ->and($fresh->reviewed_by_id)->toBe($this->mod->id);
+});
+
+it('lets only one of two concurrent reviews win, even with a stale model', function () {
+    $complaint = app(FileComplaint::class)->handle($this->author, 'spam', 'x', targetUser: $this->target);
+    $staleCopy = Complaint::query()->findOrFail($complaint->id);
+    $reviewer = User::factory()->create()->assignRole('moderator');
+
+    $won = app(ReviewComplaint::class)->handle($this->mod, $complaint, ComplaintStatus::Rejected);
+    expect($won->status)->toBe(ComplaintStatus::Rejected)
+        ->and($won->reviewed_by_id)->toBe($this->mod->id);
+
+    expect(fn () => app(ReviewComplaint::class)->handle($reviewer, $staleCopy, ComplaintStatus::Resolved))
+        ->toThrow(InvalidArgumentException::class, 'already been reviewed');
+
+    $fresh = $complaint->fresh();
+    expect($fresh->status)->toBe(ComplaintStatus::Rejected)
+        ->and($fresh->reviewed_by_id)->toBe($this->mod->id)
+        ->and(Activity::query()->where('event', 'complaint.reviewed')->count())->toBe(1);
 });

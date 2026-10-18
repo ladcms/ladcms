@@ -42,6 +42,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property bool $show_birthday
  * @property MessagesFrom $messages_from
  * @property ?Carbon $email_verified_at
+ * @property ?Carbon $first_verified_at
  * @property ?Carbon $created_at
  */
 class User extends Authenticatable
@@ -68,6 +69,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'first_verified_at' => 'datetime',
             'password' => 'hashed',
             'sex' => Sex::class,
             'birth_date' => 'date',
@@ -87,6 +89,26 @@ class User extends Authenticatable
         'show_birthday' => true,
         'messages_from' => 'all',
     ];
+
+    protected static function booted(): void
+    {
+        // Первое подтверждение email фиксируется навсегда: смена адреса сбрасывает email_verified_at,
+        // но аккаунт, подтверждённый хоть раз, не должен считаться «мусорной» регистрацией.
+        // Условный UPDATE (whereNull) вместо проверки атрибута: колонка может быть не загружена в модель.
+        static::saved(function (User $user): void {
+            if ($user->email_verified_at === null || (! $user->wasRecentlyCreated && ! $user->wasChanged('email_verified_at'))) {
+                return;
+            }
+
+            $affected = $user->newQueryWithoutScopes()->whereKey($user->getKey())->whereNull('first_verified_at')
+                ->toBase()->update(['first_verified_at' => $user->email_verified_at]);
+
+            if ($affected > 0) {
+                $user->setAttribute('first_verified_at', $user->email_verified_at);
+                $user->syncOriginalAttribute('first_verified_at');
+            }
+        });
+    }
 
     /**
      * Единый морф-тип для core User и наследника приложения: `model_has_roles`, `notifications`,

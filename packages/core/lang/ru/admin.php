@@ -244,6 +244,7 @@ return [
     'modules' => [
         'title' => 'Модули',
         'update_hint' => 'Для обновления модулей выполните',
+        'routes_cached' => 'Маршруты закешированы: включение или отключение модуля вступит в силу только после php artisan route:clear (или php artisan optimize:clear). Также перезапустите Octane и воркеры очередей.',
         'columns' => [
             'name' => 'Модуль',
             'version' => 'Версия',

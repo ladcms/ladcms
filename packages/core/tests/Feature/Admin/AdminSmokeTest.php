@@ -75,8 +75,16 @@ it('renders every admin GET route as an existing core page for the creator', fun
             ->get($uri)
             ->assertOk();
 
-        $component = AssertableInertia::fromTestResponse($response)->toArray()['component'];
+        $inertia = AssertableInertia::fromTestResponse($response)->toArray();
+        $component = $inertia['component'];
         expect($component)->toStartWith('core::admin/', $key);
+
+        // Неразрешённая ResourceCollection сериализуется Inertia 3 как {data: [...]} —
+        // фронт ждёт массив, а получает объект (см. баг с roles на /admin/users).
+        foreach ($inertia['props'] as $prop => $value) {
+            $wrapped = is_array($value) && $value !== [] && array_keys($value) === ['data'];
+            expect($wrapped)->toBeFalse("{$key}: prop '{$prop}' is an unresolved resource collection ({data: [...]}); call ->resolve(\$request)");
+        }
 
         // `true` — страница обязана существовать на диске (резолв через ModulePageFinder).
         $response->assertInertia(fn (AssertableInertia $page) => $page->component($component, true));

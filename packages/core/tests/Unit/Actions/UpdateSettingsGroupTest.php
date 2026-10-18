@@ -72,3 +72,26 @@ it('does not write an audit row when nothing changed', function () {
 
     expect(Activity::query()->count())->toBe(0);
 });
+
+it('rejects password_confirm_minutes below 1 or above 1440', function (int $minutes) {
+    app(UpdateSettingsGroup::class)->handle($this->admin, ModerationSettings::class, ['password_confirm_minutes' => $minutes]);
+})->with([0, -1, 1441])->throws(ValidationException::class);
+
+it('accepts password_confirm_minutes at the bounds', function () {
+    $settings = app(UpdateSettingsGroup::class)->handle($this->admin, ModerationSettings::class, ['password_confirm_minutes' => 1]);
+    expect($settings->password_confirm_minutes)->toBe(1);
+
+    $settings = app(UpdateSettingsGroup::class)->handle($this->admin, ModerationSettings::class, ['password_confirm_minutes' => 1440]);
+    expect($settings->password_confirm_minutes)->toBe(1440);
+});
+
+it('rejects an empty violation codes list', function () {
+    app(UpdateSettingsGroup::class)->handle($this->admin, ModerationSettings::class, ['violation_codes' => []]);
+})->throws(ValidationException::class);
+
+it('rejects negative readonly_hours but accepts zero', function () {
+    expect(fn () => app(UpdateSettingsGroup::class)->handle($this->admin, RegistrationSettings::class, ['readonly_hours' => -1]))
+        ->toThrow(ValidationException::class);
+
+    expect(app(UpdateSettingsGroup::class)->handle($this->admin, RegistrationSettings::class, ['readonly_hours' => 0])->readonly_hours)->toBe(0);
+});

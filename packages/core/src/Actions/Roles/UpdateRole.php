@@ -11,6 +11,7 @@ use InvalidArgumentException;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
+use Ladcms\Core\Support\DefaultRoleGuard;
 use Ladcms\Core\Support\RolePermissionGuard;
 
 class UpdateRole
@@ -57,6 +58,14 @@ class UpdateRole
 
         if ($changes === []) {
             return $role;
+        }
+
+        // Итоговая роль по умолчанию (назначаемая сейчас или уже являющаяся ею) не может быть привилегированной.
+        if (($changes['is_default'] ?? $role->is_default) === true && (array_key_exists('is_default', $changes) || array_key_exists('level', $changes))) {
+            DefaultRoleGuard::ensureSafe(
+                array_key_exists('level', $changes) ? $changes['level'] : $role->level,
+                $role->permissions()->pluck('name')->all(),
+            );
         }
 
         // Роль по умолчанию получает каждый новый пользователь — только в рамках прав актора.
