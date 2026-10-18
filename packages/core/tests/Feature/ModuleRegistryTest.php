@@ -46,7 +46,7 @@ it('wraps admin routes with the admin prefix and middleware', function () {
     $route = collect(Route::getRoutes())->first(fn ($r) => $r->uri() === 'admin/dummy');
 
     expect($route)->not->toBeNull()
-        ->and($route->gatherMiddleware())->toContain('web', 'auth', 'admin');
+        ->and($route->gatherMiddleware())->toContain('web', 'auth', 'admin', 'ladcms.password-confirm');
 });
 
 it('does not boot a module whose core version is incompatible', function () {

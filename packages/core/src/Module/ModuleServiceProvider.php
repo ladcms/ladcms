@@ -172,9 +172,9 @@ abstract class ModuleServiceProvider extends PackageServiceProvider implements M
             Route::middleware('web')->group("{$routes}/web.php");
         }
         if (is_file("{$routes}/admin.php")) {
-            Route::middleware(['web', 'auth', 'admin'])
-                ->prefix("admin/{$name}")
-                ->name("admin.{$name}.")
+            Route::middleware($this->adminMiddleware())
+                ->prefix($this->adminRoutePrefix())
+                ->name($this->adminRouteNamePrefix())
                 ->group("{$routes}/admin.php");
         }
         if (is_file("{$routes}/api.php")) {
@@ -183,5 +183,27 @@ abstract class ModuleServiceProvider extends PackageServiceProvider implements M
                 ->name("api.{$name}.")
                 ->group("{$routes}/api.php");
         }
+    }
+
+    /** URL-префикс админ-роутов модуля (`routes/admin.php`). */
+    protected function adminRoutePrefix(): string
+    {
+        return 'admin/'.$this->name();
+    }
+
+    /** Префикс имён админ-роутов модуля. */
+    protected function adminRouteNamePrefix(): string
+    {
+        return 'admin.'.$this->name().'.';
+    }
+
+    /**
+     * Middleware админ-роутов: вход, право `admin.access` и свежее подтверждение пароля.
+     *
+     * @return list<string>
+     */
+    protected function adminMiddleware(): array
+    {
+        return ['web', 'auth', 'admin', 'ladcms.password-confirm'];
     }
 }

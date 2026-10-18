@@ -9,22 +9,28 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
+use Ladcms\Core\Admin\AdminMenu;
+use Ladcms\Core\Admin\MenuItem;
 use Ladcms\Core\Console\InstallModuleCommand;
 use Ladcms\Core\Console\PruneUnverifiedUsersCommand;
 use Ladcms\Core\Console\UninstallModuleCommand;
 use Ladcms\Core\Console\UpdateModulesCommand;
 use Ladcms\Core\Http\Middleware\AdminAccess;
 use Ladcms\Core\Http\Middleware\CheckBan;
+use Ladcms\Core\Http\Middleware\ConfirmPasswordWithSettingsTtl;
 use Ladcms\Core\Http\Middleware\EnsureRegistrationOpen;
 use Ladcms\Core\Http\Middleware\SetLocale;
 use Ladcms\Core\Http\Middleware\TrackOnline;
+use Ladcms\Core\Http\Resources\CurrentUserResource;
 use Ladcms\Core\Inertia\ModulePageFinder;
 use Ladcms\Core\Listeners\AssignDefaultRole;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Module\Contracts\HasAdminPanel;
 use Ladcms\Core\Module\Contracts\HasPermissions;
 use Ladcms\Core\Module\Contracts\HasSettings;
 use Ladcms\Core\Module\ModuleRegistry;
@@ -43,7 +49,7 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Spatie\Permission\PermissionRegistrar;
 
-class CoreServiceProvider extends ModuleServiceProvider implements HasPermissions, HasSettings
+class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel, HasPermissions, HasSettings
 {
     public const VERSION = '0.1.0';
 
@@ -87,6 +93,41 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
         return [GeneralSettings::class, RegistrationSettings::class, ModerationSettings::class, AppearanceSettings::class];
     }
 
+    /**
+     * Разделы админки ядра. Единственный источник для AdminMenu; дочерние пункты `settings`
+     * AdminMenu достраивает сам — по группам настроек всех HasSettings-модулей.
+     * `path` — url для разделов, чьи роуты регистрируются позже.
+     */
+    public function adminMenu(): array
+    {
+        return [
+            ['key' => 'dashboard', 'label' => 'core::admin.menu.dashboard', 'icon' => 'layout-dashboard', 'route' => 'admin.dashboard', 'order' => 10, 'path' => '/admin'],
+            ['key' => 'users', 'label' => 'core::admin.menu.users', 'icon' => 'users', 'route' => 'admin.users.index', 'order' => 20, 'path' => '/admin/users', 'permission' => 'users.view', 'children' => [
+                ['key' => 'all', 'label' => 'core::admin.menu.users_all', 'route' => 'admin.users.index', 'path' => '/admin/users'],
+                ['key' => 'suspicious', 'label' => 'core::admin.menu.users_suspicious', 'route' => 'admin.users.index', 'path' => '/admin/users', 'params' => ['status' => 'suspicious']],
+            ]],
+            ['key' => 'roles', 'label' => 'core::admin.menu.roles', 'icon' => 'shield', 'route' => 'admin.roles.index', 'order' => 30, 'path' => '/admin/roles', 'permission' => 'roles.manage'],
+            ['key' => 'moderation', 'label' => 'core::admin.menu.moderation', 'icon' => 'gavel', 'route' => 'admin.moderation.complaints.index', 'order' => 40, 'path' => '/admin/moderation/complaints', 'permission' => 'complaints.review', 'children' => [
+                ['key' => 'complaints', 'label' => 'core::admin.menu.complaints', 'route' => 'admin.moderation.complaints.index', 'path' => '/admin/moderation/complaints', 'permission' => 'complaints.review'],
+                ['key' => 'bans', 'label' => 'core::admin.menu.bans', 'route' => 'admin.moderation.bans.index', 'path' => '/admin/moderation/bans', 'permission' => 'users.ban'],
+            ]],
+            ['key' => 'settings', 'label' => 'core::admin.menu.settings', 'icon' => 'settings', 'route' => 'admin.settings.edit', 'order' => 50, 'path' => '/admin/settings/general', 'params' => ['group' => 'general'], 'permission' => 'settings.manage'],
+            ['key' => 'modules', 'label' => 'core::admin.menu.modules', 'icon' => 'puzzle', 'route' => 'admin.modules.index', 'order' => 60, 'path' => '/admin/modules', 'permission' => 'modules.manage'],
+            ['key' => 'activity', 'label' => 'core::admin.menu.activity', 'icon' => 'scroll-text', 'route' => 'admin.activity.index', 'order' => 70, 'path' => '/admin/activity', 'permission' => 'activity.view'],
+        ];
+    }
+
+    /** Админ-роуты ядра — прямо под `/admin` с именами `admin.*`. */
+    protected function adminRoutePrefix(): string
+    {
+        return 'admin';
+    }
+
+    protected function adminRouteNamePrefix(): string
+    {
+        return 'admin.';
+    }
+
     protected function configureModule(Package $package): void
     {
         $package->hasCommands([
@@ -124,6 +165,7 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
         $router->aliasMiddleware('permission', PermissionMiddleware::class);
         $router->aliasMiddleware('role_or_permission', RoleOrPermissionMiddleware::class);
         $router->aliasMiddleware('ladcms.ban', CheckBan::class);
+        $router->aliasMiddleware('ladcms.password-confirm', ConfirmPasswordWithSettingsTtl::class);
 
         // CheckBan, TrackOnline и EnsureRegistrationOpen — в группу `web`. Через HTTP-kernel: он синхронизирует свои группы в роутер
         // при создании и затёр бы правку, внесённую только в роутер.
@@ -143,6 +185,23 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasPermission
 
         Inertia::share('locale', fn (): string => app()->getLocale());
         Inertia::share('locales', fn (): array => $this->app->make(LocaleManager::class)->available());
+
+        // Меню и текущий пользователь админки — только на админ-роутах.
+        Inertia::share('admin', function (): ?array {
+            $request = $this->app->make(Request::class);
+            $user = $request->user();
+            if (! $user instanceof User || ! $request->routeIs('admin.*')) {
+                return null;
+            }
+
+            return [
+                'menu' => array_map(
+                    fn (MenuItem $item): array => $item->toArray(),
+                    $this->app->make(AdminMenu::class)->build($user, $request),
+                ),
+                'user' => CurrentUserResource::make($user)->resolve($request),
+            ];
+        });
 
         // Ежедневная чистка: неподтверждённые аккаунты и старые записи журнала активности.
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
