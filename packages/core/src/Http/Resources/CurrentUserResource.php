@@ -6,6 +6,7 @@ namespace Ladcms\Core\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Ladcms\Core\Models\Ban;
 use Ladcms\Core\Models\User;
 
 /**
@@ -20,6 +21,8 @@ class CurrentUserResource extends JsonResource
     {
         /** @var User $user */
         $user = $this->resource;
+        // Активный бан — один запрос на оба флага.
+        $banned = $user->activeBan() instanceof Ban;
 
         return [
             'id' => $user->id,
@@ -30,8 +33,10 @@ class CurrentUserResource extends JsonResource
             'avatar_url' => $user->avatar_url,
             'roles' => $user->getRoleNames()->values()->all(),
             'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
-            'is_banned' => $user->isBanned(),
-            'can_write' => $user->canWrite(),
+            'level' => $user->level(),
+            'is_creator' => $user->isCreator(),
+            'is_banned' => $banned,
+            'can_write' => ! $banned && $user->readonlyPeriodPassed(),
         ];
     }
 }

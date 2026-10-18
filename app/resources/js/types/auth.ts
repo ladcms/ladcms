@@ -8,10 +8,11 @@ export type User = {
     avatar_url: string | null;
     roles: string[];
     permissions: string[];
+    level: number;
+    is_creator: boolean;
     is_banned: boolean;
     can_write: boolean;
     email_verified_at: string | null;
-    [key: string]: unknown;
 };
 
 export type Auth = {

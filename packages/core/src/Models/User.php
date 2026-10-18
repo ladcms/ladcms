@@ -156,9 +156,13 @@ class User extends Authenticatable
         return self::avatarDirectory($userId).'/'.$size.'.jpg';
     }
 
+    /**
+     * Максимальный уровень ролей. Считается по загруженной связи `roles` (один запрос на экземпляр):
+     * spatie сбрасывает связь при assignRole/removeRole/syncRoles, refresh() перезагружает её.
+     */
     public function level(): int
     {
-        return (int) ($this->roles()->max('level') ?? 0);
+        return (int) ($this->roles->max('level') ?? 0);
     }
 
     public function outranks(User $other): bool
@@ -207,10 +211,12 @@ class User extends Authenticatable
     /** Может ли писать: нет активного бана любого типа и истёк read-only период после регистрации. */
     public function canWrite(): bool
     {
-        if ($this->isBanned()) {
-            return false;
-        }
+        return ! $this->isBanned() && $this->readonlyPeriodPassed();
+    }
 
+    /** Истёк ли read-only период после регистрации (`registration.readonly_hours`). */
+    public function readonlyPeriodPassed(): bool
+    {
         $hours = app(RegistrationSettings::class)->readonly_hours;
 
         return $hours === 0 || $this->created_at === null || $this->created_at->copy()->addHours($hours)->isPast();

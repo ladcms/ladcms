@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +14,9 @@ use Ladcms\Core\Actions\Auth\RegisterUser;
 use Ladcms\Core\Contracts\InviteValidator;
 use Ladcms\Core\Database\Seeders\PermissionsSeeder;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
+use Ladcms\Core\Enums\BanType;
 use Ladcms\Core\Http\Resources\CurrentUserResource;
+use Ladcms\Core\Models\Ban;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Settings\RegistrationSettings;
 
@@ -236,10 +239,48 @@ it('exposes the current user for the frontend', function () {
 
     $data = CurrentUserResource::make($user)->resolve();
 
-    expect(array_keys($data))->toBe(['id', 'login', 'name', 'display_name', 'email', 'avatar_url', 'roles', 'permissions', 'is_banned', 'can_write'])
+    expect(array_keys($data))->toBe(['id', 'login', 'name', 'display_name', 'email', 'avatar_url', 'roles', 'permissions', 'level', 'is_creator', 'is_banned', 'can_write'])
         ->and($data['display_name'])->toBe('alice')
+        ->and($data['level'])->toBe(2)
+        ->and($data['is_creator'])->toBeFalse()
         ->and($data['roles'])->toBe(['moderator'])
         ->and($data['permissions'])->toContain('users.ban')
         ->and($data['is_banned'])->toBeFalse()
         ->and($data['can_write'])->toBeTrue();
+});
+
+it('reports creator flags and ban state for the frontend', function () {
+    $this->seed(RolesSeeder::class);
+    $creator = User::factory()->create()->assignRole('creator');
+    $banned = User::factory()->create()->assignRole('user');
+    Ban::query()->create(['user_id' => $banned->id, 'banned_by_id' => $creator->id, 'type' => BanType::Readonly,
+        'reason_code' => 'spam', 'starts_at' => now()->subMinute()]);
+
+    $creatorData = CurrentUserResource::make($creator)->resolve();
+    $bannedData = CurrentUserResource::make($banned)->resolve();
+
+    expect($creatorData['level'])->toBe(6)
+        ->and($creatorData['is_creator'])->toBeTrue()
+        ->and($bannedData['is_banned'])->toBeTrue()
+        ->and($bannedData['can_write'])->toBeFalse();
+});
+
+it('builds the current user with one roles query and one bans query', function () {
+    $this->seed(RolesSeeder::class);
+    $this->seed(PermissionsSeeder::class);
+    $user = User::factory()->create()->assignRole('admin');
+    $user = User::query()->findOrFail($user->id);
+    app(RegistrationSettings::class)->readonly_hours; // настройки загружаются один раз на запрос
+
+    DB::enableQueryLog();
+    CurrentUserResource::make($user)->resolve();
+    $queries = array_column(DB::getQueryLog(), 'query');
+    DB::disableQueryLog();
+
+    $rolesQueries = array_filter($queries, fn (string $q): bool => str_contains($q, 'from "roles"') && str_contains($q, 'model_has_roles'));
+    $bansQueries = array_filter($queries, fn (string $q): bool => str_contains($q, 'from "bans"'));
+
+    expect($rolesQueries)->toHaveCount(1)
+        ->and($bansQueries)->toHaveCount(1)
+        ->and(count($queries))->toBeLessThanOrEqual(4);
 });
