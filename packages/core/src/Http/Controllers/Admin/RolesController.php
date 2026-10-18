@@ -23,6 +23,7 @@ use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Module\Contracts\HasPermissions;
 use Ladcms\Core\Module\ModuleRegistry;
+use Ladcms\Core\Support\RolePermissionGuard;
 use Spatie\Permission\Models\Permission;
 
 /**
@@ -44,7 +45,7 @@ class RolesController
     public function store(StoreRoleRequest $request, #[CurrentUser] User $actor, CreateRole $action): RedirectResponse
     {
         try {
-            $role = $action->handle($actor, $request->validated());
+            $role = $action->handle($actor, $request->roleData());
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['general' => $e->getMessage()]);
         }
@@ -74,8 +75,7 @@ class RolesController
 
         $grantable = match (true) {
             ! $canUpdate => [],
-            $actor->isCreator() => $names,
-            default => array_values(array_intersect($names, $actor->getAllPermissions()->pluck('name')->all())),
+            default => RolePermissionGuard::grantable($actor, $names),
         };
 
         // Проба «другой уровень»: policy проверяет право менять уровень именно этой роли.
@@ -98,7 +98,7 @@ class RolesController
     public function update(UpdateRoleRequest $request, #[CurrentUser] User $actor, Role $role, UpdateRole $action): RedirectResponse
     {
         try {
-            $action->handle($actor, $role, $request->validated());
+            $action->handle($actor, $role, $request->roleData());
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['general' => $e->getMessage()]);
         }

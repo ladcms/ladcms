@@ -11,6 +11,7 @@ use InvalidArgumentException;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
+use Ladcms\Core\Support\RolePermissionGuard;
 
 class DeleteRole
 {
@@ -21,6 +22,8 @@ class DeleteRole
     public function handle(User $actor, Role $role): void
     {
         Gate::forUser($actor)->authorize('delete', $role);
+
+        RolePermissionGuard::authorize($actor, $role);
 
         if ($role->is_default) {
             throw new InvalidArgumentException('The default role cannot be deleted: make another role the default first.');

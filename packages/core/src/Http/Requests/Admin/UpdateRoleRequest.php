@@ -29,4 +29,30 @@ class UpdateRoleRequest extends FormRequest
             'is_default' => ['sometimes', 'boolean'],
         ];
     }
+
+    /**
+     * Типизированные данные: форма шлёт строки ("1", "2", "").
+     *
+     * @return array{name?: string, level?: int|null, color?: string|null, is_default?: bool}
+     */
+    public function roleData(): array
+    {
+        $data = [];
+        if ($this->has('name')) {
+            $data['name'] = (string) $this->validated('name');
+        }
+        if ($this->has('level')) {
+            $level = $this->validated('level');
+            $data['level'] = $level === null || $level === '' ? null : (int) $level;
+        }
+        if ($this->has('color')) {
+            $color = $this->validated('color');
+            $data['color'] = $color === null || $color === '' ? null : (string) $color;
+        }
+        if ($this->has('is_default')) {
+            $data['is_default'] = $this->boolean('is_default');
+        }
+
+        return $data;
+    }
 }

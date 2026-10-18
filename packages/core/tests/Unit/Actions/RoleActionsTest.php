@@ -189,3 +189,34 @@ it('forbids syncing permissions of a role at or above the actor level', function
     expect(fn () => app(SyncRolePermissions::class)->handle($this->superModerator, Role::findByName('admin', 'web'), ['users.view']))
         ->toThrow(AuthorizationException::class);
 });
+
+it('casts string flags and levels before diffing', function () {
+    $role = app(CreateRole::class)->handle($this->mainAdmin, ['name' => 'editor']);
+
+    app(UpdateRole::class)->handle($this->mainAdmin, $role, ['is_default' => '1', 'level' => '']);
+    expect(Role::query()->where('is_default', true)->pluck('name')->all())->toBe(['editor']);
+
+    expect(fn () => app(UpdateRole::class)->handle($this->mainAdmin, $role, ['is_default' => '0']))
+        ->toThrow(InvalidArgumentException::class);
+    expect(Role::query()->where('is_default', true)->count())->toBe(1);
+});
+
+it('forbids a non-creator making a role with foreign permissions the default', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
+    $role->givePermissionTo('users.delete');
+
+    expect(fn () => app(UpdateRole::class)->handle($this->superModerator, $role, ['is_default' => true]))
+        ->toThrow(AuthorizationException::class);
+
+    app(UpdateRole::class)->handle($this->creator, $role, ['is_default' => true]);
+    expect($role->fresh()->is_default)->toBeTrue();
+});
+
+it('forbids deleting a role with permissions the actor lacks', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
+    $role->givePermissionTo('users.delete');
+
+    expect(fn () => app(DeleteRole::class)->handle($this->superModerator, $role))->toThrow(AuthorizationException::class);
+    app(DeleteRole::class)->handle($this->creator, $role);
+    expect(Role::query()->where('name', 'editor')->exists())->toBeFalse();
+});

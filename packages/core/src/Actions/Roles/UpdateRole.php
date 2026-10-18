@@ -11,6 +11,7 @@ use InvalidArgumentException;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
+use Ladcms\Core\Support\RolePermissionGuard;
 
 class UpdateRole
 {
@@ -26,6 +27,8 @@ class UpdateRole
     {
         $gate = Gate::forUser($actor);
         $gate->authorize('update', $role);
+
+        $data = $this->normalise($data);
 
         $changes = [];
         foreach (['name', 'level', 'color', 'is_default'] as $key) {
@@ -56,8 +59,14 @@ class UpdateRole
             return $role;
         }
 
+        // Роль по умолчанию получает каждый новый пользователь — только в рамках прав актора.
+        if (($changes['is_default'] ?? false) === true) {
+            RolePermissionGuard::authorize($actor, $role);
+        }
+
         DB::transaction(function () use ($role, $changes): void {
             if (($changes['is_default'] ?? false) === true) {
+                Role::query()->whereKeyNot($role->getKey())->where('is_default', true)->lockForUpdate()->get();
                 Role::query()->whereKeyNot($role->getKey())->where('is_default', true)->update(['is_default' => false]);
             }
             $role->update($changes);
@@ -66,5 +75,26 @@ class UpdateRole
         Audit::log('role.updated', $actor, $role, ['changes' => $changes]);
 
         return $role;
+    }
+
+    /**
+     * Form submissions deliver strings ("1", "2", ""): bring values to the model's types before diffing.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function normalise(array $data): array
+    {
+        if (array_key_exists('is_default', $data)) {
+            $data['is_default'] = filter_var($data['is_default'], FILTER_VALIDATE_BOOLEAN);
+        }
+        if (array_key_exists('level', $data)) {
+            $data['level'] = $data['level'] === null || $data['level'] === '' ? null : (int) $data['level'];
+        }
+        if (array_key_exists('color', $data) && $data['color'] === '') {
+            $data['color'] = null;
+        }
+
+        return $data;
     }
 }

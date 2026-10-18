@@ -12,6 +12,7 @@ use InvalidArgumentException;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
+use Ladcms\Core\Support\RolePermissionGuard;
 use Ladcms\Core\Support\UserModel;
 
 class AssignRoles
@@ -48,8 +49,7 @@ class AssignRoles
         $added = $roles->reject(fn (Role $role): bool => $current->contains('id', $role->id));
         $removed = $current->reject(fn (Role $role): bool => $roles->contains('id', $role->id));
 
-        $actorPermissions = $actor->isCreator() ? [] : self::permissionsOf($actor);
-        $forbidden = $added->merge($removed)->reject(fn (Role $role): bool => self::mayAssign($actor, $role, $actorPermissions));
+        $forbidden = $added->merge($removed)->reject(fn (Role $role): bool => RolePermissionGuard::mayAssign($actor, $role));
 
         if ($forbidden->isNotEmpty()) {
             throw new AuthorizationException('You cannot add or remove roles at or above your own level or with permissions you do not have.');
@@ -71,25 +71,7 @@ class AssignRoles
     public static function assignableBy(User $actor): Collection
     {
         $roles = Role::query()->with('permissions')->where('guard_name', 'web')->orderBy('level')->orderBy('name')->get();
-        $actorPermissions = $actor->isCreator() ? [] : self::permissionsOf($actor);
 
-        return $roles->filter(fn (Role $role): bool => self::mayAssign($actor, $role, $actorPermissions))->values();
-    }
-
-    /** @param  list<string>  $actorPermissions */
-    private static function mayAssign(User $actor, Role $role, array $actorPermissions): bool
-    {
-        if ($actor->isCreator()) {
-            return true;
-        }
-
-        return ($role->level ?? 0) < $actor->level()
-            && array_diff($role->permissions->pluck('name')->all(), $actorPermissions) === [];
-    }
-
-    /** @return list<string> */
-    private static function permissionsOf(User $actor): array
-    {
-        return $actor->getAllPermissions()->pluck('name')->values()->all();
+        return $roles->filter(fn (Role $role): bool => RolePermissionGuard::mayAssign($actor, $role))->values();
     }
 }

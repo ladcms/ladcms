@@ -192,3 +192,57 @@ it('lets the creator grant anything', function () {
 
     expect($role->fresh()->permissions)->toHaveCount(2);
 });
+
+it('keeps exactly one default when a form-encoded flag "1" is posted', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
+
+    rolesAs($this->mainAdmin)->put("/admin/roles/{$role->id}", ['is_default' => '1', 'level' => '', 'color' => ''])
+        ->assertSessionHasNoErrors();
+
+    expect(Role::query()->where('is_default', true)->pluck('name')->all())->toBe(['editor'])
+        ->and($role->fresh()->level)->toBeNull()
+        ->and($role->fresh()->color)->toBeNull();
+});
+
+it('refuses to clear the only default with a form-encoded "0"', function () {
+    $default = Role::defaultForRegistration();
+
+    rolesAs($this->creator)->put("/admin/roles/{$default->id}", ['is_default' => '0'])->assertSessionHasErrors('general');
+
+    expect(Role::query()->where('is_default', true)->count())->toBe(1);
+});
+
+it('forbids a lower-ranked manager making a role with foreign permissions the default', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
+    $role->givePermissionTo('users.delete');
+
+    rolesAs($this->superModerator)->put("/admin/roles/{$role->id}", ['is_default' => '1'])->assertForbidden();
+
+    expect($role->fresh()->is_default)->toBeFalse();
+
+    rolesAs($this->creator)->put("/admin/roles/{$role->id}", ['is_default' => '1'])->assertSessionHasNoErrors();
+    expect($role->fresh()->is_default)->toBeTrue();
+});
+
+it('forbids updating and deleting a role at or above the actor level', function () {
+    $admin = Role::findByName('admin', 'web');
+
+    rolesAs($this->superModerator)->put("/admin/roles/{$admin->id}", ['color' => '#000000'])->assertForbidden();
+    rolesAs($this->superModerator)->delete("/admin/roles/{$admin->id}")->assertForbidden();
+});
+
+it('forbids deleting a role carrying permissions the actor lacks', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
+    $role->givePermissionTo('users.delete');
+
+    rolesAs($this->superModerator)->delete("/admin/roles/{$role->id}")->assertForbidden();
+
+    expect($role->fresh())->not->toBeNull();
+});
+
+it('reports assignLevel ability for a custom level-less role', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
+
+    rolesAs($this->mainAdmin)->get("/admin/roles/{$role->id}/edit")
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('can.assignLevel', true)->where('can.rename', true));
+});

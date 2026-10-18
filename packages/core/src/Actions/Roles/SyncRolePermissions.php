@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
+use Ladcms\Core\Support\RolePermissionGuard;
 use Spatie\Permission\Models\Permission;
 
 class SyncRolePermissions
@@ -39,7 +40,7 @@ class SyncRolePermissions
         $removed = array_values(array_diff($current, $names));
 
         if (! $actor->isCreator()) {
-            $held = $actor->getAllPermissions()->pluck('name')->all();
+            $held = RolePermissionGuard::permissionsOf($actor);
             if (array_diff([...$added, ...$removed], $held) !== []) {
                 throw new AuthorizationException('You cannot grant or revoke permissions you do not have.');
             }

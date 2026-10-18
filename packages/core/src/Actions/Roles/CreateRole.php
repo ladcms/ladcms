@@ -21,15 +21,17 @@ class CreateRole
     public function handle(User $actor, array $data): Role
     {
         $gate = Gate::forUser($actor);
-        $level = $data['level'] ?? null;
+        $level = ($data['level'] ?? '') === '' ? null : (int) $data['level'];
+        $color = ($data['color'] ?? '') === '' ? null : $data['color'];
 
         $gate->authorize('create', Role::class);
         $gate->authorize('assignLevel', [Role::class, $level]);
 
-        $isDefault = (bool) ($data['is_default'] ?? false);
+        $isDefault = filter_var($data['is_default'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-        $role = DB::transaction(function () use ($data, $level, $isDefault): Role {
+        $role = DB::transaction(function () use ($data, $level, $color, $isDefault): Role {
             if ($isDefault) {
+                Role::query()->where('is_default', true)->lockForUpdate()->get();
                 Role::query()->where('is_default', true)->update(['is_default' => false]);
             }
 
@@ -37,7 +39,7 @@ class CreateRole
                 'name' => $data['name'],
                 'guard_name' => 'web',
                 'level' => $level,
-                'color' => $data['color'] ?? null,
+                'color' => $color,
                 'is_default' => $isDefault,
                 'is_system' => false,
             ]);

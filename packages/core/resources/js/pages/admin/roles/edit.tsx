@@ -147,9 +147,10 @@ function RoleForm({ role, can }: Pick<Props, 'role' | 'can'>) {
                                 <Input
                                     id="role-color"
                                     name="color"
-                                    type="color"
-                                    className="h-9 w-20 p-1"
-                                    defaultValue={role.color ?? '#6366f1'}
+                                    placeholder="#rrggbb"
+                                    pattern="#[0-9a-fA-F]{6}"
+                                    autoComplete="off"
+                                    defaultValue={role.color ?? ''}
                                     disabled={!can.update}
                                 />
                                 <FieldError message={errors.color} />
