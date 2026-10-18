@@ -64,6 +64,6 @@ final class TableQuery
      */
     public static function paginate(Builder $q, Request $r, int $perPage = 25): LengthAwarePaginator
     {
-        return $q->paginate($perPage)->withQueryString();
+        return $q->paginate($perPage, ['*'], 'page', $r->integer('page', 1))->appends($r->query());
     }
 }

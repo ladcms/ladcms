@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Enums\BanType;
 use Ladcms\Core\Http\Resources\Admin\BanResource;
 use Ladcms\Core\Http\Resources\Admin\UserDetailResource;
 use Ladcms\Core\Http\Resources\Admin\UserListResource;
+use Ladcms\Core\Http\Resources\Admin\UserListResource as ListRes;
 use Ladcms\Core\Models\Ban;
 use Ladcms\Core\Models\User;
 
@@ -57,4 +60,21 @@ it('ban resource reports is_active', function () {
     $data = new BanResource($expired)->resolve(Request::create('/x'));
 
     expect($data['is_active'])->toBeFalse()->and($data['banned_by'])->toBeNull();
+});
+
+it('resolves a user list without per-row queries', function () {
+    $this->seed(RolesSeeder::class);
+    $users = User::factory()->count(3)->create();
+    $users->each(fn (User $u) => $u->assignRole('user'));
+    makeBan($users[0]);
+
+    $loaded = User::with('roles')->withActiveBanFlag()->get();
+
+    DB::enableQueryLog();
+    $rows = ListRes::collection($loaded)->resolve(Request::create('/x'));
+    $count = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($count)->toBe(0)
+        ->and(collect($rows)->where('is_banned', true))->toHaveCount(1);
 });

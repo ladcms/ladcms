@@ -57,7 +57,6 @@ it('ignores search when no searchable columns', function () {
 it('keeps the query string in pagination links', function () {
     User::factory()->count(3)->create();
     $request = Request::create('/x', 'GET', ['sort' => 'login', 'q' => 'a']);
-    app()->instance('request', $request);
 
     $page = TableQuery::paginate(TableQuery::apply(User::query(), $request, ['login'], 'id'), $request, 2);
 

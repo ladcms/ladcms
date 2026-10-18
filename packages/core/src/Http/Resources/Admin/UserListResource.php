@@ -9,7 +9,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 
-/** @mixin User */
+/**
+ * Контроллеры списков обязаны делать `with('roles')` и `->withActiveBanFlag()`,
+ * иначе на каждую строку уходят отдельные запросы.
+ *
+ * @mixin User
+ */
 class UserListResource extends JsonResource
 {
     /** @return array<string, mixed> */
@@ -34,7 +39,9 @@ class UserListResource extends JsonResource
             'avatar_url' => $user->avatar_url,
             'roles' => $roles,
             'is_online' => $user->isOnline(),
-            'is_banned' => $user->isBanned(),
+            'is_banned' => $user->getAttribute('is_banned') !== null
+                ? (bool) $user->getAttribute('is_banned')
+                : $user->isBanned(),
             'is_suspicious' => $user->is_suspicious,
             'created_at' => $user->created_at?->toIso8601String(),
             'last_activity_at' => $user->last_activity_at?->toIso8601String(),

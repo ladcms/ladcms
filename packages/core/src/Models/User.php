@@ -180,6 +180,17 @@ class User extends Authenticatable
     public const ONLINE_MINUTES = 10;
 
     /**
+     * Добавляет булев атрибут `is_banned` (активный бан) одним подзапросом.
+     *
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeWithActiveBanFlag(Builder $query): Builder
+    {
+        return $query->withExists(['bans as is_banned' => fn ($q) => $q->active()]);
+    }
+
+    /**
      * @param  Builder<User>  $query
      * @return Builder<User>
      */
