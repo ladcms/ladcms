@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Ladcms\Core\Http\Controllers\Admin\ActivityController;
 use Ladcms\Core\Http\Controllers\Admin\BansController;
 use Ladcms\Core\Http\Controllers\Admin\ComplaintsController;
 use Ladcms\Core\Http\Controllers\Admin\DashboardController;
+use Ladcms\Core\Http\Controllers\Admin\ModulesController;
 use Ladcms\Core\Http\Controllers\Admin\RolesController;
 use Ladcms\Core\Http\Controllers\Admin\SettingsController;
 use Ladcms\Core\Http\Controllers\Admin\UserBanController;
@@ -47,3 +49,8 @@ Route::prefix('/settings/{group}')->name('settings.')->middleware('can:settings.
     Route::get('/', [SettingsController::class, 'edit'])->name('edit');
     Route::put('/', [SettingsController::class, 'update'])->name('update');
 });
+
+Route::get('/modules', [ModulesController::class, 'index'])->middleware('can:modules.manage')->name('modules.index');
+Route::patch('/modules/{name}', [ModulesController::class, 'toggle'])->name('modules.toggle');
+
+Route::get('/activity', [ActivityController::class, 'index'])->middleware('can:activity.view')->name('activity.index');

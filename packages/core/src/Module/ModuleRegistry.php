@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Ladcms\Core\Module;
 
 use Composer\Semver\Semver;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
+use Ladcms\Core\Models\Module;
+use PDOException;
 use UnexpectedValueException;
 
 class ModuleRegistry
@@ -22,6 +26,11 @@ class ModuleRegistry
     /** @var array<string, string> модули, пропущенные при boot => причина пропуска */
     private array $skipped = [];
 
+    /** @var array<string, string> модули, выключенные администратором => причина */
+    private array $disabled = [];
+
+    private bool $disabledLoaded = false;
+
     private bool $validated = false;
 
     public function __construct(private readonly string $coreVersion) {}
@@ -30,6 +39,8 @@ class ModuleRegistry
     {
         $this->registered[$module->name()] = $module;
         $this->validated = false;
+        // Набор модулей изменился (в тестах — после появления строк в БД): выключенные читаем заново.
+        $this->disabledLoaded = false;
     }
 
     /**
@@ -42,6 +53,8 @@ class ModuleRegistry
         if ($this->validated) {
             return;
         }
+
+        $this->loadDisabledFromDatabase();
 
         $previous = $this->failures;
         $this->modules = $this->registered;
@@ -59,6 +72,13 @@ class ModuleRegistry
             } catch (UnexpectedValueException $e) {
                 // Битый constraint одного модуля не должен ронять весь сайт.
                 $this->fail($name, "invalid core version constraint [{$module->coreVersion()}]: {$e->getMessage()}");
+            }
+        }
+
+        // Выключенный администратором модуль недоступен — как непрошедший проверку (причина важнее «skipped at boot»).
+        foreach ($this->disabled as $name => $reason) {
+            if (isset($this->modules[$name])) {
+                $this->fail($name, $reason);
             }
         }
 
@@ -99,6 +119,45 @@ class ModuleRegistry
 
         $this->skipped[$name] ??= $this->failures[$name]->reason ?? 'unknown reason';
         $this->validated = false;
+    }
+
+    /** Помечает модуль выключенным администратором. `core` выключить нельзя. */
+    public function markDisabled(string $name, string $reason = 'disabled by administrator'): void
+    {
+        if ($name === 'core') {
+            return;
+        }
+
+        $this->disabled[$name] = $reason;
+        $this->validated = false;
+    }
+
+    /**
+     * Один раз за запрос читает `modules.is_enabled = false` из БД. Таблицы может не быть
+     * (`ladcms:install` до миграций, тесты без БД) — тогда выключенных модулей нет.
+     */
+    private function loadDisabledFromDatabase(): void
+    {
+        if ($this->disabledLoaded) {
+            return;
+        }
+        $this->disabledLoaded = true;
+
+        try {
+            if (! Schema::hasTable('modules')) {
+                return;
+            }
+
+            $names = Module::query()->where('is_enabled', false)->pluck('name');
+        } catch (QueryException|PDOException) {
+            return;
+        }
+
+        foreach ($names as $name) {
+            if ($name !== 'core') {
+                $this->disabled[(string) $name] = 'disabled by administrator';
+            }
+        }
     }
 
     private function fail(string $name, string $reason): void

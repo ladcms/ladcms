@@ -3,6 +3,34 @@
 declare(strict_types=1);
 
 return [
+    'dashboard' => [
+        'title' => 'Dashboard',
+        'users_total' => 'Users',
+        'users_online' => 'Online now',
+        'users_today' => 'New today',
+        'pending_complaints' => 'Pending complaints',
+        'active_bans' => 'Active bans',
+        'modules' => 'Modules installed',
+        'modules_failed' => 'failed',
+        'recent_activity' => 'Recent activity',
+        'recent_users' => 'New users',
+    ],
+    'modules' => [
+        'title' => 'Modules',
+        'update_hint' => 'To update modules run php artisan ladcms:update',
+        'status_active' => 'Active',
+        'status_failed' => 'Failed',
+        'status_disabled' => 'Disabled',
+        'status_not_installed' => 'Not installed',
+    ],
+    'activity' => [
+        'title' => 'Activity log',
+        'causer' => 'Actor',
+        'event' => 'Event',
+        'from' => 'From',
+        'to' => 'To',
+        'properties' => 'Properties',
+    ],
     'saved' => 'Saved',
     'user_deleted' => 'User deleted',
     'roles' => [

@@ -45,7 +45,7 @@ it('renders the dashboard with the admin menu after confirmation', function () {
         ->assertOk()
         ->assertInertia(function (AssertableInertia $page) use ($mod) {
             $page->component('core::admin/dashboard')
-                ->where('stats', [])
+                ->has('stats.users_total')
                 ->has('admin.menu')
                 ->where('admin.user.id', $mod->id);
 

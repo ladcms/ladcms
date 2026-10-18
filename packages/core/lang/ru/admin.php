@@ -3,6 +3,34 @@
 declare(strict_types=1);
 
 return [
+    'dashboard' => [
+        'title' => 'Панель управления',
+        'users_total' => 'Пользователей',
+        'users_online' => 'Сейчас онлайн',
+        'users_today' => 'Новых сегодня',
+        'pending_complaints' => 'Жалоб на рассмотрении',
+        'active_bans' => 'Активных банов',
+        'modules' => 'Модулей установлено',
+        'modules_failed' => 'с ошибками',
+        'recent_activity' => 'Последние действия',
+        'recent_users' => 'Новые пользователи',
+    ],
+    'modules' => [
+        'title' => 'Модули',
+        'update_hint' => 'Для обновления модулей выполните php artisan ladcms:update',
+        'status_active' => 'Активен',
+        'status_failed' => 'Ошибка',
+        'status_disabled' => 'Выключен',
+        'status_not_installed' => 'Не установлен',
+    ],
+    'activity' => [
+        'title' => 'Журнал действий',
+        'causer' => 'Кто',
+        'event' => 'Событие',
+        'from' => 'С',
+        'to' => 'По',
+        'properties' => 'Свойства',
+    ],
     'saved' => 'Сохранено',
     'user_deleted' => 'Пользователь удалён',
     'roles' => [

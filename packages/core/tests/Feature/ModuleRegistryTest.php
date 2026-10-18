@@ -107,3 +107,25 @@ it('collects modules implementing an interface', function () {
     expect($registry->implementing(HasPermissions::class)->keys()->all())
         ->toBe(['core', 'dummy']);
 });
+
+it('treats a disabled module like a failed one and fails its dependents', function () {
+    $this->app->register(FriendServiceProvider::class);
+    $registry = app(ModuleRegistry::class);
+    expect($registry->has('friend'))->toBeTrue();
+
+    $registry->markDisabled('friend');
+
+    expect($registry->has('friend'))->toBeFalse()
+        ->and($registry->failures()['friend']->reason)->toBe('disabled by administrator');
+});
+
+it('recomputes a disabled module from scratch and never disables core', function () {
+    $registry = app(ModuleRegistry::class);
+
+    $registry->markDisabled('dummy', 'custom reason');
+    $registry->markDisabled('core');
+
+    expect($registry->has('dummy'))->toBeFalse()
+        ->and($registry->failures()['dummy']->reason)->toBe('custom reason')
+        ->and($registry->has('core'))->toBeTrue();
+});
