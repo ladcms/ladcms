@@ -94,3 +94,16 @@ it('refuses to review a complaint back to pending', function () {
 
     expect(fn () => app(ReviewComplaint::class)->handle($this->mod, $complaint, ComplaintStatus::Pending))->toThrow(InvalidArgumentException::class);
 });
+
+it('refuses to review a complaint that is not pending', function () {
+    $complaint = app(FileComplaint::class)->handle($this->author, 'spam', 'x', targetUser: $this->target);
+    app(ReviewComplaint::class)->handle($this->mod, $complaint, ComplaintStatus::Rejected);
+    $reviewer = User::factory()->create()->assignRole('moderator');
+
+    expect(fn () => app(ReviewComplaint::class)->handle($reviewer, $complaint->fresh(), ComplaintStatus::Resolved))
+        ->toThrow(InvalidArgumentException::class, 'already been reviewed');
+
+    $fresh = $complaint->fresh();
+    expect($fresh->status)->toBe(ComplaintStatus::Rejected)
+        ->and($fresh->reviewed_by_id)->toBe($this->mod->id);
+});

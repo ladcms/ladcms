@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Ladcms\Core\Http\Controllers\Admin\BansController;
+use Ladcms\Core\Http\Controllers\Admin\ComplaintsController;
 use Ladcms\Core\Http\Controllers\Admin\DashboardController;
 use Ladcms\Core\Http\Controllers\Admin\RolesController;
 use Ladcms\Core\Http\Controllers\Admin\UserBanController;
@@ -32,4 +34,10 @@ Route::prefix('/roles')->name('roles.')->group(function (): void {
     Route::put('/{role}', [RolesController::class, 'update'])->name('update');
     Route::put('/{role}/permissions', [RolesController::class, 'permissions'])->name('permissions');
     Route::delete('/{role}', [RolesController::class, 'destroy'])->name('destroy');
+});
+
+Route::prefix('/moderation')->name('moderation.')->group(function (): void {
+    Route::get('/complaints', [ComplaintsController::class, 'index'])->middleware('can:complaints.review')->name('complaints.index');
+    Route::patch('/complaints/{complaint}', [ComplaintsController::class, 'review'])->name('complaints.review');
+    Route::get('/bans', [BansController::class, 'index'])->middleware('can:users.ban')->name('bans.index');
 });

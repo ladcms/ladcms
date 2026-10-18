@@ -24,12 +24,16 @@ use Ladcms\Core\Module\ModuleServiceProvider;
  */
 class AdminMenu
 {
+    /** Число pending-жалоб на время одного `build()`: `false` — ещё не считали. */
+    private int|false|null $pendingComplaints = false;
+
     public function __construct(private readonly ModuleRegistry $modules) {}
 
     /** @return list<MenuItem> */
     public function build(User $user, Request $request): array
     {
         $menu = [];
+        $this->pendingComplaints = false;
 
         $core = $this->modules->get('core');
         if ($core instanceof HasAdminPanel) {
@@ -147,7 +151,7 @@ class AdminMenu
                 order: $child['order'] ?? 0,
                 permission: $child['permission'] ?? null,
                 active: $i === $activeIndex,
-                badge: $key === 'complaints' && $child['route'] === 'admin.moderation.complaints.index' ? $this->pendingComplaints($user) : null,
+                badge: $child['route'] === 'admin.moderation.complaints.index' ? $this->pendingComplaints($user) : null,
             );
         }
 
@@ -250,13 +254,12 @@ class AdminMenu
 
     private function pendingComplaints(User $user): ?int
     {
-        if (! $user->can('complaints.review')) {
-            return null;
+        if ($this->pendingComplaints === false) {
+            $count = $user->can('complaints.review') ? Complaint::query()->pending()->count() : 0;
+            $this->pendingComplaints = $count > 0 ? $count : null;
         }
 
-        $count = Complaint::query()->pending()->count();
-
-        return $count > 0 ? $count : null;
+        return $this->pendingComplaints;
     }
 
     private function translate(string $key, string $fallback): string

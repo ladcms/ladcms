@@ -27,6 +27,10 @@ class ReviewComplaint
             throw new InvalidArgumentException('A complaint cannot be reviewed back to pending.');
         }
 
+        if ($complaint->status !== ComplaintStatus::Pending) {
+            throw new InvalidArgumentException('This complaint has already been reviewed.');
+        }
+
         $complaint->update([
             'status' => $status,
             'reviewed_by_id' => $reviewer->id,
