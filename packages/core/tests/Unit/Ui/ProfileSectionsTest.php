@@ -110,7 +110,7 @@ it('collects counters and ignores a failing counters closure', function () {
     Log::shouldReceive('warning')->atLeast()->once();
     $this->app->make(ModuleRegistry::class)->register(profileModule('broken', ['counters' => fn () => throw new RuntimeException('boom')]));
 
-    $counters = app(ProfileSections::class)->counters(User::factory()->create());
+    $counters = app(ProfileSections::class)->counters(User::factory()->create(), null);
 
     expect($counters)->toBe([['key' => 'dummy-posts', 'label' => 'Posts', 'value' => 7, 'tab' => 'dummy']]);
 });
@@ -124,4 +124,37 @@ it('returns tab data only for a known module tab', function () {
         ->and($sections->hasModuleTab($user, null, 'ghost'))->toBeFalse()
         ->and($sections->hasModuleTab($user, null, 'overview'))->toBeFalse()
         ->and($sections->tabData($user, null, 'ghost'))->toBe([]);
+});
+
+it('hides actions on the viewer own profile', function () {
+    $user = User::factory()->create();
+
+    expect(app(ProfileSections::class)->actions($user, $user))->toBe([]);
+});
+
+it('calls profileSections() once per module per request', function () {
+    DummyServiceProvider::$sectionsCalls = 0;
+    $sections = app(ProfileSections::class);
+    $user = User::factory()->create();
+
+    $sections->tabs($user, null);
+    $sections->overview($user, null);
+    $sections->counters($user, null);
+    $sections->hasModuleTab($user, null, 'dummy');
+
+    expect(DummyServiceProvider::$sectionsCalls)->toBe(1);
+});
+
+it('passes the viewer to counters closures', function () {
+    $seen = new ArrayObject;
+    app(ModuleRegistry::class)->register(profileModule('spy', ['counters' => function (User $target, ?User $viewer) use ($seen): array {
+        $seen[] = $viewer?->id;
+
+        return [];
+    }]));
+    $viewer = User::factory()->create();
+
+    app(ProfileSections::class)->counters(User::factory()->create(), $viewer);
+
+    expect($seen->getArrayCopy())->toBe([$viewer->id]);
 });

@@ -77,14 +77,23 @@ class DummyServiceProvider extends ModuleServiceProvider implements HasAdminPane
         ];
     }
 
+    /** Счётчики вызовов для тестов ленивости профиля. */
+    public static int $sectionsCalls = 0;
+
+    public static int $countersCalls = 0;
+
     public function profileSections(): array
     {
+        self::$sectionsCalls++;
+
         return [
             'tab' => ['label' => 'Dummy tab', 'component' => 'dummy::Tab'],
             'overview' => ['component' => 'dummy::Block', 'order' => 10],
-            'counters' => fn (User $user): array => [
-                ['key' => 'dummy-posts', 'label' => 'Posts', 'value' => 7, 'tab' => 'dummy'],
-            ],
+            'counters' => function (User $target, ?User $viewer): array {
+                self::$countersCalls++;
+
+                return [['key' => 'dummy-posts', 'label' => 'Posts', 'value' => 7, 'tab' => 'dummy']];
+            },
         ];
     }
 

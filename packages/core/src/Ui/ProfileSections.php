@@ -24,6 +24,9 @@ class ProfileSections
 
     private const string CORE_OVERVIEW = 'core::Overview';
 
+    /** @var array<string, array<string, mixed>>|null */
+    private ?array $sections = null;
+
     public function __construct(private readonly ModuleRegistry $modules) {}
 
     /** @return list<array{key: string, label: string, component: string}> */
@@ -86,7 +89,8 @@ class ProfileSections
     /** @return list<array{key: string, label: string, icon: string, component: string, order: int}> */
     public function actions(User $target, ?User $viewer): array
     {
-        if (! $viewer instanceof User) {
+        // Действия модулей — для чужих профилей: гостям и владельцу не показываются.
+        if (! $viewer instanceof User || $viewer->is($target)) {
             return [];
         }
 
@@ -133,7 +137,7 @@ class ProfileSections
     }
 
     /** @return list<array{key: string, label: string, value: int|string, tab?: string}> */
-    public function counters(User $target): array
+    public function counters(User $target, ?User $viewer): array
     {
         $counters = [];
 
@@ -144,7 +148,7 @@ class ProfileSections
             }
 
             try {
-                foreach ($closure($target) as $counter) {
+                foreach ($closure($target, $viewer) as $counter) {
                     $this->requireFields($counter, ['key', 'label', 'value']);
                     $counter['label'] = $this->label($counter['label']);
                     $counters[] = $counter;
@@ -189,6 +193,10 @@ class ProfileSections
     /** @return array<string, array<string, mixed>> имя модуля → profileSections() (сломанные модули пропущены) */
     private function sections(): array
     {
+        if ($this->sections !== null) {
+            return $this->sections;
+        }
+
         $all = [];
 
         foreach ($this->modules->implementing(HasProfileSections::class) as $moduleName => $module) {
@@ -199,7 +207,7 @@ class ProfileSections
             }
         }
 
-        return $all;
+        return $this->sections = $all;
     }
 
     /** Ключ перевода → строка; готовая строка (нет такого ключа) остаётся как есть. */

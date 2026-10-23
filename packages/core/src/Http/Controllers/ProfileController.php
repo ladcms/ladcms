@@ -27,7 +27,7 @@ class ProfileController
         $tab = is_string($tab) ? $tab : null;
 
         // Старый логин → постоянный редирект на текущий (вкладка сохраняется).
-        if ($user->login !== LoginRules::normalize($login)) {
+        if (LoginRules::normalize($user->login) !== LoginRules::normalize($login)) {
             return redirect()->route('users.show', array_filter(['login' => $user->login, 'tab' => $tab]), 301);
         }
 
@@ -36,16 +36,15 @@ class ProfileController
 
         $user->load('roles');
 
-        $tabs = $sections->tabs($user, $viewer);
         $active = $tab !== null && $sections->hasModuleTab($user, $viewer, $tab) ? $tab : ProfileSections::OVERVIEW;
 
         return Inertia::render('core::users/show', [
-            'profile' => ProfileResource::make($user)->resolve($request),
-            'tabs' => $tabs,
-            'active_tab' => $active,
-            'overview_blocks' => $sections->overview($user, $viewer),
-            'actions' => $sections->actions($user, $viewer),
-            'moderation' => $this->moderation($user, $viewer),
+            'profile' => fn (): array => ProfileResource::make($user)->resolve($request),
+            'tabs' => fn (): array => $sections->tabs($user, $viewer),
+            'active_tab' => fn (): string => $active,
+            'overview_blocks' => fn (): array => $sections->overview($user, $viewer),
+            'actions' => fn (): array => $sections->actions($user, $viewer),
+            'moderation' => fn (): array => $this->moderation($user, $viewer),
             // Данные вкладки модуля — сразу при заходе по `?tab=`, иначе только по запросу partial reload.
             'tab_data' => $active === ProfileSections::OVERVIEW
                 ? Inertia::optional(fn (): array => [])

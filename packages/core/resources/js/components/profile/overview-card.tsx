@@ -79,6 +79,16 @@ export function OverviewCard({ profile }: { profile: Profile }) {
                     <Row label={t('core::public.profile.card.last_seen')}>
                         {lastSeen}
                     </Row>
+                    {profile.email && (
+                        <Row label={t('core::public.profile.card.email')}>
+                            <a
+                                href={`mailto:${profile.email}`}
+                                className="underline-offset-4 hover:underline"
+                            >
+                                {profile.email}
+                            </a>
+                        </Row>
+                    )}
                     {profile.about && (
                         <Row label={t('core::public.profile.card.about')}>
                             <span className="whitespace-pre-line">

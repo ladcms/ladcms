@@ -36,7 +36,7 @@ class ProfileResource extends PublicUserResource
             $data['is_suspicious'] = $user->is_suspicious;
         }
 
-        $data['counters'] = app(ProfileSections::class)->counters($user);
+        $data['counters'] = app(ProfileSections::class)->counters($user, $viewer instanceof User ? $viewer : null);
 
         return $data;
     }

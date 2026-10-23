@@ -214,3 +214,43 @@ it('gives an administrator the full set', function () {
         ->where('moderation.can_mark_suspicious', true)
         ->where('moderation.can_edit', true));
 });
+
+it('hides module actions on the owner own profile', function () {
+    $this->app->register(DummyServiceProvider::class);
+    Log::shouldReceive('warning')->atLeast()->once();
+    $user = User::factory()->create();
+
+    profileOf($user, $user)->assertInertia(fn (AssertableInertia $page) => $page->where('actions', []));
+});
+
+it('does not evaluate heavy props on a tab-switch partial reload', function () {
+    $this->app->register(DummyServiceProvider::class);
+    $user = User::factory()->create();
+    DummyServiceProvider::$countersCalls = 0;
+    DummyServiceProvider::$sectionsCalls = 0;
+
+    $response = $this->get('/u/'.$user->login.'?tab=dummy', [
+        'X-Inertia' => 'true',
+        'X-Inertia-Version' => (string) Inertia\Inertia::getVersion(),
+        'X-Inertia-Partial-Component' => 'core::users/show',
+        'X-Inertia-Partial-Data' => 'tab_data,active_tab',
+    ])->assertOk();
+
+    expect($response->json('props'))->toHaveKeys(['tab_data', 'active_tab'])->not->toHaveKey('profile')
+        ->and(DummyServiceProvider::$countersCalls)->toBe(0)
+        ->and(DummyServiceProvider::$sectionsCalls)->toBe(1);
+});
+
+it('resolves case-insensitively without redirecting', function () {
+    User::factory()->create(['login' => 'alice']);
+
+    $this->get('/u/ALICE')->assertOk();
+});
+
+it('resolves a re-used login to its current owner without redirect', function () {
+    $former = User::factory()->create(['login' => 'moved']);
+    LoginHistory::query()->create(['user_id' => $former->id, 'old_login' => 'shared', 'changed_at' => now()]);
+    $owner = User::factory()->create(['login' => 'shared']);
+
+    profileOf($owner)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->where('profile.id', $owner->id));
+});

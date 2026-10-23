@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Ellipsis, ShieldCheck } from 'lucide-react';
+import { Ellipsis, Pencil, ShieldCheck } from 'lucide-react';
 import { ModuleSlot } from '@ladcms/core/components/public/module-slot';
 import { RoleBadge } from '@ladcms/core/components/public/role-badge';
 import {
@@ -39,6 +39,11 @@ export function ProfileHeader({
 }) {
     const t = useT();
     const registry = useComponentRegistry();
+    const hasModerationMenu =
+        moderation.can_ban ||
+        moderation.can_assign_roles ||
+        moderation.can_mark_suspicious ||
+        moderation.admin_url !== null;
 
     return (
         <header>
@@ -70,7 +75,15 @@ export function ProfileHeader({
                                 </ModuleSlot>
                             ) : null;
                         })}
-                        {moderation.admin_url && (
+                        {moderation.can_edit && (
+                            <Button variant="outline" asChild>
+                                <Link href="/settings/profile">
+                                    <Pencil aria-hidden />
+                                    {t('core::public.profile.edit')}
+                                </Link>
+                            </Button>
+                        )}
+                        {hasModerationMenu && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -84,14 +97,16 @@ export function ProfileHeader({
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem asChild>
-                                        <Link href={moderation.admin_url}>
-                                            <ShieldCheck aria-hidden />
-                                            {t(
-                                                'core::public.profile.admin_link',
-                                            )}
-                                        </Link>
-                                    </DropdownMenuItem>
+                                    {moderation.admin_url && (
+                                        <DropdownMenuItem asChild>
+                                            <Link href={moderation.admin_url}>
+                                                <ShieldCheck aria-hidden />
+                                                {t(
+                                                    'core::public.profile.admin_link',
+                                                )}
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         )}
@@ -103,6 +118,11 @@ export function ProfileHeader({
                         {profile.display_name}
                     </h1>
                     <RoleBadge roles={profile.roles} className="text-sm" />
+                    {profile.is_suspicious === true && (
+                        <Badge variant="outline">
+                            {t('core::public.profile.suspicious')}
+                        </Badge>
+                    )}
                     {profile.is_banned && (
                         <Badge variant="destructive">
                             {t('core::public.profile.banned')}

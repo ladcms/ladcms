@@ -13,7 +13,7 @@ use Ladcms\Core\Models\User;
  * - `tab`: вкладка профиля (ключ вкладки = имя модуля, `?tab=<module>`); `label` — ключ перевода
  *   (`<module>::public.profile.*`) или готовая строка; компонент получает `{profile, tab_data}`.
  * - `overview`: блок на вкладке «Обзор»; компонент получает `{profile}`.
- * - `counters`: счётчики в шапке профиля; `tab` — ключ вкладки, куда ведёт счётчик.
+ * - `counters`: счётчики в шапке профиля, замыкание получает `(User $target, ?User $viewer)`; `tab` — ключ вкладки, куда ведёт счётчик.
  *
  * Опционально модуль может реализовать метод `profileTabData(User $target, ?User $viewer): array` —
  * данные вкладки (props `tab_data`). Они считаются только при открытой вкладке модуля (`?tab=<module>`);
@@ -25,7 +25,7 @@ interface HasProfileSections
      * @return array{
      *     tab?: array{label: string, component: string},
      *     overview?: array{component: string, order: int},
-     *     counters?: Closure(User): list<array{key: string, label: string, value: int|string, tab?: string}>
+     *     counters?: Closure(User, ?User): list<array{key: string, label: string, value: int|string, tab?: string}>
      * }
      */
     public function profileSections(): array;
