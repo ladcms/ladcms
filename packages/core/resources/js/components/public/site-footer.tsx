@@ -8,10 +8,13 @@ import {
 } from '@ladcms/core/components/ui/select';
 import { useT } from '@ladcms/core/lib/i18n';
 import type { LayoutShared } from '@ladcms/core/types/layout';
+import { rules } from '@/routes';
+import { page as notificationsPage } from '@/routes/notifications';
 
 export function SiteFooter() {
     const t = useT();
-    const { layout, locale, locales } = usePage<{
+    const { auth, layout, locale, locales } = usePage<{
+        auth?: { user: unknown } | null;
         layout?: LayoutShared | null;
         locale?: string;
         locales?: Record<string, string>;
@@ -28,7 +31,15 @@ export function SiteFooter() {
                     })}
                 </span>
                 <div className="flex items-center gap-4">
-                    <Link href="/rules" className="hover:text-foreground">
+                    {auth?.user && (
+                        <Link
+                            href={notificationsPage()}
+                            className="hover:text-foreground"
+                        >
+                            {t('core::public.footer.notifications')}
+                        </Link>
+                    )}
+                    <Link href={rules()} className="hover:text-foreground">
                         {t('core::public.footer.rules')}
                     </Link>
                     {available.length > 1 && (

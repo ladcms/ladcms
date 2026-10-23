@@ -22,7 +22,7 @@ class UserMentioned extends Notification
         public readonly string $url,
     ) {}
 
-    /** @return array{author_id: int, author_login: string, context_type: string, context_id: mixed, url: string} */
+    /** @return array{author_id: int, author_login: string, context_type: string, context_id: mixed, url: string, title: string, params: array{name: string}} */
     public function toDatabase(object $notifiable): array
     {
         return [
@@ -31,6 +31,8 @@ class UserMentioned extends Notification
             'context_type' => $this->context->getMorphClass(),
             'context_id' => $this->context->getKey(),
             'url' => $this->url,
+            'title' => 'core::public.notifications.mentioned',
+            'params' => ['name' => $this->author->login],
         ];
     }
 

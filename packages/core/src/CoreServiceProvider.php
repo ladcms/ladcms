@@ -88,6 +88,7 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
             '@radix-ui/react-popover' => '^1.3.1',
             '@radix-ui/react-switch' => '^1.4.1',
             '@radix-ui/react-tabs' => '^1.2.1',
+            '@tailwindcss/typography' => '^0.5.16',
             'cmdk' => '^1.1.1',
         ];
     }
@@ -135,7 +136,7 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
         return [
             ['key' => 'home', 'label' => 'core::public.nav.home', 'icon' => 'house', 'route' => 'home', 'order' => 10],
             ['key' => 'users', 'label' => 'core::public.nav.users', 'icon' => 'users', 'route' => 'users.index', 'order' => 20],
-            ['key' => 'rules', 'label' => 'core::public.nav.rules', 'icon' => 'scroll', 'route' => 'rules', 'order' => 30, 'path' => '/rules'],
+            ['key' => 'rules', 'label' => 'core::public.nav.rules', 'icon' => 'scroll', 'route' => 'rules', 'order' => 30],
         ];
     }
 
@@ -152,7 +153,7 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
             ['name' => 'welcome', 'component' => 'core::Welcome', 'slot' => 'main', 'order' => 10, 'props' => fn (): array => [
                 'site_name' => app(GeneralSettings::class)->site_name,
                 'description' => app(GeneralSettings::class)->site_description ?: null,
-                'rules_url' => '/rules',
+                'rules_url' => route('rules'),
             ]],
             ['name' => 'online', 'component' => 'core::Online', 'slot' => 'sidebar', 'order' => 10, 'props' => function () use ($avatar): array {
                 $online = UserModel::query()->where('last_activity_at', '>=', now()->subMinutes(DashboardStats::ONLINE_MINUTES));

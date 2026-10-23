@@ -39,7 +39,7 @@ it('shares the core Welcome widget in the main slot', function () {
         ->where('layout.widgets.main.0.component', 'core::Welcome')
         ->where('layout.widgets.main.0.module', 'core')
         ->where('layout.widgets.main.0.props.site_name', 'Cool Site')
-        ->where('layout.widgets.main.0.props.rules_url', '/rules')
+        ->where('layout.widgets.main.0.props.rules_url', route('rules'))
         ->has('layout.widgets.main.0.props.description'));
 });
 

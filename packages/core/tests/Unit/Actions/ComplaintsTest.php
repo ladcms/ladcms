@@ -41,7 +41,8 @@ it('files a complaint against a user and notifies moderators', function () {
         ->and($complaint->reportable_type)->toBeNull();
 
     Notification::assertSentTo($this->mod, ComplaintFiled::class, fn (ComplaintFiled $n, array $channels) => $channels === ['database']
-        && $n->toDatabase($this->mod) === ['complaint_id' => $complaint->id, 'reason_code' => 'spam', 'author_login' => $this->author->login]);
+        && $n->toDatabase($this->mod) === ['complaint_id' => $complaint->id, 'reason_code' => 'spam', 'author_login' => $this->author->login,
+            'title' => 'core::public.notifications.complaint', 'params' => [], 'url' => '/admin/moderation/complaints']);
     Notification::assertNotSentTo($this->target, ComplaintFiled::class);
     Notification::assertNotSentTo($this->author, ComplaintFiled::class);
 });

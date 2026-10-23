@@ -9,19 +9,6 @@ return [
     'common' => [
         'cancel' => 'Cancel',
     ],
-    'notifications' => [
-        'types' => [
-            'ComplaintFiled' => 'New complaint',
-            'UserBanned' => 'Account restricted',
-            'UserMentioned' => 'You were mentioned',
-        ],
-        'title' => 'Notifications',
-        'aria' => 'Notifications',
-        'aria_unread' => 'Notifications, :count unread',
-        'mark_all' => 'Mark all as read',
-        'empty' => 'No notifications',
-        'load_error' => 'Failed to load notifications',
-    ],
     'roles' => [
         'names' => [
             'guest' => 'Guest',

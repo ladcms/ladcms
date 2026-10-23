@@ -9,19 +9,6 @@ return [
     'common' => [
         'cancel' => 'Отмена',
     ],
-    'notifications' => [
-        'types' => [
-            'ComplaintFiled' => 'Новая жалоба',
-            'UserBanned' => 'Ограничение аккаунта',
-            'UserMentioned' => 'Вас упомянули',
-        ],
-        'title' => 'Уведомления',
-        'aria' => 'Уведомления',
-        'aria_unread' => 'Уведомления, непрочитанных: :count',
-        'mark_all' => 'Прочитать все',
-        'empty' => 'Уведомлений нет',
-        'load_error' => 'Не удалось загрузить уведомления',
-    ],
     'roles' => [
         'names' => [
             'guest' => 'Гость',

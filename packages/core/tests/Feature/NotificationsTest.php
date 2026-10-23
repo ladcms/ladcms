@@ -40,6 +40,9 @@ it('stores a UserBanned database notification for the banned user', function () 
             'ban_id' => $ban->id,
             'reason_code' => 'spam',
             'expires_at' => $ban->expires_at?->toIso8601String(),
+            'title' => 'core::public.notifications.banned',
+            'params' => [],
+            'url' => null,
         ])
         ->and($this->mod->notifications()->count())->toBe(0);
 });

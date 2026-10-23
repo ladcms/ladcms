@@ -24,13 +24,16 @@ class UserBanned extends Notification implements ShouldQueue
         $this->afterCommit();
     }
 
-    /** @return array{ban_id: int, reason_code: string, expires_at: ?string} */
+    /** @return array{ban_id: int, reason_code: string, expires_at: ?string, title: string, params: array{}, url: null} */
     public function toDatabase(object $notifiable): array
     {
         return [
             'ban_id' => $this->ban->id,
             'reason_code' => $this->ban->reason_code,
             'expires_at' => $this->ban->expires_at?->toIso8601String(),
+            'title' => 'core::public.notifications.banned',
+            'params' => [],
+            'url' => null,
         ];
     }
 

@@ -47,7 +47,7 @@ it('resolves urls with literal fallbacks for routes that do not exist yet', func
 
     expect($urls['home'])->toBe(url('/'))
         ->and($urls['users'])->toEndWith('/users')
-        ->and($urls['rules'])->toEndWith('/rules')
+        ->and($urls['rules'])->toBe(route('rules'))
         ->and($urls['dummy'])->toBe(url('/dummy'));
 });
 
@@ -79,11 +79,14 @@ it('marks the item of the current route as active', function () {
 });
 
 it('marks the fallback-path item active by url prefix', function () {
-    Route::get('/rules/{any}', fn () => 'x')->middleware('web');
+    Route::get('/later/{any}', fn () => 'x')->middleware('web');
+    app(ModuleRegistry::class)->register(brokenNavModule('later', [
+        ['key' => 'later', 'label' => 'Later', 'icon' => 'x', 'route' => 'later.not-yet', 'path' => '/later', 'order' => 5],
+    ]));
 
-    $items = app(Navigation::class)->items(null, navRequest('/rules/abc'));
+    $items = app(Navigation::class)->items(null, navRequest('/later/abc'));
 
-    expect(array_column($items, 'active', 'key')['rules'])->toBeTrue();
+    expect(array_column($items, 'active', 'key')['later'])->toBeTrue();
 });
 
 /** Anonymous module with the given navigation entries. */

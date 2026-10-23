@@ -7,7 +7,9 @@ use Ladcms\Core\Http\Controllers\Api\MentionSearchController;
 use Ladcms\Core\Http\Controllers\BannedController;
 use Ladcms\Core\Http\Controllers\HomeController;
 use Ladcms\Core\Http\Controllers\NotificationsController;
+use Ladcms\Core\Http\Controllers\NotificationsPageController;
 use Ladcms\Core\Http\Controllers\ProfileController;
+use Ladcms\Core\Http\Controllers\RulesController;
 use Ladcms\Core\Http\Controllers\Settings\AvatarController;
 use Ladcms\Core\Http\Controllers\Settings\LocaleController;
 use Ladcms\Core\Http\Controllers\Settings\NotificationPreferencesController;
@@ -18,6 +20,8 @@ use Ladcms\Core\Http\Controllers\UsersController;
 Route::get('/', HomeController::class)->name('home');
 Route::get('/users', [UsersController::class, 'index'])->name('users.index');
 Route::get('/u/{login}', [ProfileController::class, 'show'])->name('users.show');
+Route::get('/rules', [RulesController::class, 'show'])->name('rules');
+Route::get('/notifications', [NotificationsPageController::class, 'index'])->middleware('auth')->name('notifications.page');
 Route::get('/banned', BannedController::class)->middleware('auth')->name('banned');
 Route::middleware(['auth', 'throttle:60,1'])->get('/api/users/mention-search', MentionSearchController::class)->name('api.users.mention-search');
 
