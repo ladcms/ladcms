@@ -374,7 +374,10 @@ export default function RoleEdit(props: Props) {
 RoleEdit.layout = {
     title: 'core::admin.roles.edit.title',
     breadcrumbs: [
-        { title: 'core::admin.roles.edit.roles', href: '/admin/roles' },
+        {
+            title: 'core::admin.roles.edit.roles',
+            href: RolesController.index.url(),
+        },
         { title: 'core::admin.roles.edit.title' },
     ],
 };

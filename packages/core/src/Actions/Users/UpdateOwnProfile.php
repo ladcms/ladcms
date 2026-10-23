@@ -48,7 +48,7 @@ class UpdateOwnProfile
         if (is_string($data['email'] ?? null)) {
             $email = mb_strtolower(trim($data['email']));
             Validator::make(['email' => $email], ['email' => [Rule::unique('users', 'email')->ignore($user->id)]])->validate();
-            $newEmail = $email !== $user->email ? $email : null;
+            $newEmail = EmailChange::differs($user, $email) ? $email : null;
         }
         unset($data['email']);
 

@@ -138,12 +138,30 @@ it('rejects over-long about and signature', function () {
         ->and(fn () => app(UpdateOwnProfile::class)->handle($this->user, ['signature' => str_repeat('a', 501)]))->toThrow(ValidationException::class);
 });
 
-it('validates name, sex and birth date for direct callers', function (array $data) {
-    expect(fn () => app(UpdateOwnProfile::class)->handle($this->user, $data))->toThrow(ValidationException::class);
+it('validates name, sex and birth date for direct callers', function (Closure $data) {
+    expect(fn () => app(UpdateOwnProfile::class)->handle($this->user, $data()))->toThrow(ValidationException::class);
 })->with([
-    'empty name' => [['name' => '']],
-    'long name' => [['name' => str_repeat('a', 256)]],
-    'bad sex' => [['sex' => 'other']],
-    'future birth date' => [['birth_date' => now()->addDay()->toDateString()]],
-    'bad birth date' => [['birth_date' => 'yesterday-ish']],
+    'empty name' => [fn () => ['name' => '']],
+    'long name' => [fn () => ['name' => str_repeat('a', 256)]],
+    'bad sex' => [fn () => ['sex' => 'other']],
+    // Closure: the date is computed when the test runs, not at file load (midnight flake).
+    'future birth date' => [fn () => ['birth_date' => now()->addDay()->toDateString()]],
+    'bad birth date' => [fn () => ['birth_date' => 'yesterday-ish']],
 ]);
+
+it('treats a case-only difference from a legacy mixed-case stored email as unchanged', function () {
+    Notification::fake();
+    $settings = app(RegistrationSettings::class);
+    $settings->require_email_verification = true;
+    $settings->save();
+    User::query()->whereKey($this->user->id)->toBase()->update(['email' => 'Foo@x.ru', 'email_verified_at' => now()]);
+    $verifiable = VerifiableUser::query()->findOrFail($this->user->id);
+
+    app(UpdateOwnProfile::class)->handle($verifiable, ['email' => 'foo@x.ru', 'name' => 'Old']);
+
+    $fresh = $verifiable->fresh();
+    expect($fresh->email)->toBe('Foo@x.ru')
+        ->and($fresh->email_verified_at)->not->toBeNull()
+        ->and(Activity::query()->where('event', 'user.profile_updated')->exists())->toBeFalse();
+    Notification::assertNothingSent();
+});

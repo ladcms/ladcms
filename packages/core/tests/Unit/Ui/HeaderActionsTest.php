@@ -89,3 +89,27 @@ it('sorts equal orders by key', function () {
 
     expect(array_column(app(HeaderActions::class)->items(null), 'key'))->toBe(['alpha', 'zeta', 'dummy']);
 });
+
+it('skips header actions with a non-string component instead of failing', function () {
+    $module = new class(app()) extends ModuleServiceProvider implements HasHeaderActions
+    {
+        public function name(): string
+        {
+            return 'typed';
+        }
+
+        public function version(): string
+        {
+            return '1.0.0';
+        }
+
+        public function headerActions(): array
+        {
+            return [['key' => 'typed', 'icon' => 'x', 'component' => 42, 'order' => 1]];
+        }
+    };
+    app(ModuleRegistry::class)->register($module);
+    Log::shouldReceive('warning')->atLeast()->once();
+
+    expect(array_column(app(HeaderActions::class)->items(null), 'key'))->toBe(['dummy']);
+});

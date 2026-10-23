@@ -67,7 +67,7 @@ Defaults are seeded by settings migrations (they run with `migrate`), not by cla
   Number fields default to `min: 0`). Labels come from `<module>::settings.<group>.title` / `.fields.<name>.label`.
   The settings page `admin.settings.edit` gets a tab per group of every module.
 - Texts: never hard-code UI strings. Put them in `lang/<locale>/admin.php` of the module (both `ru` and `en`) and read them with `const t = useT()` from `@ladcms/core/lib/i18n`:
-  `t('<module>::admin.some.key', { name })` (`:name` placeholders, falls back to the key). Core shares a flat `i18n` map built from every module's `admin` lang namespace on `admin.*` routes only.
+  `t('<module>::admin.some.key', { name })` (`:name` placeholders, falls back to the key). The `admin` namespace is included in the shared `i18n` map on `admin.*` routes (see below).
   Server exception messages stay English; user-facing flash toasts use `Inertia::flash('toast', [...])` with translated text.
 - The admin can disable a module on the Modules page (`modules.is_enabled`); it is skipped on the next boot. Octane and queue workers keep the old module set in memory:
   restart them (`octane:reload`, `queue:restart`) after toggling a module. With cached routes (`route:cache`) the toggle takes effect only after
@@ -87,8 +87,9 @@ Defaults are seeded by settings migrations (they run with `migrate`), not by cla
   Widgets get their `props`; profile tab components `{profile, tab_data}`, overview blocks and actions `{profile}`; header actions get nothing. They are lazy and wrapped in an error boundary; a missing file hides the slot.
 - Public pages of a module are `<module>::Path/Page` (`resources/js/pages/...`) and render inside `PublicLayout` automatically (admin pages: `AdminLayout`). Use `<Seo title description image type />`
   (`@ladcms/core/components/public/seo`) for `<title>`, description and Open Graph tags.
-- Texts: `lang/{ru,en}/public.php` of the module, keys `<module>::public.*`, read with `useT()` (`@ladcms/core/lib/i18n`). The `i18n` map (strings only, current locale, public namespace on every page, `admin` additionally on `admin.*`)
-  is a once-prop: the client keeps it until the locale, scope or module set changes. Placeholders (`:name`) are replaced in a single pass.
+- Texts: `lang/{ru,en}/public.php` of the module, keys `<module>::public.*`, read with `useT()` (`@ladcms/core/lib/i18n`). `i18n` is a normal shared prop sent with every Inertia response
+  (built per request by `Support\TranslationMap` in `SharePublicLayout`): a flat map of strings for the current locale with `<module>::public.*` of every module everywhere,
+  plus `<module>::admin.*` on `admin.*` routes. Placeholders (`:name`) are replaced in a single pass.
 - `layout` share: `navigation` (`key, label, icon, url, order, active`), `header_actions` (`key, icon, component, order`), `widgets.sidebar` / `widgets.main` (`main` only on `home`; `name, component, module, order, props`),
   `site` (`name`, `url`, `description`, `logo_url`, `registration_open` from `RegistrationSettings::isAvailable()` - use it instead of reading registration settings yourself).
 - `auth.user` (`CurrentUserResource`): `id, login, name, display_name, email, avatar_url, roles, permissions, level, is_creator, is_banned, can_write`; `roles` is a list of `{name, color}` (admin-configured hex or `null`), not strings.
@@ -96,7 +97,7 @@ Defaults are seeded by settings migrations (they run with `migrate`), not by cla
 - Privacy: user data for other people goes through `PublicUserResource` / `ProfileResource` only. `email` and `birth_date` are exposed when the user enabled `show_email` / `show_birthday` or the viewer is the owner;
   suspicious flag, raw activity and ban reasons are never exposed (only a public boolean `is_banned`). Never serialize a `User` model into props.
 - Notification types appear in the user's notification settings through `Support\NotificationTypes::register('<key>', <Notification::class>)` (call it in `boot()`; `mergeConfigFrom` is shallow).
-- Error pages: `403/404/500/503` render `core::error` through `Http\ErrorPageRenderer` (wired in the app's `bootstrap/app.php`); in debug mode a 500 keeps Laravel's debug page; `419` redirects back with a toast. JSON requests are untouched.
+- Error pages: `403/404/405/500/503` render `core::error` through `Http\ErrorPageRenderer` (wired in the app's `bootstrap/app.php`); in debug mode a 500 keeps Laravel's debug page; `419` redirects back with a toast. JSON requests are untouched. Unknown URLs hit a GET-only `Route::fallback` in the `web` group (so a POST there is a 405); asset-like paths (`*.ico`, `*.map`, `*.php`, `*.js`, …) get a plain 404 without the layout share or Inertia.
 - Accessibility: skip link and `#main` in `PublicLayout`, labelled `nav` landmarks, `aria-current` on active links, icon-only controls need `aria-label`, `focus-visible:ring-2 focus-visible:ring-ring` on interactive elements, tabs use `role=tablist/tab/tabpanel` with arrow keys.
 - Every public GET route must render an existing page: keep `PublicSmokeTest` green.
 

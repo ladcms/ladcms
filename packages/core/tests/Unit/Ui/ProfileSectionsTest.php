@@ -158,3 +158,25 @@ it('passes the viewer to counters closures', function () {
 
     expect($seen->getArrayCopy())->toBe([$viewer->id]);
 });
+
+it('skips tabs, overview blocks and actions with a non-string component or label instead of failing', function () {
+    Log::shouldReceive('warning')->atLeast()->once();
+    $registry = $this->app->make(ModuleRegistry::class);
+    $registry->register(profileModule('badcomponent', [
+        'tab' => ['label' => 'Bad', 'component' => 42],
+        'overview' => ['component' => ['dummy::Block'], 'order' => 1],
+    ], [
+        ['label' => 'Bad', 'icon' => 'x', 'component' => 7, 'order' => 1],
+    ]));
+    $registry->register(profileModule('badlabel', [
+        'tab' => ['label' => ['nope'], 'component' => 'dummy::Tab'],
+    ], [
+        ['label' => 123, 'icon' => 'x', 'component' => 'dummy::Wave', 'order' => 1],
+    ]));
+    $sections = app(ProfileSections::class);
+    $target = User::factory()->create();
+
+    expect(array_column($sections->tabs($target, null), 'key'))->toBe(['overview', 'dummy'])
+        ->and(array_column($sections->overview($target, null), 'key'))->not->toContain('badcomponent')
+        ->and(array_column($sections->actions($target, User::factory()->create()), 'key'))->toBe(['dummy:Wave']);
+});

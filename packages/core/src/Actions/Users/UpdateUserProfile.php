@@ -38,7 +38,7 @@ class UpdateUserProfile
         if (is_string($data['email'] ?? null)) {
             $email = mb_strtolower(trim($data['email']));
             Validator::make(['email' => $email], ['email' => [Rule::unique('users', 'email')->ignore($target->id)]])->validate();
-            $newEmail = $email !== $target->email ? $email : null;
+            $newEmail = EmailChange::differs($target, $email) ? $email : null;
         }
         unset($data['email']);
 

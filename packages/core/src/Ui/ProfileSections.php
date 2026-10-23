@@ -40,19 +40,18 @@ class ProfileSections
                 continue;
             }
 
+            // componentExists()/label() — внутри try: нестроковые значения дают TypeError, а не 500.
             try {
                 $this->requireFields($tab, ['label', 'component']);
+
+                if ($moduleName === self::OVERVIEW || ! $this->componentExists($this->modules, $tab['component'], 'profile')) {
+                    continue;
+                }
+
+                $tabs[] = ['key' => $moduleName, 'label' => $this->label($tab['label']), 'component' => $tab['component']];
             } catch (Throwable $e) {
                 $this->warnOnce("tab:{$moduleName}", "Module [{$moduleName}] has a malformed profile tab: {$e->getMessage()}");
-
-                continue;
             }
-
-            if ($moduleName === self::OVERVIEW || ! $this->componentExists($this->modules, $tab['component'], 'profile')) {
-                continue;
-            }
-
-            $tabs[] = ['key' => $moduleName, 'label' => $this->label($tab['label']), 'component' => $tab['component']];
         }
 
         return $tabs;
@@ -71,14 +70,12 @@ class ProfileSections
 
             try {
                 $this->requireFields($block, ['component', 'order']);
+
+                if ($this->componentExists($this->modules, $block['component'], 'profile')) {
+                    $blocks[] = ['key' => $moduleName, 'component' => $block['component'], 'order' => $block['order']];
+                }
             } catch (Throwable $e) {
                 $this->warnOnce("overview:{$moduleName}", "Module [{$moduleName}] has a malformed profile overview block: {$e->getMessage()}");
-
-                continue;
-            }
-
-            if ($this->componentExists($this->modules, $block['component'], 'profile')) {
-                $blocks[] = ['key' => $moduleName, 'component' => $block['component'], 'order' => $block['order']];
             }
         }
 
@@ -108,27 +105,25 @@ class ProfileSections
             foreach ($actions as $action) {
                 try {
                     $this->requireFields($action, ['label', 'icon', 'component', 'order']);
+
+                    if (isset($action['permission']) && ! $viewer->can($action['permission'])) {
+                        continue;
+                    }
+
+                    if (! $this->componentExists($this->modules, $action['component'], 'profile')) {
+                        continue;
+                    }
+
+                    $items[] = [
+                        'key' => $moduleName.':'.explode('::', $action['component'], 2)[1],
+                        'label' => $this->label($action['label']),
+                        'icon' => $action['icon'],
+                        'component' => $action['component'],
+                        'order' => $action['order'],
+                    ];
                 } catch (Throwable $e) {
                     $this->warnOnce("action:{$moduleName}", "Module [{$moduleName}] has a malformed profile action: {$e->getMessage()}");
-
-                    continue;
                 }
-
-                if (isset($action['permission']) && ! $viewer->can($action['permission'])) {
-                    continue;
-                }
-
-                if (! $this->componentExists($this->modules, $action['component'], 'profile')) {
-                    continue;
-                }
-
-                $items[] = [
-                    'key' => $moduleName.':'.explode('::', $action['component'], 2)[1],
-                    'label' => $this->label($action['label']),
-                    'icon' => $action['icon'],
-                    'component' => $action['component'],
-                    'order' => $action['order'],
-                ];
             }
         }
 

@@ -153,3 +153,20 @@ it('keeps a once-verified user safe from the unverified prune after an email cha
         ->and(User::withTrashed()->find($this->target->id))->not->toBeNull()
         ->and(User::withTrashed()->find($neverVerified->id))->toBeNull();
 });
+
+it('treats a case-only difference from a legacy mixed-case stored email as unchanged', function () {
+    Notification::fake();
+    $settings = app(RegistrationSettings::class);
+    $settings->require_email_verification = true;
+    $settings->save();
+    User::query()->whereKey($this->target->id)->toBase()->update(['email' => 'Foo@x.ru', 'email_verified_at' => now()]);
+    $verifiable = VerifiableUser::query()->findOrFail($this->target->id);
+
+    app(UpdateUserProfile::class)->handle($this->admin, $verifiable, ['email' => 'FOO@x.ru', 'name' => 'Old']);
+
+    $fresh = $verifiable->fresh();
+    expect($fresh->email)->toBe('Foo@x.ru')
+        ->and($fresh->email_verified_at)->not->toBeNull()
+        ->and(Activity::query()->where('event', 'user.updated')->exists())->toBeFalse();
+    Notification::assertNothingSent();
+});

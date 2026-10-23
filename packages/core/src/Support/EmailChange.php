@@ -12,6 +12,15 @@ use Ladcms\Core\Settings\RegistrationSettings;
 final class EmailChange
 {
     /**
+     * Отличается ли адрес от текущего. Сравнение без учёта регистра: у старых аккаунтов (импорт из DCMS)
+     * email может храниться в смешанном регистре, и пересохранение профиля не должно сбрасывать подтверждение.
+     */
+    public static function differs(User $user, string $email): bool
+    {
+        return mb_strtolower(trim($email)) !== mb_strtolower((string) $user->email);
+    }
+
+    /**
      * Меняет адрес и сохраняет модель (вместе с уже заполненными полями). Новый адрес не подтверждён;
      * если сайт не требует подтверждения — считается подтверждённым (как при регистрации). Письмо
      * подтверждения уходит только моделям с контрактом MustVerifyEmail.

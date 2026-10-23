@@ -29,6 +29,7 @@ import {
 } from '@ladcms/core/components/ui/tabs';
 import type { AdminBreadcrumb } from '@ladcms/core/types/admin';
 import { roleName, useT } from '@ladcms/core/lib/i18n';
+import { index as usersIndex } from '@/routes/admin/users';
 
 /** `BanResource`. */
 export type BanItem = {
@@ -146,7 +147,7 @@ export default function UserShow({
             breadcrumbs: [
                 {
                     title: t('core::admin.users.show.users'),
-                    href: '/admin/users',
+                    href: usersIndex.url(),
                 },
                 { title: user.login },
             ],
@@ -313,7 +314,7 @@ export default function UserShow({
 UserShow.layout = {
     title: 'core::admin.users.show.title',
     breadcrumbs: [
-        { title: 'core::admin.users.show.users', href: '/admin/users' },
+        { title: 'core::admin.users.show.users', href: usersIndex.url() },
         { title: 'core::admin.users.show.title' },
     ],
 };

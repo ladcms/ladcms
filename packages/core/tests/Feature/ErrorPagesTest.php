@@ -29,7 +29,7 @@ function errorPage(SymfonyResponse $response): array
     return json_decode((string) $response->getContent(), true, flags: JSON_THROW_ON_ERROR);
 }
 
-it('renders core::error for 403, 404 and 503 with the right status', function (int $status) {
+it('renders core::error for 403, 404, 405 and 503 with the right status', function (int $status) {
     $response = renderError($status);
 
     expect($response->getStatusCode())->toBe($status);
@@ -38,7 +38,7 @@ it('renders core::error for 403, 404 and 503 with the right status', function (i
         ->and($page['props']['status'])->toBe($status)
         ->and($page['props']['title'])->not->toBe("core::public.errors.{$status}.title")
         ->and($page['props']['message'])->toBeString();
-})->with([403, 404, 503]);
+})->with([403, 404, 405, 503]);
 
 it('renders core::error for 500 in production', function () {
     config(['app.debug' => false]);
@@ -76,7 +76,7 @@ it('keeps the original response for JSON requests and other statuses', function 
 
 it('has translated titles and messages for every handled status in both locales', function () {
     foreach (['ru', 'en'] as $locale) {
-        foreach ([403, 404, 419, 500, 503] as $status) {
+        foreach ([403, 404, 405, 419, 500, 503] as $status) {
             expect(trans("core::public.errors.{$status}.title", [], $locale))->not->toStartWith('core::public');
             expect(trans("core::public.errors.{$status}.message", [], $locale))->not->toStartWith('core::public');
         }
@@ -114,4 +114,32 @@ it('routes an unmatched URL through the web group (fallback route)', function ()
 
 it('keeps JSON 404s for unmatched api URLs', function () {
     test()->getJson('/api/definitely-missing')->assertNotFound()->assertJsonStructure(['message']);
+});
+
+it('shares the public layout on a 405 for an unknown URL hit with another method', function () {
+    $response = renderError(405, Request::create('/definitely-missing', 'POST'));
+
+    expect($response->getStatusCode())->toBe(405)
+        ->and(errorPage($response)['props'])->toHaveKey('layout');
+});
+
+it('keeps the original response for asset-like paths', function (string $path) {
+    $original = new Response('original', 404);
+
+    $response = app(ErrorPageRenderer::class)->render($original, new RuntimeException, Request::create($path));
+
+    expect($response)->toBe($original);
+})->with(['/favicon.ico', '/wp-login.php', '/build/app.js.map', '/img/Logo.PNG', '/fonts/x.woff2', '/robots.txt']);
+
+it('answers a POST to an unknown URL with 405 from the GET-only fallback', function () {
+    test()->post('/definitely-missing')->assertStatus(405);
+});
+
+it('answers an unknown asset-like URL with a plain 404 without the public layout', function () {
+    $response = test()->get('/favicon.ico');
+
+    $response->assertNotFound();
+    expect($response->headers->get('X-Inertia'))->toBeNull()
+        ->and(Inertia\Inertia::getShared('layout'))->toBeNull()
+        ->and(Inertia\Inertia::getShared('i18n'))->toBeNull();
 });

@@ -48,14 +48,13 @@ class HeaderActions
                         'component' => $action['component'],
                         'order' => $action['order'],
                     ];
+
+                    // Внутри try: нестроковый component — TypeError, а не 500 на всей странице.
+                    if ($this->componentExists($this->modules, $item['component'], 'header-actions')) {
+                        $items[] = $item;
+                    }
                 } catch (Throwable $e) {
                     $this->warnOnce("entry:{$name}", "Module [{$name}] has a malformed header action: {$e->getMessage()}");
-
-                    continue;
-                }
-
-                if ($this->componentExists($this->modules, $item['component'], 'header-actions')) {
-                    $items[] = $item;
                 }
             }
         }

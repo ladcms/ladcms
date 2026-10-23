@@ -11,7 +11,7 @@ type Props = {
 };
 
 /**
- * Страница ошибки 403/404/500/503 (`ErrorPageRenderer`). Может отрисоваться без shared-пропов `layout`/`auth`
+ * Страница ошибки 403/404/405/500/503 (`ErrorPageRenderer`). Может отрисоваться без shared-пропов `layout`/`auth`
  * (ошибка случилась до middleware), поэтому ничего из них не требует.
  */
 export default function ErrorPage({ status, title, message }: Props) {

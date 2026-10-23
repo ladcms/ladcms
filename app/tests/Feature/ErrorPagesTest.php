@@ -44,4 +44,24 @@ class ErrorPagesTest extends TestCase
                 ->where('auth.user.id', $user->id)
                 ->where('locale', 'ru'));
     }
+
+    public function test_post_to_an_unknown_url_renders_the_405_error_page(): void
+    {
+        $this->post('/definitely-not-here')
+            ->assertStatus(405)
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('core::error', true)
+                ->where('status', 405)
+                ->has('layout.site.name'));
+    }
+
+    public function test_unknown_asset_like_url_returns_a_plain_404(): void
+    {
+        $response = $this->get('/favicon.ico');
+
+        $response->assertNotFound();
+        $this->assertNull($response->headers->get('X-Inertia'));
+        $this->assertStringNotContainsString('data-page', (string) $response->getContent());
+        $this->assertStringNotContainsString('core::error', (string) $response->getContent());
+    }
 }

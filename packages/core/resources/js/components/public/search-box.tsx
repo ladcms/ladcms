@@ -5,6 +5,7 @@ import { Input } from '@ladcms/core/components/ui/input';
 import { resolveIcon } from '@ladcms/core/lib/icons';
 import { useT } from '@ladcms/core/lib/i18n';
 import { cn } from '@ladcms/core/lib/utils';
+import { index as usersIndex } from '@/routes/users';
 
 export function SearchBox({ className }: { className?: string }) {
     const t = useT();
@@ -14,8 +15,7 @@ export function SearchBox({ className }: { className?: string }) {
     const submit = (event: FormEvent) => {
         event.preventDefault();
         const q = query.trim();
-        // TODO(core-public Task 4): Wayfinder-хелпер, когда появится маршрут `users.index`.
-        router.get('/users', q === '' ? {} : { q });
+        router.get(usersIndex.url(), q === '' ? {} : { q });
     };
 
     return (

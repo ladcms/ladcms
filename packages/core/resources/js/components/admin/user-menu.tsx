@@ -17,6 +17,7 @@ import {
 } from '@ladcms/core/components/ui/dropdown-menu';
 import type { CurrentUser } from '@ladcms/core/types/admin';
 import { roleName, useT } from '@ladcms/core/lib/i18n';
+import { logout } from '@/routes';
 import { profile as settingsProfile } from '@/routes/settings';
 import { show as userProfile } from '@/routes/users';
 
@@ -85,8 +86,7 @@ export function UserMenu({ user }: { user: CurrentUser }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                     <Link
-                        href="/logout"
-                        method="post"
+                        href={logout()}
                         as="button"
                         className="w-full"
                         onClick={() => router.flushAll()}

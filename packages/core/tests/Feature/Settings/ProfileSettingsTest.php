@@ -167,3 +167,19 @@ it('renders the appearance page', function () {
     $this->actingAs($this->user)->get(route('settings.appearance'))->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page->component('core::settings/appearance'));
 });
+
+it('throttles profile updates to 6 per minute', function () {
+    for ($i = 0; $i < 6; $i++) {
+        $this->actingAs($this->user)->patch(route('settings.profile.update'), profilePayload($this->user))->assertRedirect();
+    }
+
+    $this->actingAs($this->user)->patch(route('settings.profile.update'), profilePayload($this->user))->assertStatus(429);
+});
+
+it('throttles login changes to 6 per minute', function () {
+    for ($i = 0; $i < 6; $i++) {
+        $this->actingAs($this->user)->patch(route('settings.login.update'), ['login' => '']);
+    }
+
+    $this->actingAs($this->user)->patch(route('settings.login.update'), ['login' => ''])->assertStatus(429);
+});

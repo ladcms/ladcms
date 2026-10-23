@@ -17,11 +17,19 @@ use Throwable;
 class ErrorPageRenderer
 {
     /** Статусы, для которых показывается страница ошибки. */
-    public const array STATUSES = [403, 404, 500, 503];
+    public const array STATUSES = [403, 404, 405, 500, 503];
+
+    /** Пути, похожие на файлы/ассеты: на них не тратим сессию/layout и отдаём обычный 404 без Inertia. */
+    private const string ASSET_PATH = '/\.(php|ico|map|png|jpg|jpeg|gif|svg|webp|css|js|txt|xml|json|woff2?)$/i';
+
+    public static function isAssetPath(Request $request): bool
+    {
+        return preg_match(self::ASSET_PATH, $request->path()) === 1;
+    }
 
     public function render(Response $response, Throwable $e, Request $request): Response
     {
-        if ($request->expectsJson() || $request->is('api/*')) {
+        if ($request->expectsJson() || $request->is('api/*') || self::isAssetPath($request)) {
             return $response;
         }
 
@@ -58,9 +66,9 @@ class ErrorPageRenderer
             'message' => __("core::public.errors.{$status}.message"),
         ])->toResponse($request);
 
-        // 404 на несуществующий URL приходит до web-middleware: layout ещё не расшарен.
-        // Для 500/503 БД может быть недоступна — там обходимся дефолтами фронта.
-        if ($status === 404 && $request->route() === null) {
+        // 404/405 без маршрута (например, POST на несуществующий URL при GET-only fallback) приходит
+        // до web-middleware: layout ещё не расшарен. Для 500/503 БД может быть недоступна — там обходимся дефолтами фронта.
+        if (in_array($status, [404, 405], true) && $request->route() === null) {
             return (new SharePublicLayout)->handle($request, $render);
         }
 

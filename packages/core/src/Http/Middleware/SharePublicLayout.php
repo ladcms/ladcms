@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Ladcms\Core\Http\ErrorPageRenderer;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Settings\AppearanceSettings;
 use Ladcms\Core\Settings\GeneralSettings;
@@ -28,6 +29,11 @@ class SharePublicLayout
     /** @param  Closure(Request): Response  $next */
     public function handle(Request $request, Closure $next): Response
     {
+        // Ассет-подобный путь (favicon.ico, *.map, …) отдаётся обычным 404 — layout и переводы ему не нужны.
+        if (ErrorPageRenderer::isAssetPath($request)) {
+            return $next($request);
+        }
+
         Inertia::share('layout', $request->routeIs('admin.*') ? null : function (): array {
             // Запрос и пользователь — из контейнера в момент вычисления, а не из захваченного замыкания.
             $request = app(Request::class);

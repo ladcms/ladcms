@@ -8,6 +8,7 @@ import { resolveModulePage } from '@ladcms/core/inertia/resolve-page';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@ladcms/core/hooks/use-appearance';
+import { useDocumentLang } from '@ladcms/core/lib/use-document-lang';
 import AuthLayout from '@/layouts/auth-layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -20,6 +21,13 @@ const modulePages = import.meta.glob(
 const moduleComponents = import.meta.glob(
     '/vendor/ladcms/*/resources/js/{widgets,profile,header-actions}/**/*.tsx',
 );
+
+// `<html lang>` следует за shared-пропом `locale` и при SPA-навигации (смена языка без перезагрузки).
+function DocumentLang() {
+    useDocumentLang();
+
+    return null;
+}
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
@@ -49,6 +57,7 @@ void createInertiaApp({
         return (
             <ComponentRegistryProvider registry={moduleComponents}>
                 <TooltipProvider delayDuration={0}>
+                    <DocumentLang />
                     {app}
                     <Toaster />
                 </TooltipProvider>

@@ -21,6 +21,7 @@ import { useT } from '@ladcms/core/lib/i18n';
 import type { CurrentUser } from '@ladcms/core/types/admin';
 import type { LayoutShared } from '@ladcms/core/types/layout';
 import { login, logout, register } from '@/routes';
+import { dashboard as adminDashboard } from '@/routes/admin';
 import { profile as settingsProfile } from '@/routes/settings';
 import { show as userProfile } from '@/routes/users';
 
@@ -107,7 +108,7 @@ export function UserMenu() {
                     </DropdownMenuItem>
                     {user.permissions.includes('admin.access') && (
                         <DropdownMenuItem asChild>
-                            <Link href="/admin">
+                            <Link href={adminDashboard()}>
                                 <AdminIcon aria-hidden />
                                 {t('core::public.user_menu.admin')}
                             </Link>
