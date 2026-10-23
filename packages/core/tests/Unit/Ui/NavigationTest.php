@@ -79,11 +79,11 @@ it('marks the item of the current route as active', function () {
 });
 
 it('marks the fallback-path item active by url prefix', function () {
-    Route::get('/users/{any}', fn () => 'x')->middleware('web');
+    Route::get('/rules/{any}', fn () => 'x')->middleware('web');
 
-    $items = app(Navigation::class)->items(null, navRequest('/users/abc'));
+    $items = app(Navigation::class)->items(null, navRequest('/rules/abc'));
 
-    expect(array_column($items, 'active', 'key')['users'])->toBeTrue();
+    expect(array_column($items, 'active', 'key')['rules'])->toBeTrue();
 });
 
 /** Anonymous module with the given navigation entries. */

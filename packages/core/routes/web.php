@@ -7,8 +7,10 @@ use Ladcms\Core\Http\Controllers\Api\MentionSearchController;
 use Ladcms\Core\Http\Controllers\BannedController;
 use Ladcms\Core\Http\Controllers\HomeController;
 use Ladcms\Core\Http\Controllers\NotificationsController;
+use Ladcms\Core\Http\Controllers\UsersController;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/users', [UsersController::class, 'index'])->name('users.index');
 Route::get('/banned', BannedController::class)->middleware('auth')->name('banned');
 Route::middleware(['auth', 'throttle:60,1'])->get('/api/users/mention-search', MentionSearchController::class)->name('api.users.mention-search');
 

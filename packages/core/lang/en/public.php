@@ -66,4 +66,23 @@ return [
             'empty' => 'Nobody yet',
         ],
     ],
+    'users' => [
+        'title' => 'Users',
+        'total' => 'Total',
+        'search' => 'Search by login or name',
+        'sort' => 'Sort',
+        'sort_options' => [
+            'created_at_desc' => 'Newest first',
+            'created_at_asc' => 'Oldest first',
+            'login_asc' => 'Login A–Z',
+            'login_desc' => 'Login Z–A',
+            'last_activity_at_desc' => 'Recently active',
+            'last_activity_at_asc' => 'Least recently active',
+        ],
+        'online_only' => 'Online only',
+        'online' => 'Online',
+        'joined' => 'Joined :date',
+        'empty' => 'No users found',
+        'empty_text' => 'Try changing your search.',
+    ],
 ];

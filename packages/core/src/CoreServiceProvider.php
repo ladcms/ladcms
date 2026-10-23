@@ -133,7 +133,7 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
     {
         return [
             ['key' => 'home', 'label' => 'core::public.nav.home', 'icon' => 'house', 'route' => 'home', 'order' => 10],
-            ['key' => 'users', 'label' => 'core::public.nav.users', 'icon' => 'users', 'route' => 'users.index', 'order' => 20, 'path' => '/users'],
+            ['key' => 'users', 'label' => 'core::public.nav.users', 'icon' => 'users', 'route' => 'users.index', 'order' => 20],
             ['key' => 'rules', 'label' => 'core::public.nav.rules', 'icon' => 'scroll', 'route' => 'rules', 'order' => 30, 'path' => '/rules'],
         ];
     }

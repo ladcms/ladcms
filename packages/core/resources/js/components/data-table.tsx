@@ -112,7 +112,7 @@ function SortIcon({
     );
 }
 
-function DataTablePagination({
+export function DataTablePagination({
     pagination,
     currentUrl,
 }: {
