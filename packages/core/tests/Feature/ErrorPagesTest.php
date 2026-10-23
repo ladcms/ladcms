@@ -6,8 +6,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Ladcms\Core\Http\ErrorPageRenderer;
+use Ladcms\Core\Models\User;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 uses(RefreshDatabase::class);
@@ -95,4 +97,21 @@ it('falls back to the original response when the error page itself cannot be bui
 
     expect($response->getStatusCode())->toBe(404)
         ->and($response->getContent())->toBe('original');
+});
+
+it('routes an unmatched URL through the web group (fallback route)', function () {
+    $fallback = collect(Route::getRoutes()->getRoutes())->first(fn ($route) => $route->isFallback);
+
+    expect($fallback)->not->toBeNull()
+        ->and($fallback->gatherMiddleware())->toContain('web');
+
+    // Web-middleware отработали до 404: SetLocale выставил язык пользователя.
+    $user = User::factory()->create(['language' => 'ru']);
+
+    test()->actingAs($user)->get('/definitely-missing')->assertNotFound();
+    expect(app()->getLocale())->toBe('ru');
+});
+
+it('keeps JSON 404s for unmatched api URLs', function () {
+    test()->getJson('/api/definitely-missing')->assertNotFound()->assertJsonStructure(['message']);
 });

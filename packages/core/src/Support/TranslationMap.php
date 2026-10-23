@@ -23,18 +23,6 @@ class TranslationMap
         return $request->routeIs('admin.*') ? ['public', 'admin'] : ['public'];
     }
 
-    /**
-     * Ключ once-пропа: меняется с локалью, областью (public/admin) и набором модулей,
-     * тогда клиент получает карту заново; иначе использует запомненную.
-     */
-    public function cacheKey(Request $request): string
-    {
-        $names = $this->modules->names();
-        sort($names);
-
-        return sprintf('i18n:%s:%s:%s', app()->getLocale(), implode('+', $this->groups($request)), substr(md5(implode(',', $names)), 0, 8));
-    }
-
     /** @return array<string, string> */
     public function build(Request $request): array
     {

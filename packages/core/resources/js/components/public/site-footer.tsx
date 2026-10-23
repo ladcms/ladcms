@@ -66,7 +66,7 @@ export function SiteFooter() {
                             >
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent side="top" align="end">
                                 {available.map(([code, label]) => (
                                     <SelectItem key={code} value={code}>
                                         {label}

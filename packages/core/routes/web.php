@@ -47,3 +47,7 @@ Route::middleware('auth')->prefix('settings')->group(function (): void {
     Route::patch('notifications', [NotificationPreferencesController::class, 'update'])->name('settings.notifications.update');
     Route::inertia('appearance', 'core::settings/appearance')->name('settings.appearance');
 });
+
+// Несуществующий URL проходит через группу `web` (сессия, пользователь, локаль, layout) и отдаёт обычный 404,
+// который рендерит `ErrorPageRenderer`: страница ошибки показывается залогиненному пользователю в его локали.
+Route::fallback(fn () => abort(404));

@@ -54,9 +54,10 @@ class SharePublicLayout
             ];
         });
 
-        // Карта переводов — once-проп: повторно уходит на клиент только при смене локали/области/набора модулей.
+        // Карта переводов — обычный проп на каждый запрос: у клиента Inertia один слот на все once-ключи,
+        // и запомненная карта другой локали/области (public/admin) подменила бы актуальную.
         $translations = app(TranslationMap::class);
-        Inertia::shareOnce('i18n', fn (): array => $translations->build($request))->as($translations->cacheKey($request));
+        Inertia::share('i18n', fn (): array => $translations->build($request));
 
         return $next($request);
     }

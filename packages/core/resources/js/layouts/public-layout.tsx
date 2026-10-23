@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { MobileTabBar } from '@ladcms/core/components/public/mobile-tab-bar';
@@ -19,10 +19,9 @@ import type { LayoutShared } from '@ladcms/core/types/layout';
 
 type PublicLayoutProps = {
     children: ReactNode;
-    title?: string;
 };
 
-export default function PublicLayout({ children, title }: PublicLayoutProps) {
+export default function PublicLayout({ children }: PublicLayoutProps) {
     const t = useT();
     const { auth, layout } = usePage<{
         auth: { user: CurrentUser | null };
@@ -33,8 +32,6 @@ export default function PublicLayout({ children, title }: PublicLayoutProps) {
 
     return (
         <div className="flex min-h-svh flex-col bg-background pb-[calc(3rem+1px+env(safe-area-inset-bottom))] text-foreground lg:pb-0">
-            {title && <Head title={t(title)} />}
-
             <a
                 href="#main"
                 className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-2 focus-visible:left-2 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium focus-visible:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
