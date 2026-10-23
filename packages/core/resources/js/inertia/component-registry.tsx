@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 export type ComponentRegistry = Record<string, () => Promise<unknown>>;
 
-const ComponentRegistryContext = createContext<ComponentRegistry>({});
+const ComponentRegistryContext = createContext<ComponentRegistry | null>(null);
 
 /** Передаёт core glob-реестр компонентов модулей, объявленный в приложении (`import.meta.glob`). */
 export function ComponentRegistryProvider({
@@ -21,5 +21,12 @@ export function ComponentRegistryProvider({
 }
 
 export function useComponentRegistry(): ComponentRegistry {
-    return useContext(ComponentRegistryContext);
+    const registry = useContext(ComponentRegistryContext);
+    if (registry === null) {
+        throw new Error(
+            'useComponentRegistry() must be used inside <ComponentRegistryProvider>',
+        );
+    }
+
+    return registry;
 }

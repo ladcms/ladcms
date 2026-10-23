@@ -9,7 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@ladcms/core/components/ui/card';
-import { initials } from '@ladcms/core/components/public/user-menu';
+import { initials } from '@ladcms/core/lib/initials';
 import { useT } from '@ladcms/core/lib/i18n';
 import { relativeTime } from '@ladcms/core/lib/relative-time';
 

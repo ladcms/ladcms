@@ -10,7 +10,7 @@ import {
     CardTitle,
 } from '@ladcms/core/components/ui/card';
 import { useT } from '@ladcms/core/lib/i18n';
-import { initials } from '@ladcms/core/components/public/user-menu';
+import { initials } from '@ladcms/core/lib/initials';
 
 type OnlineUser = {
     id: number;

@@ -55,7 +55,7 @@ export function SiteHeader() {
             <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 sm:flex-nowrap">
                 <Link
                     href={home()}
-                    className="flex min-w-0 shrink-0 items-center gap-2 font-semibold"
+                    className="flex min-w-0 items-center gap-2 font-semibold"
                 >
                     {site?.logo_url && (
                         <img
@@ -69,7 +69,7 @@ export function SiteHeader() {
 
                 <nav
                     aria-label={t('core::public.header.main_nav')}
-                    className="hidden items-center gap-1 lg:flex"
+                    className="hidden min-w-0 items-center gap-1 overflow-x-auto lg:flex"
                 >
                     {navigation.map((item) => {
                         const Icon = resolveIcon(item.icon);
@@ -80,7 +80,7 @@ export function SiteHeader() {
                                 href={item.url}
                                 aria-current={item.active ? 'page' : undefined}
                                 className={cn(
-                                    'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                                    'flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
                                     item.active &&
                                         'bg-accent text-accent-foreground',
                                 )}

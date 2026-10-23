@@ -15,6 +15,7 @@ import {
     DropdownMenuTrigger,
 } from '@ladcms/core/components/ui/dropdown-menu';
 import { resolveIcon } from '@ladcms/core/lib/icons';
+import { initials } from '@ladcms/core/lib/initials';
 import { useT } from '@ladcms/core/lib/i18n';
 import type { Translate } from '@ladcms/core/lib/i18n';
 import { cn } from '@ladcms/core/lib/utils';
@@ -40,14 +41,6 @@ const ROLE_COLOR: Record<string, string> = {
     moderator: 'text-sky-600 dark:text-sky-400',
     vip: 'text-emerald-600 dark:text-emerald-400',
 };
-
-export function initials(name: string): string {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    const first = parts[0]?.[0] ?? '';
-    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
-
-    return (first + last).toUpperCase() || '?';
-}
 
 export function topRole(roles: string[]): string | null {
     for (const name of ROLE_PRIORITY) {

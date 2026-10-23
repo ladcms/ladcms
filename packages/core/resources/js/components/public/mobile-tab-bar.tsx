@@ -12,21 +12,18 @@ const tabClass =
 /** Нижняя панель телефона/планшета: первые 4 пункта навигации + «Я», только иконки с `aria-label`. */
 export function MobileTabBar() {
     const t = useT();
-    const { auth, layout } = usePage<{
+    const { props, url } = usePage<{
         auth: { user: CurrentUser | null };
         layout?: LayoutShared | null;
-    }>().props;
+    }>();
+    const { auth, layout } = props;
     const user = auth?.user;
     const items = (layout?.navigation ?? []).slice(0, 4);
     const MeIcon = resolveIcon(user ? 'user' : 'log-in');
     const meLabel = user
         ? t('core::public.tabbar.me')
         : t('core::public.user_menu.login');
-    const profileActive =
-        user !== null &&
-        user !== undefined &&
-        typeof window !== 'undefined' &&
-        window.location.pathname === `/u/${user.login}`;
+    const profileActive = !!user && url.split(/[?#]/)[0] === `/u/${user.login}`;
 
     return (
         <nav
