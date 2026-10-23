@@ -29,7 +29,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
             <div className="flex flex-col gap-6 md:flex-row">
                 <nav
                     aria-label={t('core::public.settings.nav_label')}
-                    className="flex gap-1 overflow-x-auto md:w-48 md:shrink-0 md:flex-col md:overflow-visible"
+                    className="flex [scrollbar-width:none] gap-1 overflow-x-auto overflow-y-hidden md:w-48 md:shrink-0 md:flex-col md:overflow-visible [&::-webkit-scrollbar]:hidden"
                 >
                     {items.map((item) => {
                         const active =

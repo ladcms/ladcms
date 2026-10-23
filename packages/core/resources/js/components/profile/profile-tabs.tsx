@@ -40,7 +40,7 @@ export function ProfileTabs({
         <div
             role="tablist"
             aria-label={t('core::public.profile.tabs.label')}
-            className="flex gap-1 overflow-x-auto border-b px-2"
+            className="flex [scrollbar-width:none] gap-1 overflow-x-auto overflow-y-hidden border-b px-2 [&::-webkit-scrollbar]:hidden"
         >
             {tabs.map((tab, index) => {
                 const selected = tab.key === active;

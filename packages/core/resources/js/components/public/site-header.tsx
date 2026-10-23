@@ -69,7 +69,7 @@ export function SiteHeader() {
 
                 <nav
                     aria-label={t('core::public.header.main_nav')}
-                    className="hidden min-w-0 items-center gap-1 overflow-x-auto lg:flex"
+                    className="hidden min-w-0 [scrollbar-width:none] items-center gap-1 overflow-x-auto overflow-y-hidden lg:flex [&::-webkit-scrollbar]:hidden"
                 >
                     {navigation.map((item) => {
                         const Icon = resolveIcon(item.icon);
