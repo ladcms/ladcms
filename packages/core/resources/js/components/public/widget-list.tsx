@@ -6,7 +6,7 @@ import type { LayoutWidget } from '@ladcms/core/types/layout';
 import { ModuleSlot } from './module-slot';
 
 /** Виджеты слота layout: ленивые компоненты модулей, каждый в `Card`, props виджета разворачиваются в компонент. */
-export function SidebarWidgets({ widgets }: { widgets: LayoutWidget[] }) {
+export function WidgetList({ widgets }: { widgets: LayoutWidget[] }) {
     const registry = useComponentRegistry();
 
     return (

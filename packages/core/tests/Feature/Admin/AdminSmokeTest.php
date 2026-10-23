@@ -93,7 +93,7 @@ it('renders every admin GET route as an existing core page for the creator', fun
 
 it('shares the i18n map on admin routes only', function () {
     $this->app->register(DummyServiceProvider::class);
-    Route::get('/plain', fn () => Inertia\Inertia::render('core::welcome'))->middleware('web');
+    Route::get('/plain', fn () => Inertia\Inertia::render('core::home'))->middleware('web');
     $creator = User::factory()->create(['language' => 'en'])->assignRole('creator');
     $auth = fn () => $this->actingAs($creator)->withSession(['auth.password_confirmed_at' => time()]);
 

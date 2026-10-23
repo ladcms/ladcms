@@ -35,6 +35,8 @@ it('filters by slot and evaluates props of an existing module widget', function 
 
     $widgets = app(Widgets::class)->for('main', null);
 
+    $widgets = array_values(array_filter($widgets, fn (array $widget): bool => $widget['module'] === 'dummy'));
+
     expect($widgets)->toHaveCount(1)
         ->and($widgets[0])->toBe(['name' => 'hello', 'component' => 'dummy::Hello', 'module' => 'dummy', 'order' => 10, 'props' => ['greeting' => 'hi']]);
 });
@@ -203,5 +205,5 @@ it('sorts equal orders by name', function () {
 
     $names = array_column(app(Widgets::class)->for('main', null), 'name');
 
-    expect($names)->toBe(['alpha', 'zeta', 'hello']);
+    expect($names)->toBe(['alpha', 'zeta', 'hello', 'welcome']);
 });

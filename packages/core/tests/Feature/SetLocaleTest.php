@@ -53,7 +53,7 @@ it('shares the available locales from LocaleManager with Inertia pages', functio
             return ['en' => 'English'];
         }
     });
-    Route::middleware('web')->get('/locales-probe', fn () => Inertia::render('core::welcome'));
+    Route::middleware('web')->get('/locales-probe', fn () => Inertia::render('core::home'));
 
     $this->get('/locales-probe')->assertOk()->assertInertia(fn ($page) => $page->where('locales', ['en' => 'English']));
 });

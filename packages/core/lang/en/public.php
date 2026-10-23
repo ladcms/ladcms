@@ -47,7 +47,16 @@ return [
     'sidebar' => [
         'more' => 'More',
     ],
+    'home' => [
+        'heading' => 'Welcome to :name',
+        'empty' => 'Nothing here yet',
+        'empty_text' => 'The home page has no content yet.',
+    ],
     'widgets' => [
+        'welcome' => [
+            'title' => 'Welcome',
+            'rules' => 'Read the rules',
+        ],
         'online' => [
             'title' => 'Online now',
             'empty' => 'Nobody is online',

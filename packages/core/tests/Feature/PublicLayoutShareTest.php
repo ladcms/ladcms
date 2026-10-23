@@ -32,14 +32,14 @@ it('shares the layout prop on the home page', function () {
         ->where('layout.navigation.0.active', true)
         ->has('layout.header_actions', 1)
         ->has('layout.widgets.sidebar', 2)
-        ->has('layout.widgets.main', 1)
+        ->has('layout.widgets.main', 2)
         ->where('layout.widgets.main.0.component', 'dummy::Hello'));
 });
 
 it('shares main widgets on the home page only', function () {
     $this->app->register(DummyServiceProvider::class);
 
-    Route::get('/other', fn () => Inertia\Inertia::render('core::welcome'))->middleware('web');
+    Route::get('/other', fn () => Inertia\Inertia::render('core::home'))->middleware('web');
 
     $this->get('/other')->assertInertia(fn (AssertableInertia $page) => $page
         ->has('layout.widgets.sidebar', 2)

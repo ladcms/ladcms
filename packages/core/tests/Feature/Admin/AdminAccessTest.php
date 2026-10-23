@@ -57,7 +57,7 @@ it('renders the dashboard with the admin menu after confirmation', function () {
 
 it('does not share the admin menu outside admin routes', function () {
     $mod = User::factory()->create()->assignRole('moderator');
-    Route::middleware('web')->get('/inertia-probe', fn () => inertia('core::welcome'));
+    Route::middleware('web')->get('/inertia-probe', fn () => inertia('core::home'));
 
     $this->actingAs($mod)->get('/inertia-probe')->assertInertia(fn (AssertableInertia $page) => $page->where('admin', null));
 });

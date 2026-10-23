@@ -148,6 +148,11 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
         ];
 
         return [
+            ['name' => 'welcome', 'component' => 'core::Welcome', 'slot' => 'main', 'order' => 10, 'props' => fn (): array => [
+                'site_name' => app(GeneralSettings::class)->site_name,
+                'description' => app(GeneralSettings::class)->site_description ?: null,
+                'rules_url' => '/rules',
+            ]],
             ['name' => 'online', 'component' => 'core::Online', 'slot' => 'sidebar', 'order' => 10, 'props' => function () use ($avatar): array {
                 $online = UserModel::query()->where('last_activity_at', '>=', now()->subMinutes(DashboardStats::ONLINE_MINUTES));
 

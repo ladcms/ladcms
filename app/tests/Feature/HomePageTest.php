@@ -2,10 +2,10 @@
 
 use Inertia\Testing\AssertableInertia;
 
-it('renders the core welcome page', function () {
+it('renders the core home page', function () {
     $this->get('/')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('core::welcome')
-        ->has('version'));
+        ->component('core::home')
+        ->has('layout.widgets.main'));
 });
 
 it('shares the three core navigation items with the public layout', function () {

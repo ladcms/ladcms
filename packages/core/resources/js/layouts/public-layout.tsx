@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { MobileTabBar } from '@ladcms/core/components/public/mobile-tab-bar';
 import { ReadonlyBanner } from '@ladcms/core/components/public/readonly-banner';
-import { SidebarWidgets } from '@ladcms/core/components/public/sidebar-widgets';
+import { WidgetList } from '@ladcms/core/components/public/widget-list';
 import { SiteFooter } from '@ladcms/core/components/public/site-footer';
 import { SiteHeader } from '@ladcms/core/components/public/site-header';
 import { Button } from '@ladcms/core/components/ui/button';
@@ -41,7 +41,7 @@ export default function PublicLayout({ children, title }: PublicLayoutProps) {
             <div className="mx-auto flex w-full max-w-7xl flex-1 gap-6 px-4 py-6">
                 {isDesktop && sidebar.length > 0 && (
                     <aside className="hidden w-72 shrink-0 lg:block">
-                        <SidebarWidgets widgets={sidebar} />
+                        <WidgetList widgets={sidebar} />
                     </aside>
                 )}
 
@@ -60,7 +60,7 @@ export default function PublicLayout({ children, title }: PublicLayoutProps) {
                                 </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-4">
-                                <SidebarWidgets widgets={sidebar} />
+                                <WidgetList widgets={sidebar} />
                             </CollapsibleContent>
                         </Collapsible>
                     )}
