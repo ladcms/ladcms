@@ -34,7 +34,7 @@ class EmailVerificationTest extends TestCase
     {
         $user = User::factory()->unverified()->create();
 
-        $response = $this->actingAs($user)->get(route('appearance.edit'));
+        $response = $this->actingAs($user)->get(route('dashboard'));
 
         $response->assertRedirect(route('verification.notice'));
     }

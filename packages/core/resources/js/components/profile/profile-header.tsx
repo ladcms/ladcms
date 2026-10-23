@@ -24,6 +24,7 @@ import type {
     ProfileAction,
     ProfileModeration,
 } from '@ladcms/core/types/profile';
+import { profile as settingsProfile } from '@/routes/settings';
 
 /** Шапка профиля: обложка, аватар, имя, роль, @login, статусы, счётчики, действия модулей и меню `⋯`. */
 export function ProfileHeader({
@@ -77,7 +78,7 @@ export function ProfileHeader({
                         })}
                         {moderation.can_edit && (
                             <Button variant="outline" asChild>
-                                <Link href="/settings/profile">
+                                <Link href={settingsProfile()}>
                                     <Pencil aria-hidden />
                                     {t('core::public.profile.edit')}
                                 </Link>

@@ -7,9 +7,8 @@ import SettingsLayout from '@ladcms/core/layouts/settings-layout';
 import { resolveModulePage } from '@ladcms/core/inertia/resolve-page';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { initializeTheme } from '@/hooks/use-appearance';
+import { initializeTheme } from '@ladcms/core/hooks/use-appearance';
 import AuthLayout from '@/layouts/auth-layout';
-import KitSettingsLayout from '@/layouts/settings/layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -37,11 +36,10 @@ void createInertiaApp({
                 return AdminLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;
+            // Страницы настроек core и kit-страница безопасности (`settings/security`) делят вкладки core.
             case name.startsWith('core::settings/'):
-                return [PublicLayout, SettingsLayout];
             case name.startsWith('settings/'):
-                // Kit-страницы настроек живут в app до переезда в core (Task 6).
-                return [PublicLayout, KitSettingsLayout];
+                return [PublicLayout, SettingsLayout];
             default:
                 return PublicLayout;
         }

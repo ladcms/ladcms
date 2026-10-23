@@ -8,6 +8,10 @@ use Ladcms\Core\Http\Controllers\BannedController;
 use Ladcms\Core\Http\Controllers\HomeController;
 use Ladcms\Core\Http\Controllers\NotificationsController;
 use Ladcms\Core\Http\Controllers\ProfileController;
+use Ladcms\Core\Http\Controllers\Settings\LocaleController;
+use Ladcms\Core\Http\Controllers\Settings\NotificationPreferencesController;
+use Ladcms\Core\Http\Controllers\Settings\PrivacyController;
+use Ladcms\Core\Http\Controllers\Settings\ProfileSettingsController;
 use Ladcms\Core\Http\Controllers\UsersController;
 
 Route::get('/', HomeController::class)->name('home');
@@ -20,4 +24,19 @@ Route::middleware(['auth', 'throttle:60,1'])->prefix('api/notifications')->name(
     Route::get('/', [NotificationsController::class, 'index'])->name('index');
     Route::post('read-all', [NotificationsController::class, 'markAllRead'])->name('read-all');
     Route::post('{id}/read', [NotificationsController::class, 'markRead'])->name('read');
+});
+
+Route::post('/locale', [LocaleController::class, 'update'])->middleware('throttle:30,1')->name('locale.update');
+
+Route::middleware('auth')->prefix('settings')->group(function (): void {
+    // Not Route::redirect(): Wayfinder 0.1.x emits a "query" method for it that its TS types lack.
+    Route::get('/', fn () => redirect()->route('settings.profile'))->name('settings');
+    Route::get('profile', [ProfileSettingsController::class, 'edit'])->name('settings.profile');
+    Route::patch('profile', [ProfileSettingsController::class, 'update'])->name('settings.profile.update');
+    Route::patch('login', [ProfileSettingsController::class, 'updateLogin'])->name('settings.login.update');
+    Route::get('privacy', [PrivacyController::class, 'edit'])->name('settings.privacy');
+    Route::patch('privacy', [PrivacyController::class, 'update'])->name('settings.privacy.update');
+    Route::get('notifications', [NotificationPreferencesController::class, 'edit'])->name('settings.notifications');
+    Route::patch('notifications', [NotificationPreferencesController::class, 'update'])->name('settings.notifications.update');
+    Route::inertia('appearance', 'core::settings/appearance')->name('settings.appearance');
 });

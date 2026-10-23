@@ -17,6 +17,7 @@ import {
 } from '@ladcms/core/components/ui/dropdown-menu';
 import type { CurrentUser } from '@ladcms/core/types/admin';
 import { roleName, useT } from '@ladcms/core/lib/i18n';
+import { profile as settingsProfile } from '@/routes/settings';
 import { show as userProfile } from '@/routes/users';
 
 function initials(name: string): string {
@@ -75,7 +76,7 @@ export function UserMenu({ user }: { user: CurrentUser }) {
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                        <Link href="/settings/profile">
+                        <Link href={settingsProfile()}>
                             <Settings aria-hidden />
                             {t('core::admin.user_menu.settings')}
                         </Link>

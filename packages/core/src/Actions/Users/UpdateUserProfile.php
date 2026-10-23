@@ -5,20 +5,17 @@ declare(strict_types=1);
 namespace Ladcms\Core\Actions\Users;
 
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Ladcms\Core\Models\User;
-use Ladcms\Core\Settings\RegistrationSettings;
 use Ladcms\Core\Support\Audit;
+use Ladcms\Core\Support\EmailChange;
 
 class UpdateUserProfile
 {
-    public function __construct(private readonly RegistrationSettings $registration) {}
-
     /** Поля профиля, которые можно менять этим действием (логин, роли, флаги — отдельными действиями). */
     public const array FIELDS = ['name', 'email', 'sex', 'birth_date', 'about', 'signature', 'language', 'timezone'];
 
@@ -37,29 +34,30 @@ class UpdateUserProfile
 
         $data = Arr::only($data, self::FIELDS);
 
+        $newEmail = null;
         if (is_string($data['email'] ?? null)) {
-            $data['email'] = mb_strtolower(trim($data['email']));
-            Validator::make($data, ['email' => [Rule::unique('users', 'email')->ignore($target->id)]])->validate();
+            $email = mb_strtolower(trim($data['email']));
+            Validator::make(['email' => $email], ['email' => [Rule::unique('users', 'email')->ignore($target->id)]])->validate();
+            $newEmail = $email !== $target->email ? $email : null;
         }
+        unset($data['email']);
 
         $target->fill($data);
 
-        // Новый адрес не подтверждён; если сайт не требует подтверждения — считаем его подтверждённым (как при регистрации).
-        $emailChanged = $target->isDirty('email');
-        if ($emailChanged) {
-            $target->forceFill(['email_verified_at' => $this->registration->require_email_verification ? null : now()]);
+        $changed = array_keys($target->getDirty());
+        if ($newEmail !== null) {
+            $changed[] = 'email';
         }
-
-        $changed = array_values(array_diff(array_keys($target->getDirty()), ['email_verified_at', 'first_verified_at']));
 
         if ($changed !== []) {
-            $target->save();
-            Audit::log('user.updated', $actor, $target, ['changed' => $changed]);
-        }
+            // Смена email сохраняет модель сама (сброс подтверждения + письмо), см. EmailChange.
+            if ($newEmail !== null) {
+                EmailChange::apply($target, $newEmail);
+            } else {
+                $target->save();
+            }
 
-        // Письмо — только модели с контрактом MustVerifyEmail (как делает слушатель Registered в Laravel).
-        if ($emailChanged && $this->registration->require_email_verification && $target instanceof MustVerifyEmail) {
-            $target->sendEmailVerificationNotification();
+            Audit::log('user.updated', $actor, $target, ['changed' => $changed]);
         }
 
         return $target;

@@ -21,6 +21,7 @@ import { useT } from '@ladcms/core/lib/i18n';
 import type { CurrentUser } from '@ladcms/core/types/admin';
 import type { LayoutShared } from '@ladcms/core/types/layout';
 import { login, logout, register } from '@/routes';
+import { profile as settingsProfile } from '@/routes/settings';
 import { show as userProfile } from '@/routes/users';
 
 export function UserMenu() {
@@ -99,7 +100,7 @@ export function UserMenu() {
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                        <Link href="/settings/profile">
+                        <Link href={settingsProfile()}>
                             <SettingsIcon aria-hidden />
                             {t('core::public.user_menu.settings')}
                         </Link>

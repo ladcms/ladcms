@@ -3,7 +3,11 @@
 namespace Tests\Feature\Settings;
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Route;
+use Inertia\Testing\AssertableInertia as Assert;
 use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Tests\TestCase;
 
@@ -11,69 +15,48 @@ class ProfileUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_profile_page_is_displayed()
+    public function test_kit_profile_and_appearance_routes_are_replaced_by_core(): void
+    {
+        $this->assertFalse(Route::has('profile.edit'));
+        $this->assertFalse(Route::has('profile.update'));
+        $this->assertFalse(Route::has('appearance.edit'));
+        $this->assertTrue(Route::has('profile.destroy'));
+    }
+
+    public function test_settings_pages_are_served_by_core(): void
     {
         $user = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
-            ->get(route('profile.edit'));
-
-        $response->assertOk();
+        $this->actingAs($user)->get('/settings')->assertRedirect(route('settings.profile'));
+        $this->actingAs($user)->get(route('settings.profile'))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('core::settings/profile')
+                ->where('must_verify_email', true)
+                ->where('profile.email_verified', true));
+        $this->actingAs($user)->get(route('settings.privacy'))->assertOk();
+        $this->actingAs($user)->get(route('settings.notifications'))->assertOk();
+        $this->actingAs($user)->get(route('settings.appearance'))->assertOk();
     }
 
-    public function test_profile_information_can_be_updated()
+    public function test_profile_update_sends_the_verification_mail_for_the_app_user(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
-            ->patch(route('profile.update'), [
-                'name' => 'Test User',
-                'email' => 'test@example.com',
-            ]);
-
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('profile.edit'));
-
-        $user->refresh();
-
-        $this->assertSame('Test User', $user->name);
-        $this->assertSame('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
-    }
-
-    public function test_profile_email_is_stored_in_lowercase()
-    {
+        Notification::fake();
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->patch(route('profile.update'), [
+            ->patch(route('settings.profile.update'), [
                 'name' => 'Test User',
                 'email' => '  Test@Example.COM ',
+                'timezone' => 'UTC',
             ])
-            ->assertSessionHasNoErrors();
-
-        $this->assertSame('test@example.com', $user->refresh()->email);
-    }
-
-    public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged()
-    {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
-            ->patch(route('profile.update'), [
-                'name' => 'Test User',
-                'email' => $user->email,
-            ]);
-
-        $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('profile.edit'));
+            ->assertRedirect(route('settings.profile'));
 
-        $this->assertNotNull($user->refresh()->email_verified_at);
+        $user->refresh();
+
+        $this->assertSame('test@example.com', $user->email);
+        $this->assertNull($user->email_verified_at);
+        Notification::assertSentTo($user, VerifyEmail::class);
     }
 
     public function test_user_can_delete_their_account()
@@ -107,14 +90,14 @@ class ProfileUpdateTest extends TestCase
 
         $response = $this
             ->actingAs($creator)
-            ->from(route('profile.edit'))
+            ->from(route('security.edit'))
             ->delete(route('profile.destroy'), [
                 'password' => 'password',
             ]);
 
         $response
             ->assertSessionHasErrors('password')
-            ->assertRedirect(route('profile.edit'));
+            ->assertRedirect(route('security.edit'));
 
         $this->assertAuthenticatedAs($creator);
         $this->assertNotSoftDeleted($creator);
@@ -141,14 +124,14 @@ class ProfileUpdateTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->from(route('profile.edit'))
+            ->from(route('security.edit'))
             ->delete(route('profile.destroy'), [
                 'password' => 'wrong-password',
             ]);
 
         $response
             ->assertSessionHasErrors('password')
-            ->assertRedirect(route('profile.edit'));
+            ->assertRedirect(route('security.edit'));
 
         $this->assertNotNull($user->fresh());
     }

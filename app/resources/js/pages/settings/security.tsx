@@ -1,6 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
 import { useRef } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
+import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -134,6 +135,8 @@ export default function Security(props: Props) {
                 canManagePasskeys={props.canManagePasskeys}
                 passkeys={props.passkeys}
             />
+
+            <DeleteUser />
         </>
     );
 }
