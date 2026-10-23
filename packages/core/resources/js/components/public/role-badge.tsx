@@ -38,23 +38,37 @@ export function publicRoleName(t: Translate, name: string): string {
     return label === key ? name : label;
 }
 
-/** Название роли её цветом. */
+export type RoleInfo = { name: string; color: string | null };
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+/** Название старшей из ролей её цветом (настроенный в админке hex, иначе цвет по умолчанию). */
 export function RoleBadge({
-    name,
+    roles,
     className,
 }: {
-    name: string;
+    roles: RoleInfo[];
     className?: string;
 }) {
     const t = useT();
+    const name = topRole(roles.map((role) => role.name));
+
+    if (name === null) {
+        return null;
+    }
+
+    const color = roles.find((role) => role.name === name)?.color ?? null;
+    const custom = color !== null && HEX_COLOR.test(color) ? color : null;
 
     return (
         <span
             className={cn(
                 'truncate text-xs',
-                ROLE_COLOR[name] ?? 'text-muted-foreground',
+                custom === null &&
+                    (ROLE_COLOR[name] ?? 'text-muted-foreground'),
                 className,
             )}
+            style={custom === null ? undefined : { color: custom }}
         >
             {publicRoleName(t, name)}
         </span>

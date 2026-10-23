@@ -172,3 +172,20 @@ it('keeps the query count constant regardless of the number of users', function 
 
     expect($count())->toBe($few);
 });
+
+it('reports is_online false for users without activity', function () {
+    User::factory()->create(['last_activity_at' => null]);
+
+    publicUsers()->assertInertia(fn (AssertableInertia $page) => $page->where('users.data.0.is_online', false));
+});
+
+it('combines the search with the online filter', function () {
+    $match = User::factory()->create(['login' => 'combo-on']);
+    $match->forceFill(['last_activity_at' => now()])->save();
+    $offline = User::factory()->create(['login' => 'combo-off']);
+    $offline->forceFill(['last_activity_at' => now()->subHour()])->save();
+    $other = User::factory()->create(['login' => 'else']);
+    $other->forceFill(['last_activity_at' => now()])->save();
+
+    publicUsers(['q' => 'combo', 'online' => 1])->assertInertia(fn (AssertableInertia $page) => expect(publicUsersIds($page))->toBe([$match->id]));
+});

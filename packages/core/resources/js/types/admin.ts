@@ -25,7 +25,7 @@ export type CurrentUser = {
     display_name: string;
     email: string;
     avatar_url: string | null;
-    roles: string[];
+    roles: { name: string; color: string | null }[];
     permissions: string[];
     level: number;
     is_creator: boolean;

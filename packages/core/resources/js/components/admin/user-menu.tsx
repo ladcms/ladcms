@@ -59,7 +59,7 @@ export function UserMenu({ user }: { user: CurrentUser }) {
                         {user.roles.length > 0 && (
                             <span className="truncate text-xs text-muted-foreground">
                                 {user.roles
-                                    .map((name) => roleName(t, name))
+                                    .map((role) => roleName(t, role.name))
                                     .join(', ')}
                             </span>
                         )}

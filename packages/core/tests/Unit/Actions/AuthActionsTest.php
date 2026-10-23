@@ -17,6 +17,7 @@ use Ladcms\Core\Database\Seeders\RolesSeeder;
 use Ladcms\Core\Enums\BanType;
 use Ladcms\Core\Http\Resources\CurrentUserResource;
 use Ladcms\Core\Models\Ban;
+use Ladcms\Core\Models\Role;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Settings\RegistrationSettings;
 
@@ -243,7 +244,7 @@ it('exposes the current user for the frontend', function () {
         ->and($data['display_name'])->toBe('alice')
         ->and($data['level'])->toBe(2)
         ->and($data['is_creator'])->toBeFalse()
-        ->and($data['roles'])->toBe(['moderator'])
+        ->and($data['roles'])->toBe([['name' => 'moderator', 'color' => Role::findByName('moderator')->color]])
         ->and($data['permissions'])->toContain('users.ban')
         ->and($data['is_banned'])->toBeFalse()
         ->and($data['can_write'])->toBeTrue();

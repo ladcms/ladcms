@@ -4,7 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { DataTablePagination } from '@ladcms/core/components/data-table';
 import { EmptyState } from '@ladcms/core/components/empty-state';
 import { PageHeader } from '@ladcms/core/components/page-header';
-import { RoleBadge, topRole } from '@ladcms/core/components/public/role-badge';
+import { RoleBadge } from '@ladcms/core/components/public/role-badge';
 import {
     Avatar,
     AvatarFallback,
@@ -60,6 +60,11 @@ const SORT_OPTIONS = [
     'last_activity_at:asc',
 ] as const;
 
+/** Как на сервере: обрезка пробелов и 100 символов. */
+function normalizeQuery(value: string): string {
+    return value.trim().slice(0, 100);
+}
+
 /** Параметры запроса без значений по умолчанию (чистый URL). */
 function queryFrom(filters: Filters): Record<string, string> {
     const query: Record<string, string> = {};
@@ -101,13 +106,13 @@ export default function UsersIndex({ users, filters }: Props) {
     };
 
     useEffect(() => {
-        if (search === filtersRef.current.q) {
+        if (normalizeQuery(search) === filtersRef.current.q) {
             return;
         }
 
         const timer = window.setTimeout(() => {
-            sentQuery.current = search;
-            visit({ q: search });
+            sentQuery.current = normalizeQuery(search);
+            visit({ q: sentQuery.current });
         }, SEARCH_DEBOUNCE_MS);
 
         return () => window.clearTimeout(timer);
@@ -204,8 +209,6 @@ export default function UsersIndex({ users, filters }: Props) {
                 ) : (
                     <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                         {users.data.map((user) => {
-                            const role = topRole(user.roles.map((r) => r.name));
-
                             return (
                                 <li
                                     key={user.id}
@@ -243,7 +246,7 @@ export default function UsersIndex({ users, filters }: Props) {
                                         >
                                             {user.display_name}
                                         </Link>
-                                        {role && <RoleBadge name={role} />}
+                                        <RoleBadge roles={user.roles} />
                                         {user.created_at && (
                                             <span className="truncate text-xs text-muted-foreground">
                                                 {t(

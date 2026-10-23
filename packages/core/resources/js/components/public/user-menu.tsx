@@ -14,7 +14,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@ladcms/core/components/ui/dropdown-menu';
-import { RoleBadge, topRole } from '@ladcms/core/components/public/role-badge';
+import { RoleBadge } from '@ladcms/core/components/public/role-badge';
 import { resolveIcon } from '@ladcms/core/lib/icons';
 import { initials } from '@ladcms/core/lib/initials';
 import { useT } from '@ladcms/core/lib/i18n';
@@ -53,8 +53,6 @@ export function UserMenu() {
         );
     }
 
-    const role = topRole(user.roles);
-
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -78,7 +76,7 @@ export function UserMenu() {
                         <span className="w-full truncate text-sm font-medium">
                             {user.display_name}
                         </span>
-                        {role && <RoleBadge name={role} className="w-full" />}
+                        <RoleBadge roles={user.roles} className="w-full" />
                     </span>
                 </Button>
             </DropdownMenuTrigger>
@@ -88,7 +86,7 @@ export function UserMenu() {
                         <span className="truncate font-medium">
                             {user.display_name}
                         </span>
-                        {role && <RoleBadge name={role} />}
+                        <RoleBadge roles={user.roles} />
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
