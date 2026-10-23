@@ -30,7 +30,7 @@ class MentionSearchController
                 ->orWhereRaw("name LIKE ? ESCAPE '!'", [$prefix]))
             ->orderBy('login')
             ->limit(10)
-            ->get(['id', 'login', 'name', 'avatar_path']);
+            ->get(['id', 'login', 'name', 'avatar_path', 'avatar_updated_at']);
 
         return response()->json($users->map(fn (User $user): array => [
             'id' => $user->id,
