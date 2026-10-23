@@ -6,6 +6,7 @@ namespace Ladcms\Core\Http\Requests\Settings;
 
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Ladcms\Core\Support\NotificationTypes;
 
 class UpdateNotificationPreferencesRequest extends FormRequest
 {
@@ -17,7 +18,7 @@ class UpdateNotificationPreferencesRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        $types = array_keys((array) config('core.notification_types', []));
+        $types = array_keys(NotificationTypes::all());
 
         return [
             // Неизвестный тип — ошибка на `preferences`, а не молчаливое игнорирование.

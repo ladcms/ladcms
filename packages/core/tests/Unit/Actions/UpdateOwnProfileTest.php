@@ -137,3 +137,13 @@ it('rejects over-long about and signature', function () {
     expect(fn () => app(UpdateOwnProfile::class)->handle($this->user, ['about' => str_repeat('a', 2001)]))->toThrow(ValidationException::class)
         ->and(fn () => app(UpdateOwnProfile::class)->handle($this->user, ['signature' => str_repeat('a', 501)]))->toThrow(ValidationException::class);
 });
+
+it('validates name, sex and birth date for direct callers', function (array $data) {
+    expect(fn () => app(UpdateOwnProfile::class)->handle($this->user, $data))->toThrow(ValidationException::class);
+})->with([
+    'empty name' => [['name' => '']],
+    'long name' => [['name' => str_repeat('a', 256)]],
+    'bad sex' => [['sex' => 'other']],
+    'future birth date' => [['birth_date' => now()->addDay()->toDateString()]],
+    'bad birth date' => [['birth_date' => 'yesterday-ish']],
+]);

@@ -143,6 +143,14 @@ it('changes the login through settings and keeps the history', function () {
         ->and(LoginHistory::query()->where('old_login', 'alice')->exists())->toBeTrue();
 });
 
+it('returns 403 to a readonly-banned user changing the login', function () {
+    Ban::create(['user_id' => $this->user->id, 'banned_by_id' => User::factory()->create()->id, 'type' => BanType::Readonly, 'reason_code' => 'spam', 'starts_at' => now()->subMinute()]);
+
+    $this->actingAs($this->user)->patch(route('settings.login.update'), ['login' => 'new_login'])->assertForbidden();
+
+    expect($this->user->fresh()->login)->toBe('alice');
+});
+
 it('rejects a taken or malformed login', function (string $login) {
     User::factory()->create(['login' => 'taken']);
 

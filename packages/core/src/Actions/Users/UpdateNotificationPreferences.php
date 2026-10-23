@@ -6,6 +6,7 @@ namespace Ladcms\Core\Actions\Users;
 
 use Illuminate\Validation\ValidationException;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\NotificationTypes;
 
 class UpdateNotificationPreferences
 {
@@ -21,7 +22,7 @@ class UpdateNotificationPreferences
      */
     public function handle(User $user, array $preferences): User
     {
-        $allowed = array_keys((array) config('core.notification_types', []));
+        $allowed = array_keys(NotificationTypes::all());
         $unknown = array_diff(array_keys($preferences), $allowed);
 
         if ($unknown !== []) {

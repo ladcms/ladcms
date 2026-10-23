@@ -139,7 +139,9 @@ export default function ProfileSettings({
                         </CardTitle>
                         <CardDescription>
                             {readonly
-                                ? t('core::public.settings.readonly_note')
+                                ? t(
+                                      'core::public.settings.profile.readonly_note',
+                                  )
                                 : t(
                                       'core::public.settings.profile.description',
                                   )}
@@ -337,12 +339,20 @@ export default function ProfileSettings({
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-2">
+                        {readonly && (
+                            <p className="text-sm text-muted-foreground">
+                                {t(
+                                    'core::public.settings.profile.readonly_note',
+                                )}
+                            </p>
+                        )}
                         <Label htmlFor="profile-login">
                             {t('core::public.settings.profile.login')}
                         </Label>
                         <Input
                             id="profile-login"
                             value={loginForm.data.login}
+                            disabled={readonly}
                             autoComplete="username"
                             onChange={(e) =>
                                 loginForm.setData('login', e.target.value)
@@ -366,7 +376,10 @@ export default function ProfileSettings({
                         )}
                     </CardContent>
                     <CardFooter className="justify-end pt-6">
-                        <Button type="submit" disabled={loginForm.processing}>
+                        <Button
+                            type="submit"
+                            disabled={loginForm.processing || readonly}
+                        >
                             {t('core::public.settings.profile.login_save')}
                         </Button>
                     </CardFooter>

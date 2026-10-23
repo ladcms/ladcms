@@ -11,7 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Ladcms\Core\Actions\Users\ChangeLogin;
+use Ladcms\Core\Actions\Users\ChangeOwnLogin;
 use Ladcms\Core\Actions\Users\UpdateOwnProfile;
 use Ladcms\Core\Http\Requests\Settings\ChangeOwnLoginRequest;
 use Ladcms\Core\Http\Requests\Settings\UpdateProfileRequest;
@@ -47,7 +47,7 @@ class ProfileSettingsController
         return $this->saved('settings.profile');
     }
 
-    public function updateLogin(ChangeOwnLoginRequest $request, #[CurrentUser] User $user, ChangeLogin $action): RedirectResponse
+    public function updateLogin(ChangeOwnLoginRequest $request, #[CurrentUser] User $user, ChangeOwnLogin $action): RedirectResponse
     {
         $action->handle($user, $request->login());
 

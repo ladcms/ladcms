@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ladcms\Core\Http\Requests\Settings;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Ladcms\Core\Support\LoginRules;
 
 /** Новый логин; нормализация и правила (`LoginRules`) — в `ChangeLogin`. */
 class ChangeOwnLoginRequest extends FormRequest
@@ -18,7 +19,7 @@ class ChangeOwnLoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'login' => ['required', 'string', 'max:64'],
+            'login' => ['required', 'string', 'max:'.LoginRules::MAX_LENGTH],
         ];
     }
 

@@ -8,7 +8,8 @@ use Ladcms\Core\Models\User;
 
 /**
  * `via()` по настройкам пользователя: класс объявляет ключ типа в `public const TYPE`
- * (он же ключ в `core.notification_types`). Почта — только если у получателя есть email.
+ * (он же ключ в `core.notification_types`). Модуль регистрирует свой тип в `boot()` через
+ * `NotificationTypes::register(key, class)` (`mergeConfigFrom` поверхностный). Почта — только если у получателя есть email.
  */
 trait RespectsPreferences
 {

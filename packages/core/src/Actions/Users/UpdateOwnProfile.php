@@ -10,6 +10,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Ladcms\Core\Enums\Sex;
 use Ladcms\Core\Models\User;
 use Ladcms\Core\Support\Audit;
 use Ladcms\Core\Support\EmailChange;
@@ -35,6 +36,9 @@ class UpdateOwnProfile
         $this->authorizePublicContent($user, $data);
 
         Validator::make($data, [
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'sex' => ['sometimes', 'nullable', Rule::enum(Sex::class)],
+            'birth_date' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'before:tomorrow'],
             'about' => ['nullable', 'string', 'max:2000'],
             'signature' => ['nullable', 'string', 'max:500'],
             'timezone' => ['sometimes', 'string', Rule::in(DateTimeZone::listIdentifiers())],

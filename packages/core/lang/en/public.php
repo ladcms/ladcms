@@ -120,7 +120,6 @@ return [
         'description' => 'Profile, privacy and notifications',
         'saved' => 'Saved',
         'nav_label' => 'Settings sections',
-        'readonly_note' => 'Your account is read-only: name, about and signature cannot be changed.',
         'save' => 'Save',
         'tabs' => [
             'profile' => 'Profile',
@@ -132,6 +131,7 @@ return [
         'profile' => [
             'title' => 'Profile',
             'description' => 'This information is shown on your public page',
+            'readonly_note' => 'Your account is read-only (a restriction or the post-registration period): name, about, signature and login cannot be changed.',
             'avatar_title' => 'Avatar',
             'avatar_placeholder' => 'Avatar upload is coming soon',
             'name' => 'Name',

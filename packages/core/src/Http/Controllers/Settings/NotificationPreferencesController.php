@@ -11,12 +11,13 @@ use Inertia\Response;
 use Ladcms\Core\Actions\Users\UpdateNotificationPreferences;
 use Ladcms\Core\Http\Requests\Settings\UpdateNotificationPreferencesRequest;
 use Ladcms\Core\Models\User;
+use Ladcms\Core\Support\NotificationTypes;
 
 class NotificationPreferencesController
 {
     public function edit(#[CurrentUser] User $user): Response
     {
-        $types = array_keys((array) config('core.notification_types', []));
+        $types = array_keys(NotificationTypes::all());
 
         $preferences = [];
         foreach ($types as $type) {
