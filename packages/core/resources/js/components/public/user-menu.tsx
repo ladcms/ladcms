@@ -21,6 +21,7 @@ import { useT } from '@ladcms/core/lib/i18n';
 import type { CurrentUser } from '@ladcms/core/types/admin';
 import type { LayoutShared } from '@ladcms/core/types/layout';
 import { login, logout, register } from '@/routes';
+import { show as userProfile } from '@/routes/users';
 
 export function UserMenu() {
     const t = useT();
@@ -92,7 +93,7 @@ export function UserMenu() {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
-                        <Link href={`/u/${user.login}`}>
+                        <Link href={userProfile(user.login)}>
                             <UserIcon aria-hidden />
                             {t('core::public.user_menu.profile')}
                         </Link>

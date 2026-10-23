@@ -5,6 +5,7 @@ import { cn } from '@ladcms/core/lib/utils';
 import type { CurrentUser } from '@ladcms/core/types/admin';
 import type { LayoutShared } from '@ladcms/core/types/layout';
 import { login } from '@/routes';
+import { show as userProfile } from '@/routes/users';
 
 const tabClass =
     'flex h-12 flex-1 items-center justify-center text-muted-foreground transition-colors hover:text-foreground';
@@ -23,7 +24,8 @@ export function MobileTabBar() {
     const meLabel = user
         ? t('core::public.tabbar.me')
         : t('core::public.user_menu.login');
-    const profileActive = !!user && url.split(/[?#]/)[0] === `/u/${user.login}`;
+    const profileActive =
+        !!user && url.split(/[?#]/)[0] === userProfile.url(user.login);
 
     return (
         <nav
@@ -46,7 +48,7 @@ export function MobileTabBar() {
                 );
             })}
             <Link
-                href={user ? `/u/${user.login}` : login()}
+                href={user ? userProfile(user.login) : login()}
                 aria-label={meLabel}
                 aria-current={profileActive ? 'page' : undefined}
                 className={cn(tabClass, profileActive && 'text-primary')}

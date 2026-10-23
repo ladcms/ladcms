@@ -17,6 +17,7 @@ import {
 } from '@ladcms/core/components/ui/dropdown-menu';
 import type { CurrentUser } from '@ladcms/core/types/admin';
 import { roleName, useT } from '@ladcms/core/lib/i18n';
+import { show as userProfile } from '@/routes/users';
 
 function initials(name: string): string {
     const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -68,7 +69,7 @@ export function UserMenu({ user }: { user: CurrentUser }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
-                        <Link href={`/u/${user.login}`}>
+                        <Link href={userProfile(user.login)}>
                             <User aria-hidden />
                             {t('core::admin.user_menu.profile')}
                         </Link>

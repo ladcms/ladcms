@@ -23,6 +23,7 @@ import { Switch } from '@ladcms/core/components/ui/switch';
 import { useT } from '@ladcms/core/lib/i18n';
 import { initials } from '@ladcms/core/lib/initials';
 import type { Paginator, SortDirection } from '@ladcms/core/types/table';
+import { show as userProfile } from '@/routes/users';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -241,7 +242,7 @@ export default function UsersIndex({ users, filters }: Props) {
                                     </div>
                                     <div className="grid min-w-0 gap-0.5">
                                         <Link
-                                            href={`/u/${user.login}`}
+                                            href={userProfile(user.login)}
                                             className="truncate font-medium hover:underline"
                                         >
                                             {user.display_name}

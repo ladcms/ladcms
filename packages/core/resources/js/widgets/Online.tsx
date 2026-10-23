@@ -11,6 +11,7 @@ import {
 } from '@ladcms/core/components/ui/card';
 import { useT } from '@ladcms/core/lib/i18n';
 import { initials } from '@ladcms/core/lib/initials';
+import { show as userProfile } from '@/routes/users';
 
 type OnlineUser = {
     id: number;
@@ -48,7 +49,7 @@ export default function Online({ count, users }: Props) {
                         {users.map((user) => (
                             <li key={user.id}>
                                 <Link
-                                    href={`/u/${user.login}`}
+                                    href={userProfile(user.login)}
                                     title={user.display_name}
                                     aria-label={user.display_name}
                                     className="relative block rounded-full"

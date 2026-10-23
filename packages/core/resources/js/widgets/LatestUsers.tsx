@@ -12,6 +12,7 @@ import {
 import { initials } from '@ladcms/core/lib/initials';
 import { useT } from '@ladcms/core/lib/i18n';
 import { relativeTime } from '@ladcms/core/lib/relative-time';
+import { show as userProfile } from '@/routes/users';
 
 type LatestUser = {
     id: number;
@@ -44,7 +45,7 @@ export default function LatestUsers({ users }: Props) {
                         {users.map((user) => (
                             <li key={user.id}>
                                 <Link
-                                    href={`/u/${user.login}`}
+                                    href={userProfile(user.login)}
                                     className="flex items-center gap-3 rounded-lg p-1 hover:bg-accent"
                                 >
                                     <Avatar className="size-8">
