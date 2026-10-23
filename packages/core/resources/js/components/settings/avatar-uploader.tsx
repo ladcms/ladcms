@@ -23,10 +23,12 @@ export function AvatarUploader({
     name,
     avatarUrl,
     maxKb,
+    maxDimension,
 }: {
     name: string;
     avatarUrl: string | null;
     maxKb: number;
+    maxDimension: number;
 }) {
     const t = useT();
     const inputRef = useRef<HTMLInputElement>(null);
@@ -176,6 +178,7 @@ export function AvatarUploader({
                 <p className="text-sm text-muted-foreground">
                     {t('core::public.settings.profile.avatar_hint', {
                         size: formatSize(maxKb),
+                        dim: maxDimension,
                     })}
                 </p>
                 {form.errors.avatar && (

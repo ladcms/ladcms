@@ -15,6 +15,7 @@ class RemoveAvatar
         Storage::disk(User::avatarDisk())->deleteDirectory(User::avatarDirectory($user->id));
 
         $user->avatar_path = null;
+        $user->avatar_updated_at = null;
         $user->save();
 
         return $user;

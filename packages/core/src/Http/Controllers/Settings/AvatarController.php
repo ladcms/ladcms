@@ -23,8 +23,8 @@ class AvatarController
     public function store(Request $request, #[CurrentUser] User $user, UpdateAvatar $action): RedirectResponse
     {
         $file = $request->file('avatar');
-        if (! $file instanceof UploadedFile) {
-            throw ValidationException::withMessages(['avatar' => __('validation.required', ['attribute' => 'avatar'])]);
+        if (! $request->hasFile('avatar') || ! $file instanceof UploadedFile) {
+            throw ValidationException::withMessages(['avatar' => __('core::public.settings.avatar.missing_or_too_large')]);
         }
 
         $action->handle($user, $file);

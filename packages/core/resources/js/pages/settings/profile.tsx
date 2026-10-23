@@ -46,6 +46,7 @@ type Props = {
     profile: ProfileProps;
     avatar_url: string | null;
     avatar_max_kb: number;
+    avatar_max_dimension: number;
     must_verify_email: boolean;
     status?: string | null;
     timezones: string[];
@@ -65,6 +66,7 @@ export default function ProfileSettings({
     profile,
     avatar_url: avatarUrl,
     avatar_max_kb: avatarMaxKb,
+    avatar_max_dimension: avatarMaxDimension,
     must_verify_email: mustVerifyEmail,
     status,
     timezones,
@@ -139,6 +141,7 @@ export default function ProfileSettings({
                         name={profile.name}
                         avatarUrl={avatarUrl}
                         maxKb={avatarMaxKb}
+                        maxDimension={avatarMaxDimension}
                     />
                 </CardContent>
             </Card>

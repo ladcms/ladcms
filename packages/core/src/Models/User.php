@@ -27,6 +27,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $name
  * @property string $email
  * @property ?string $avatar_path
+ * @property ?Carbon $avatar_updated_at
  * @property-read ?string $avatar_url
  * @property ?Sex $sex
  * @property ?Carbon $birth_date
@@ -59,7 +60,7 @@ class User extends Authenticatable
     protected string $guard_name = 'web';
 
     protected $fillable = [
-        'login', 'name', 'email', 'password', 'avatar_path', 'sex', 'birth_date', 'about', 'signature',
+        'login', 'name', 'email', 'password', 'avatar_path', 'avatar_updated_at', 'sex', 'birth_date', 'about', 'signature',
         'language', 'timezone',
         'show_email', 'show_birthday', 'messages_from',
     ];
@@ -71,6 +72,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'first_verified_at' => 'datetime',
+            'avatar_updated_at' => 'datetime',
             'password' => 'hashed',
             'sex' => Sex::class,
             'birth_date' => 'date',
@@ -162,7 +164,10 @@ class User extends Authenticatable
             return null;
         }
 
-        return Storage::disk(self::avatarDisk())->url(self::avatarFile($this->id, $size));
+        $url = Storage::disk(self::avatarDisk())->url(self::avatarFile($this->id, $size));
+
+        // Путь файла постоянный, поэтому версия в query сбрасывает кэш браузера/CDN после замены.
+        return $this->avatar_updated_at !== null ? $url.'?v='.$this->avatar_updated_at->getTimestamp() : $url;
     }
 
     public static function avatarDisk(): string

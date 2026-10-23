@@ -36,6 +36,7 @@ class ProfileSettingsController
             ],
             'avatar_url' => $user->avatar_url,
             'avatar_max_kb' => (int) config('core.avatars.max_kb', 2048),
+            'avatar_max_dimension' => (int) config('core.avatars.max_dimension', 4000),
             'must_verify_email' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
             'timezones' => DateTimeZone::listIdentifiers(),

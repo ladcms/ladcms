@@ -25,5 +25,7 @@ return [
         'path' => 'avatars',
         'sizes' => ['md' => 256, 'sm' => 64],
         'max_kb' => 2048,
+        // Максимальная сторона исходника в px (защита от decompression bomb при декодировании).
+        'max_dimension' => 4000,
     ],
 ];

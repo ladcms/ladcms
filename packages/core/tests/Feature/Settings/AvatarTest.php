@@ -82,11 +82,11 @@ it('rejects svg and keeps the old avatar', function () {
     assertOldAvatarIntact($this->user);
 });
 
-it('rejects an image wider than 8000 px and keeps the old avatar', function () {
+it('rejects an image wider than 4000 px and keeps the old avatar', function () {
     seedAvatar($this->user);
 
     $this->actingAs($this->user)->from(route('settings.profile'))
-        ->post(route('settings.avatar.store'), ['avatar' => UploadedFile::fake()->image('wide.png', 9000, 100)])
+        ->post(route('settings.avatar.store'), ['avatar' => UploadedFile::fake()->image('wide.png', 4001, 100)])
         ->assertSessionHasErrors('avatar');
 
     assertOldAvatarIntact($this->user);
@@ -111,4 +111,14 @@ it('lets a readonly-banned user change the avatar', function () {
         ->assertSessionHasNoErrors();
 
     expect($this->user->fresh()?->avatar_path)->not->toBeNull();
+});
+
+it('returns a dedicated error when the request has no avatar file', function () {
+    seedAvatar($this->user);
+
+    $this->actingAs($this->user)->from(route('settings.profile'))
+        ->post(route('settings.avatar.store'), [])
+        ->assertSessionHasErrors(['avatar' => __('core::public.settings.avatar.missing_or_too_large')]);
+
+    assertOldAvatarIntact($this->user);
 });

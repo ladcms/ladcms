@@ -128,6 +128,9 @@ return [
             'security' => 'Безопасность',
             'appearance' => 'Оформление',
         ],
+        'avatar' => [
+            'missing_or_too_large' => 'Файл не получен. Возможно, он превышает лимит загрузки на сервере.',
+        ],
         'profile' => [
             'title' => 'Профиль',
             'description' => 'Эти данные видны на вашей публичной странице',
@@ -138,7 +141,7 @@ return [
             'avatar_upload' => 'Загрузить',
             'avatar_cancel' => 'Отмена',
             'avatar_remove' => 'Удалить',
-            'avatar_hint' => 'JPG, PNG или WebP, до :size, не более 8000×8000 px.',
+            'avatar_hint' => 'JPG, PNG или WebP, до :size, не более :dim×:dim px.',
             'avatar_remove_title' => 'Удалить аватар?',
             'avatar_remove_description' => 'Вместо аватара будут показаны ваши инициалы.',
             'avatar_saved' => 'Аватар обновлён',

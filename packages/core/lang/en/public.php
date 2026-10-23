@@ -128,6 +128,9 @@ return [
             'security' => 'Security',
             'appearance' => 'Appearance',
         ],
+        'avatar' => [
+            'missing_or_too_large' => 'No file received. It may exceed the server upload limit.',
+        ],
         'profile' => [
             'title' => 'Profile',
             'description' => 'This information is shown on your public page',
@@ -138,7 +141,7 @@ return [
             'avatar_upload' => 'Upload',
             'avatar_cancel' => 'Cancel',
             'avatar_remove' => 'Remove',
-            'avatar_hint' => 'JPG, PNG or WebP, up to :size, at most 8000×8000 px.',
+            'avatar_hint' => 'JPG, PNG or WebP, up to :size, at most :dim×:dim px.',
             'avatar_remove_title' => 'Remove avatar?',
             'avatar_remove_description' => 'Your avatar will be replaced by your initials.',
             'avatar_saved' => 'Avatar updated',

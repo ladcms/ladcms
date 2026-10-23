@@ -90,9 +90,69 @@ it('rejects oversized files', function () {
 it('rejects images exceeding the dimension limit', function () {
     $user = User::factory()->create();
 
-    expect(fn () => app(UpdateAvatar::class)->handle($user, UploadedFile::fake()->image('wide.png', 9000, 100)))
+    expect(fn () => app(UpdateAvatar::class)->handle($user, UploadedFile::fake()->image('wide.png', 4001, 100)))
         ->toThrow(ValidationException::class)
         ->and(Storage::disk('public')->files("avatars/{$user->id}"))->toBeEmpty();
+});
+
+it('accepts an image just below the dimension limit', function () {
+    $user = User::factory()->create();
+
+    $user = app(UpdateAvatar::class)->handle($user, UploadedFile::fake()->image('wide.png', 4000, 50));
+
+    expect($user->avatar_path)->not->toBeNull();
+});
+
+it('changes the avatar url after a re-upload and has no version without avatar', function () {
+    $user = User::factory()->create(['avatar_path' => null]);
+    expect($user->avatarUrl())->toBeNull();
+
+    $user = app(UpdateAvatar::class)->handle($user, UploadedFile::fake()->image('a.png', 300, 300));
+    $first = $user->avatar_url;
+    expect($first)->toContain('?v=');
+
+    $this->travel(5)->seconds();
+    $user = app(UpdateAvatar::class)->handle($user, UploadedFile::fake()->image('b.png', 300, 300));
+
+    expect($user->avatar_url)->not->toBe($first)->and($user->avatar_url)->toContain('?v=');
+
+    $user = app(RemoveAvatar::class)->handle($user);
+    expect($user->avatar_updated_at)->toBeNull()->and($user->avatar_url)->toBeNull();
+});
+
+it('prunes files that are not configured sizes after a successful upload', function () {
+    $user = User::factory()->create();
+    Storage::disk('public')->put("avatars/{$user->id}/stale.jpg", 'stale');
+
+    app(UpdateAvatar::class)->handle($user, UploadedFile::fake()->image('a.png', 300, 300));
+
+    expect(Storage::disk('public')->exists("avatars/{$user->id}/stale.jpg"))->toBeFalse();
+});
+
+it('never loses the avatar when a disk write fails midway', function () {
+    $user = User::factory()->create();
+    $user = app(UpdateAvatar::class)->handle($user, UploadedFile::fake()->image('a.png', 800, 600));
+    $before = Storage::disk('public')->get("avatars/{$user->id}/md.jpg");
+
+    $real = Storage::disk('public');
+    $failing = Mockery::mock($real)->makePartial();
+    $failing->shouldReceive('put')->andReturnUsing(function (string $path, $contents) use ($real) {
+        static $calls = 0;
+        if (++$calls === 2) {
+            throw new RuntimeException('disk full');
+        }
+
+        return $real->put($path, $contents);
+    });
+    Storage::set('public', $failing);
+
+    expect(fn () => app(UpdateAvatar::class)->handle($user, UploadedFile::fake()->image('b.png', 300, 300)))->toThrow(RuntimeException::class);
+
+    expect($real->exists("avatars/{$user->id}/md.jpg"))->toBeTrue()
+        ->and($real->exists("avatars/{$user->id}/sm.jpg"))->toBeTrue()
+        ->and($user->fresh()?->avatar_path)->toBe("avatars/{$user->id}/md.jpg")
+        ->and($real->get("avatars/{$user->id}/md.jpg"))->not->toBe('');
+    unset($before);
 });
 
 it('keeps the old avatar when an image passes validation but cannot be decoded', function () {
