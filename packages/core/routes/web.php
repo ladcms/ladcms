@@ -8,6 +8,7 @@ use Ladcms\Core\Http\Controllers\BannedController;
 use Ladcms\Core\Http\Controllers\HomeController;
 use Ladcms\Core\Http\Controllers\NotificationsController;
 use Ladcms\Core\Http\Controllers\ProfileController;
+use Ladcms\Core\Http\Controllers\Settings\AvatarController;
 use Ladcms\Core\Http\Controllers\Settings\LocaleController;
 use Ladcms\Core\Http\Controllers\Settings\NotificationPreferencesController;
 use Ladcms\Core\Http\Controllers\Settings\PrivacyController;
@@ -33,6 +34,8 @@ Route::middleware('auth')->prefix('settings')->group(function (): void {
     Route::get('/', fn () => redirect()->route('settings.profile'))->name('settings');
     Route::get('profile', [ProfileSettingsController::class, 'edit'])->name('settings.profile');
     Route::patch('profile', [ProfileSettingsController::class, 'update'])->name('settings.profile.update');
+    Route::post('profile/avatar', [AvatarController::class, 'store'])->middleware('throttle:20,1')->name('settings.avatar.store');
+    Route::delete('profile/avatar', [AvatarController::class, 'destroy'])->name('settings.avatar.destroy');
     Route::patch('login', [ProfileSettingsController::class, 'updateLogin'])->name('settings.login.update');
     Route::get('privacy', [PrivacyController::class, 'edit'])->name('settings.privacy');
     Route::patch('privacy', [PrivacyController::class, 'update'])->name('settings.privacy.update');

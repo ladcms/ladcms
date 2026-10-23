@@ -1,5 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
+import { AvatarUploader } from '@ladcms/core/components/settings/avatar-uploader';
 import { Button } from '@ladcms/core/components/ui/button';
 import {
     Card,
@@ -43,6 +44,8 @@ type ProfileProps = {
 
 type Props = {
     profile: ProfileProps;
+    avatar_url: string | null;
+    avatar_max_kb: number;
     must_verify_email: boolean;
     status?: string | null;
     timezones: string[];
@@ -60,6 +63,8 @@ type ProfileData = {
 
 export default function ProfileSettings({
     profile,
+    avatar_url: avatarUrl,
+    avatar_max_kb: avatarMaxKb,
     must_verify_email: mustVerifyEmail,
     status,
     timezones,
@@ -126,9 +131,16 @@ export default function ProfileSettings({
                         {t('core::public.settings.profile.avatar_title')}
                     </CardTitle>
                     <CardDescription>
-                        {t('core::public.settings.profile.avatar_placeholder')}
+                        {t('core::public.settings.profile.avatar_description')}
                     </CardDescription>
                 </CardHeader>
+                <CardContent>
+                    <AvatarUploader
+                        name={profile.name}
+                        avatarUrl={avatarUrl}
+                        maxKb={avatarMaxKb}
+                    />
+                </CardContent>
             </Card>
 
             <Card>

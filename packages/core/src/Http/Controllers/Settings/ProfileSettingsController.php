@@ -34,6 +34,8 @@ class ProfileSettingsController
                 'signature' => $user->signature,
                 'timezone' => $user->timezone,
             ],
+            'avatar_url' => $user->avatar_url,
+            'avatar_max_kb' => (int) config('core.avatars.max_kb', 2048),
             'must_verify_email' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
             'timezones' => DateTimeZone::listIdentifiers(),

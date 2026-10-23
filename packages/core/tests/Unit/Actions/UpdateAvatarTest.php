@@ -86,3 +86,27 @@ it('rejects oversized files', function () {
         ->toThrow(ValidationException::class)
         ->and(Storage::disk('public')->files("avatars/{$user->id}"))->toBeEmpty();
 });
+
+it('rejects images exceeding the dimension limit', function () {
+    $user = User::factory()->create();
+
+    expect(fn () => app(UpdateAvatar::class)->handle($user, UploadedFile::fake()->image('wide.png', 9000, 100)))
+        ->toThrow(ValidationException::class)
+        ->and(Storage::disk('public')->files("avatars/{$user->id}"))->toBeEmpty();
+});
+
+it('keeps the old avatar when an image passes validation but cannot be decoded', function () {
+    $user = User::factory()->create();
+    $user = app(UpdateAvatar::class)->handle($user, UploadedFile::fake()->image('a.png', 800, 600));
+    $before = Storage::disk('public')->get("avatars/{$user->id}/md.jpg");
+
+    // Обрезанный PNG: заголовок читается (проходит image/mimes/dimensions), а полное декодирование падает.
+    $source = UploadedFile::fake()->image('b.png', 400, 400);
+    $full = (string) file_get_contents((string) $source->getRealPath());
+    $broken = UploadedFile::fake()->createWithContent('broken.png', substr($full, 0, (int) (strlen($full) * 0.5)));
+
+    expect(fn () => app(UpdateAvatar::class)->handle($user, $broken))->toThrow(Exception::class)
+        ->and(Storage::disk('public')->get("avatars/{$user->id}/md.jpg"))->toBe($before)
+        ->and(Storage::disk('public')->files("avatars/{$user->id}"))->toHaveCount(2)
+        ->and($user->fresh()?->avatar_path)->toBe("avatars/{$user->id}/md.jpg");
+});

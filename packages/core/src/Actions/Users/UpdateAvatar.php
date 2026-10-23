@@ -10,20 +10,23 @@ use Illuminate\Support\Facades\Validator;
 use Intervention\Image\ImageManager;
 use Ladcms\Core\Models\User;
 
-/** Загружает аватар: валидация, ресайз cover() во все размеры из config('core.avatars.sizes'), замена старых файлов. */
+/**
+ * Загружает аватар: валидация (тип, вес, габариты — защита от decompression bomb), ресайз cover() во все размеры
+ * из config('core.avatars.sizes') в памяти; старые файлы заменяются только после успешной генерации всех вариантов.
+ */
 class UpdateAvatar
 {
     public function handle(User $user, UploadedFile $file): User
     {
         Validator::make(['avatar' => $file], [
-            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.(int) config('core.avatars.max_kb', 2048)],
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'dimensions:max_width=8000,max_height=8000', 'max:'.(int) config('core.avatars.max_kb', 2048)],
         ])->validate();
 
         $manager = ImageManager::gd();
         /** @var array<string, int> $sizes */
         $sizes = config('core.avatars.sizes', ['md' => 256, 'sm' => 64]);
 
-        // Сначала кодируем все размеры, чтобы ошибка декодирования не оставила пользователя без старых файлов.
+        // Сначала кодируем все размеры в памяти: ошибка декодирования/ресайза не оставит пользователя без старого аватара.
         $encoded = [];
         foreach ($sizes as $name => $size) {
             $encoded[$name] = $manager->read((string) $file->getRealPath())->cover($size, $size)->toJpeg(85)->toString();
