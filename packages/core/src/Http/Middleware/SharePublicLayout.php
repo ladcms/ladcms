@@ -12,6 +12,7 @@ use Ladcms\Core\Models\User;
 use Ladcms\Core\Settings\AppearanceSettings;
 use Ladcms\Core\Settings\GeneralSettings;
 use Ladcms\Core\Settings\RegistrationSettings;
+use Ladcms\Core\Support\TranslationMap;
 use Ladcms\Core\Ui\HeaderActions;
 use Ladcms\Core\Ui\Navigation;
 use Ladcms\Core\Ui\Widgets;
@@ -45,12 +46,17 @@ class SharePublicLayout
                 ],
                 'site' => [
                     'name' => $general->site_name,
+                    'url' => rtrim((string) config('app.url'), '/'),
                     'description' => $general->site_description,
                     'logo_url' => $logo !== null && $logo !== '' ? Storage::url($logo) : null,
                     'registration_open' => app(RegistrationSettings::class)->isAvailable(),
                 ],
             ];
         });
+
+        // Карта переводов — once-проп: повторно уходит на клиент только при смене локали/области/набора модулей.
+        $translations = app(TranslationMap::class);
+        Inertia::shareOnce('i18n', fn (): array => $translations->build($request))->as($translations->cacheKey($request));
 
         return $next($request);
     }

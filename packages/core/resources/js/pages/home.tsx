@@ -1,5 +1,6 @@
-import { Head, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { WidgetList } from '@ladcms/core/components/public/widget-list';
+import { Seo } from '@ladcms/core/components/public/seo';
 import { useT } from '@ladcms/core/lib/i18n';
 import type { LayoutShared } from '@ladcms/core/types/layout';
 
@@ -8,16 +9,20 @@ export default function Home() {
     const t = useT();
     const { layout } = usePage<{ layout: LayoutShared }>().props;
     const { site, widgets } = layout;
+    // Виджет Welcome сам показывает описание сайта — второй раз его не выводим.
+    const hasWelcome = widgets.main.some(
+        (widget) => widget.component === 'core::Welcome',
+    );
 
     return (
         <>
-            <Head title={site.name} />
+            <Seo title={site.name} description={site.description} />
             <div className="flex flex-col gap-4">
                 <header>
                     <h1 className="text-2xl font-semibold">
                         {t('core::public.home.heading', { name: site.name })}
                     </h1>
-                    {site.description && (
+                    {site.description && !hasWelcome && (
                         <p className="mt-1 text-muted-foreground">
                             {site.description}
                         </p>

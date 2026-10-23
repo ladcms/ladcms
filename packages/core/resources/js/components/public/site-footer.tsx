@@ -9,6 +9,7 @@ import {
 import { useT } from '@ladcms/core/lib/i18n';
 import type { LayoutShared } from '@ladcms/core/types/layout';
 import { rules } from '@/routes';
+import { update } from '@/routes/locale';
 import { page as notificationsPage } from '@/routes/notifications';
 
 export function SiteFooter() {
@@ -30,25 +31,30 @@ export function SiteFooter() {
                         name: layout?.site.name ?? '',
                     })}
                 </span>
-                <div className="flex items-center gap-4">
+                <nav
+                    aria-label={t('core::public.footer.nav')}
+                    className="flex items-center gap-4"
+                >
                     {auth?.user && (
                         <Link
                             href={notificationsPage()}
-                            className="hover:text-foreground"
+                            className="rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         >
                             {t('core::public.footer.notifications')}
                         </Link>
                     )}
-                    <Link href={rules()} className="hover:text-foreground">
+                    <Link
+                        href={rules()}
+                        className="rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >
                         {t('core::public.footer.rules')}
                     </Link>
                     {available.length > 1 && (
                         <Select
                             value={locale}
                             onValueChange={(value) =>
-                                // Маршрут `/locale` появляется в Task 6.
                                 router.post(
-                                    '/locale',
+                                    update.url(),
                                     { locale: value },
                                     { preserveScroll: true },
                                 )
@@ -69,7 +75,7 @@ export function SiteFooter() {
                             </SelectContent>
                         </Select>
                     )}
-                </div>
+                </nav>
             </div>
         </footer>
     );

@@ -16,12 +16,17 @@ export function useT(): Translate {
     // Стабильная ссылка: функцию безопасно указывать в зависимостях эффектов.
     return useCallback(
         (key, replacements) => {
-            let text = i18n?.[key] ?? key;
-            for (const [name, value] of Object.entries(replacements ?? {})) {
-                text = text.replaceAll(`:${name}`, String(value));
+            const text = i18n?.[key] ?? key;
+            if (!replacements) {
+                return text;
             }
 
-            return text;
+            // Один проход: значение, содержащее `:другой`, повторно не подставляется.
+            return text.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, (match, name) =>
+                Object.hasOwn(replacements, name)
+                    ? String(replacements[name])
+                    : match,
+            );
         },
         [i18n],
     );

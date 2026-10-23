@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { ModuleBlock } from '@ladcms/core/components/profile/module-block';
 import { ProfileHeader } from '@ladcms/core/components/profile/profile-header';
 import {
@@ -11,6 +11,7 @@ import { Card } from '@ladcms/core/components/ui/card';
 import { Skeleton } from '@ladcms/core/components/ui/skeleton';
 import { useComponentRegistry } from '@ladcms/core/inertia/component-registry';
 import { resolveModuleComponent } from '@ladcms/core/inertia/resolve-component';
+import { Seo } from '@ladcms/core/components/public/seo';
 import type {
     OverviewBlock,
     Profile,
@@ -70,7 +71,12 @@ export default function UserShow({
 
     return (
         <>
-            <Head title={profile.display_name} />
+            <Seo
+                title={profile.display_name}
+                description={profile.about}
+                image={profile.avatar_url}
+                type="profile"
+            />
             <div className="flex flex-col gap-4">
                 <Card className="gap-0 overflow-hidden py-0">
                     <ProfileHeader

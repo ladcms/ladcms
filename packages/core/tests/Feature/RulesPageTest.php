@@ -72,3 +72,12 @@ it('resolves the nav rules item by route and the Welcome rules_url to the route 
     $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
         ->where('layout.widgets.main.0.props.rules_url', route('rules')));
 });
+
+it('neutralises data:, vbscript: and autolink vectors', function () {
+    setRules("[a](data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==)\n\n[b](vbscript:msgbox(1))\n\n<javascript:alert(5)>\n\n<data:text/html,x>\n\n[c](JaVaScRiPt:alert(6))");
+
+    $html = strtolower(rulesHtml($this));
+
+    expect($html)->not->toMatch('/href\s*=\s*["\']?\s*(javascript|vbscript|data):/')
+        ->and($html)->not->toContain('<script');
+});

@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { Button } from '@ladcms/core/components/ui/button';
 import {
@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from '@ladcms/core/components/ui/select';
 import { Switch } from '@ladcms/core/components/ui/switch';
+import { Seo } from '@ladcms/core/components/public/seo';
 import { useT } from '@ladcms/core/lib/i18n';
 import PrivacyController from '@/actions/Ladcms/Core/Http/Controllers/Settings/PrivacyController';
 
@@ -46,7 +47,7 @@ export default function PrivacySettings({
 
     return (
         <>
-            <Head title={t('core::public.settings.privacy.title')} />
+            <Seo title={t('core::public.settings.privacy.title')} />
 
             <Card>
                 <form onSubmit={submit}>

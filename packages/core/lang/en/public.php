@@ -57,6 +57,7 @@ return [
         'empty_text' => 'The administrator has not filled in the site rules yet.',
     ],
     'footer' => [
+        'nav' => 'Footer links',
         'notifications' => 'All notifications',
         'copyright' => '© :year :name',
         'rules' => 'Rules',
@@ -65,8 +66,11 @@ return [
     'tabbar' => [
         'label' => 'Bottom navigation',
         'me' => 'Me',
+        'more' => 'More',
+        'more_title' => 'Site sections',
     ],
     'sidebar' => [
+        'label' => 'Sidebar',
         'more' => 'More',
     ],
     'home' => [
@@ -76,7 +80,7 @@ return [
     ],
     'widgets' => [
         'welcome' => [
-            'title' => 'Welcome',
+            'title' => 'Welcome, :name',
             'rules' => 'Read the rules',
         ],
         'online' => [
@@ -217,4 +221,20 @@ return [
             'language' => 'Language',
         ],
     ],
+    'errors' => [
+        'back_home' => 'Back to home',
+        '403' => ['title' => 'Access denied', 'message' => 'You do not have permission to view this page.'],
+        '404' => ['title' => 'Page not found', 'message' => 'This page does not exist or has been removed.'],
+        '419' => ['title' => 'Session expired', 'message' => 'Your session has expired. Refresh the page and try again.'],
+        '500' => ['title' => 'Server error', 'message' => 'Something went wrong. Please try again later.'],
+        '503' => ['title' => 'Temporarily unavailable', 'message' => 'The site is under maintenance. Please check back soon.'],
+    ],
+    'banned' => [
+        'title' => 'Access restricted',
+        'reason' => 'Reason: :code',
+        'until' => 'Until: :date',
+        'forever' => 'Permanent',
+        'logout' => 'Log out',
+    ],
+    'skip_to_content' => 'Skip to content',
 ];

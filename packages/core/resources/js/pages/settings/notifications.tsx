@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { Button } from '@ladcms/core/components/ui/button';
 import {
@@ -10,6 +10,7 @@ import {
     CardTitle,
 } from '@ladcms/core/components/ui/card';
 import { Switch } from '@ladcms/core/components/ui/switch';
+import { Seo } from '@ladcms/core/components/public/seo';
 import { useT } from '@ladcms/core/lib/i18n';
 import NotificationPreferencesController from '@/actions/Ladcms/Core/Http/Controllers/Settings/NotificationPreferencesController';
 
@@ -55,7 +56,7 @@ export default function NotificationSettings({
 
     return (
         <>
-            <Head title={t('core::public.settings.notifications.title')} />
+            <Seo title={t('core::public.settings.notifications.title')} />
 
             <Card>
                 <form onSubmit={submit}>

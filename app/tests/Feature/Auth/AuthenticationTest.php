@@ -30,7 +30,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticatedAs($user);
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('home', absolute: false));
     }
 
     public function test_users_can_authenticate_with_their_login()
@@ -43,7 +43,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticatedAs($user);
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('home', absolute: false));
     }
 
     public function test_users_can_not_authenticate_with_their_login_and_invalid_password()
@@ -109,7 +109,7 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create(['login' => 'alice']);
 
-        $this->actingAs($user)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($user)->get(route('settings.profile'))->assertInertia(fn (Assert $page) => $page
             ->where('auth.user.id', $user->id)
             ->where('auth.user.login', 'alice')
             ->where('auth.user.roles', [])

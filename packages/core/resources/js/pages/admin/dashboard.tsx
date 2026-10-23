@@ -65,7 +65,10 @@ export default function Dashboard({
                             <CardDescription>
                                 {t(`core::admin.dashboard.cards.${card.key}`)}
                             </CardDescription>
-                            <CardTitle className="text-3xl tabular-nums">
+                            <CardTitle
+                                as="div"
+                                className="text-3xl tabular-nums"
+                            >
                                 {card.value}
                             </CardTitle>
                             {card.key === 'modules' &&

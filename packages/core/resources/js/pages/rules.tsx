@@ -1,7 +1,7 @@
-import { Head } from '@inertiajs/react';
 import { ScrollText } from 'lucide-react';
 import { EmptyState } from '@ladcms/core/components/empty-state';
 import { PageHeader } from '@ladcms/core/components/page-header';
+import { Seo } from '@ladcms/core/components/public/seo';
 import { useT } from '@ladcms/core/lib/i18n';
 
 type Props = {
@@ -14,7 +14,7 @@ export default function Rules({ html }: Props) {
 
     return (
         <>
-            <Head title={t('core::public.rules.title')} />
+            <Seo title={t('core::public.rules.title')} />
             <div className="space-y-6">
                 <PageHeader title={t('core::public.rules.title')} />
                 {html === null ? (

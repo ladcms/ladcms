@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Search, Users } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { DataTablePagination } from '@ladcms/core/components/data-table';
@@ -20,6 +20,7 @@ import {
     SelectValue,
 } from '@ladcms/core/components/ui/select';
 import { Switch } from '@ladcms/core/components/ui/switch';
+import { Seo } from '@ladcms/core/components/public/seo';
 import { useT } from '@ladcms/core/lib/i18n';
 import { initials } from '@ladcms/core/lib/initials';
 import type { Paginator, SortDirection } from '@ladcms/core/types/table';
@@ -139,7 +140,7 @@ export default function UsersIndex({ users, filters }: Props) {
 
     return (
         <>
-            <Head title={title} />
+            <Seo title={title} />
             <div className="space-y-6">
                 <PageHeader
                     title={title}

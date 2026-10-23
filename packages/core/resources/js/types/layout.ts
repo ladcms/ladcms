@@ -27,6 +27,8 @@ export type LayoutWidget = {
 
 export type LayoutSite = {
     name: string;
+    /** Корень сайта без завершающего `/` (`config('app.url')`) — для абсолютных `og:url`/`og:image`. */
+    url: string;
     description: string | null;
     logo_url: string | null;
     registration_open: boolean;

@@ -12,13 +12,14 @@ const ROLE_PRIORITY = [
     'vip',
 ];
 
+/** Цвета по умолчанию: ступень 700 на светлом фоне даёт контраст не ниже 4.5:1. */
 export const ROLE_COLOR: Record<string, string> = {
-    creator: 'text-amber-600 dark:text-amber-400',
-    main_admin: 'text-rose-600 dark:text-rose-400',
-    admin: 'text-rose-600 dark:text-rose-400',
-    super_moderator: 'text-violet-600 dark:text-violet-400',
-    moderator: 'text-sky-600 dark:text-sky-400',
-    vip: 'text-emerald-600 dark:text-emerald-400',
+    creator: 'text-amber-700 dark:text-amber-400',
+    main_admin: 'text-rose-700 dark:text-rose-400',
+    admin: 'text-rose-700 dark:text-rose-400',
+    super_moderator: 'text-violet-700 dark:text-violet-400',
+    moderator: 'text-sky-700 dark:text-sky-400',
+    vip: 'text-emerald-700 dark:text-emerald-400',
 };
 
 export function topRole(roles: string[]): string | null {

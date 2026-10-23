@@ -32,6 +32,9 @@ type NotificationsPayload = {
 
 const POLL_INTERVAL_MS = 60_000;
 
+/** Событие `window`: список уведомлений изменился вне колокольчика (например, «Прочитать все» на странице) — перечитать счётчик. */
+export const NOTIFICATIONS_CHANGED_EVENT = 'ladcms:notifications-changed';
+
 /** Заголовок: ключ перевода из `title` (с `params`), для устаревших строк сервер подставляет ключ по типу. */
 function titleOf(item: NotificationItem, t: Translate): string {
     return item.title !== '' ? t(item.title, item.params) : item.type;
@@ -111,11 +114,14 @@ export function NotificationBell({ className }: { className?: string }) {
         if (!document.hidden) {
             start();
         }
+        const onChanged = () => void load();
         document.addEventListener('visibilitychange', onVisibility);
+        window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
 
         return () => {
             stop();
             document.removeEventListener('visibilitychange', onVisibility);
+            window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
         };
     }, [load]);
 

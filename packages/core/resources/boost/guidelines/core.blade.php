@@ -74,6 +74,32 @@ Defaults are seeded by settings migrations (they run with `migrate`), not by cla
   `php artisan route:clear` (or `optimize:clear`); the Modules page gets `routes_cached` and shows a warning. The web request never calls Artisan itself.
 - Admin lint: `npm run check:fix` in the app also lints `vendor/ladcms/*/resources/js` (UI kit `components/ui/**` is excluded).
 
+### Public UI for modules
+- A module plugs into the public site by implementing `Has*` contracts; core collects them (`Ui\Navigation`, `Ui\Widgets`, `Ui\HeaderActions`, `Ui\ProfileSections`) and shares the result as the `layout` Inertia prop
+  (`null` on `admin.*`). Entries that are malformed, throw, or point to a missing component file are skipped and logged once - they never break the page. Sorting is by `order`, ties by key/name.
+  - `HasNavigation::navigation()`: `key`, `label` (fallback; the text is `<module>::public.nav.<key>`), `icon` (lucide, kebab-case), `route` (name) or `path`, `order`, optional `params`, `permission` (hidden without it).
+  - `HasWidgets::widgets()`: `name`, `component` (`<module>::<Name>`), `slot` (`sidebar` | `main`), `order`, optional `props` as an array or a closure `fn (?User $user): array` (evaluated lazily, only for the requested slot).
+  - `HasHeaderActions::headerActions()`: `key`, `icon`, `component`, `order`, optional `auth` (signed-in users only).
+  - `HasProfileSections::profileSections()`: `tab` (`label`, `component`; key = module name, opened with `?tab=<module>`), `overview` (`component`, `order`), `counters` (`Closure(User $target, ?User $viewer)`: list of `key`, `label`, `value`, optional `tab`).
+    Optional `profileTabData(User $target, ?User $viewer): array` (checked with `method_exists`) feeds the `tab_data` prop; it is computed only when the module tab is open.
+  - `HasProfileActions::profileActions()`: `label`, `icon`, `component`, `order`, optional `permission` (viewers without it do not see the button). Guests and the profile owner never see module actions.
+- Components: `<module>::<Name>` resolves to `resources/js/<kind>/<Name>.tsx` of the module with kind `widgets` | `profile` | `header-actions` (flat, no nested directories).
+  Widgets get their `props`; profile tab components `{profile, tab_data}`, overview blocks and actions `{profile}`; header actions get nothing. They are lazy and wrapped in an error boundary; a missing file hides the slot.
+- Public pages of a module are `<module>::Path/Page` (`resources/js/pages/...`) and render inside `PublicLayout` automatically (admin pages: `AdminLayout`). Use `<Seo title description image type />`
+  (`@ladcms/core/components/public/seo`) for `<title>`, description and Open Graph tags.
+- Texts: `lang/{ru,en}/public.php` of the module, keys `<module>::public.*`, read with `useT()` (`@ladcms/core/lib/i18n`). The `i18n` map (strings only, current locale, public namespace on every page, `admin` additionally on `admin.*`)
+  is a once-prop: the client keeps it until the locale, scope or module set changes. Placeholders (`:name`) are replaced in a single pass.
+- `layout` share: `navigation` (`key, label, icon, url, order, active`), `header_actions` (`key, icon, component, order`), `widgets.sidebar` / `widgets.main` (`main` only on `home`; `name, component, module, order, props`),
+  `site` (`name`, `url`, `description`, `logo_url`, `registration_open` from `RegistrationSettings::isAvailable()` - use it instead of reading registration settings yourself).
+- `auth.user` (`CurrentUserResource`): `id, login, name, display_name, email, avatar_url, roles, permissions, level, is_creator, is_banned, can_write`; `roles` is a list of `{name, color}` (admin-configured hex or `null`), not strings.
+  `can_write` is `false` for banned users and during the post-registration readonly period: forms that change public content must check `canWrite()` on the server and disable controls in the UI.
+- Privacy: user data for other people goes through `PublicUserResource` / `ProfileResource` only. `email` and `birth_date` are exposed when the user enabled `show_email` / `show_birthday` or the viewer is the owner;
+  suspicious flag, raw activity and ban reasons are never exposed (only a public boolean `is_banned`). Never serialize a `User` model into props.
+- Notification types appear in the user's notification settings through `Support\NotificationTypes::register('<key>', <Notification::class>)` (call it in `boot()`; `mergeConfigFrom` is shallow).
+- Error pages: `403/404/500/503` render `core::error` through `Http\ErrorPageRenderer` (wired in the app's `bootstrap/app.php`); in debug mode a 500 keeps Laravel's debug page; `419` redirects back with a toast. JSON requests are untouched.
+- Accessibility: skip link and `#main` in `PublicLayout`, labelled `nav` landmarks, `aria-current` on active links, icon-only controls need `aria-label`, `focus-visible:ring-2 focus-visible:ring-ring` on interactive elements, tabs use `role=tablist/tab/tabpanel` with arrow keys.
+- Every public GET route must render an existing page: keep `PublicSmokeTest` green.
+
 ### Conventions a module must follow
 - `name()` must equal the Composer package directory (`vendor/ladcms/<name>`): the frontend resolves
   `<name>::Page` to `vendor/ladcms/<name>/resources/js/pages/Page.tsx`.

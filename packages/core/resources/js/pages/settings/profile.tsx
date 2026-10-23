@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 import { AvatarUploader } from '@ladcms/core/components/settings/avatar-uploader';
 import { Button } from '@ladcms/core/components/ui/button';
@@ -20,6 +20,7 @@ import {
     SelectValue,
 } from '@ladcms/core/components/ui/select';
 import { Textarea } from '@ladcms/core/components/ui/textarea';
+import { Seo } from '@ladcms/core/components/public/seo';
 import { useT } from '@ladcms/core/lib/i18n';
 import type { CurrentUser } from '@ladcms/core/types/admin';
 import ProfileSettingsController from '@/actions/Ladcms/Core/Http/Controllers/Settings/ProfileSettingsController';
@@ -125,7 +126,7 @@ export default function ProfileSettings({
 
     return (
         <>
-            <Head title={t('core::public.settings.profile.title')} />
+            <Seo title={t('core::public.settings.profile.title')} />
 
             <Card>
                 <CardHeader>

@@ -32,20 +32,34 @@ export default function PublicLayout({ children, title }: PublicLayoutProps) {
     const isDesktop = useMediaQuery('(min-width: 1024px)');
 
     return (
-        <div className="flex min-h-svh flex-col bg-background pb-[calc(3rem+env(safe-area-inset-bottom))] text-foreground lg:pb-0">
+        <div className="flex min-h-svh flex-col bg-background pb-[calc(3rem+1px+env(safe-area-inset-bottom))] text-foreground lg:pb-0">
             {title && <Head title={t(title)} />}
+
+            <a
+                href="#main"
+                className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-2 focus-visible:left-2 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium focus-visible:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+                {t('core::public.skip_to_content')}
+            </a>
 
             <SiteHeader />
             {auth?.user?.can_write === false && <ReadonlyBanner />}
 
             <div className="mx-auto flex w-full max-w-7xl flex-1 gap-6 px-4 py-6">
                 {isDesktop && sidebar.length > 0 && (
-                    <aside className="hidden w-72 shrink-0 lg:block">
+                    <aside
+                        aria-label={t('core::public.sidebar.label')}
+                        className="hidden w-72 shrink-0 lg:block"
+                    >
                         <WidgetList widgets={sidebar} />
                     </aside>
                 )}
 
-                <main className="min-w-0 flex-1">
+                <main
+                    id="main"
+                    tabIndex={-1}
+                    className="min-w-0 flex-1 outline-none"
+                >
                     {children}
 
                     {!isDesktop && sidebar.length > 0 && (

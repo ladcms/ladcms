@@ -1,9 +1,11 @@
-import { Head, Link, router, useHttp, usePage } from '@inertiajs/react';
+import { Link, router, useHttp, usePage } from '@inertiajs/react';
 import { Bell } from 'lucide-react';
 import { DataTablePagination } from '@ladcms/core/components/data-table';
 import { EmptyState } from '@ladcms/core/components/empty-state';
 import { PageHeader } from '@ladcms/core/components/page-header';
+import { NOTIFICATIONS_CHANGED_EVENT } from '@ladcms/core/components/notification-bell';
 import { Button } from '@ladcms/core/components/ui/button';
+import { Seo } from '@ladcms/core/components/public/seo';
 import { useT } from '@ladcms/core/lib/i18n';
 import { relativeTime } from '@ladcms/core/lib/relative-time';
 import { cn } from '@ladcms/core/lib/utils';
@@ -42,11 +44,13 @@ export default function NotificationsIndex({ notifications }: Props) {
             // Список перезагрузится ниже и покажет фактическое состояние.
         }
         router.reload();
+        // Колокольчик в шапке перечитывает счётчик сразу, а не на следующем опросе.
+        window.dispatchEvent(new CustomEvent(NOTIFICATIONS_CHANGED_EVENT));
     };
 
     return (
         <>
-            <Head title={t('core::public.notifications.page_title')} />
+            <Seo title={t('core::public.notifications.page_title')} />
             <div className="space-y-6">
                 <PageHeader
                     title={t('core::public.notifications.page_title')}

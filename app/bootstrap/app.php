@@ -7,6 +7,8 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Ladcms\Core\Http\ErrorPageRenderer;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -28,4 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Публичные страницы ошибок (403/404/500/503) вместо дефолтных Blade-страниц.
+        $exceptions->respond(fn (Response $response, Throwable $e, Request $request): Response => app(ErrorPageRenderer::class)->render($response, $e, $request));
     })->create();

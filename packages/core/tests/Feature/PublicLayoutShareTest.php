@@ -63,7 +63,8 @@ it('shares site data from settings', function () {
     $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
         ->where('layout.site.name', 'Cool Site')
         ->where('layout.site.description', 'About it')
-        ->where('layout.site.logo_url', null));
+        ->where('layout.site.logo_url', null)
+        ->where('layout.site.url', rtrim((string) config('app.url'), '/')));
 });
 
 it('computes registration_open from settings and invite validator', function (bool $open, bool $inviteOnly, bool $bound, bool $expected) {

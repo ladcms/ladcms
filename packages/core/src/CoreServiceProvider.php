@@ -11,10 +11,8 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Ladcms\Core\Admin\AdminMenu;
@@ -88,7 +86,7 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
             '@radix-ui/react-popover' => '^1.3.1',
             '@radix-ui/react-switch' => '^1.4.1',
             '@radix-ui/react-tabs' => '^1.2.1',
-            '@tailwindcss/typography' => '^0.5.16',
+            '@tailwindcss/typography' => '^0.5.20',
             'cmdk' => '^1.1.1',
         ];
     }
@@ -266,26 +264,6 @@ class CoreServiceProvider extends ModuleServiceProvider implements HasAdminPanel
                 ),
                 'user' => CurrentUserResource::make($user)->resolve($request),
             ];
-        });
-
-        // Переводы (`<module>::public.*` на всех страницах, `<module>::admin.*` дополнительно на админ-роутах)
-        // для текущей локали — плоской картой. Собирается на каждый запрос, без кэша: набор модулей и локаль меняются между запросами.
-        Inertia::share('i18n', function (): array {
-            $groups = $this->app->make(Request::class)->routeIs('admin.*') ? ['public', 'admin'] : ['public'];
-
-            $map = [];
-            foreach ($this->app->make(ModuleRegistry::class)->names() as $name) {
-                foreach ($groups as $group) {
-                    $lines = Lang::get("{$name}::{$group}");
-                    if (is_array($lines)) {
-                        foreach (Arr::dot($lines) as $key => $value) {
-                            $map["{$name}::{$group}.{$key}"] = $value;
-                        }
-                    }
-                }
-            }
-
-            return $map;
         });
 
         // Ежедневная чистка: неподтверждённые аккаунты и старые записи журнала активности.

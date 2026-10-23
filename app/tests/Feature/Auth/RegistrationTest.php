@@ -40,7 +40,7 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('home', absolute: false));
 
         $user = User::query()->where('login', 'test_user')->firstOrFail();
         $this->assertSame('test@example.com', $user->email);
@@ -97,7 +97,7 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated();
         $this->assertNotNull(User::query()->where('login', 'test_user')->sole()->email_verified_at);
-        $this->get(route('dashboard'))->assertOk();
+        $this->get(route('home'))->assertOk();
     }
 
     public function test_invite_only_registration_is_closed_without_an_invite_validator()

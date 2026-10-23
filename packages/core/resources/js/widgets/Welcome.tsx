@@ -20,7 +20,9 @@ export default function Welcome({ site_name, description, rules_url }: Props) {
         <section>
             <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-xl">
-                    {t('core::public.widgets.welcome.title')}, {site_name}
+                    {t('core::public.widgets.welcome.title', {
+                        name: site_name,
+                    })}
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-start gap-3 p-4 pt-0">

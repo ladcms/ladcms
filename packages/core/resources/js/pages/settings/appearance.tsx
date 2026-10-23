@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import type { Appearance } from '@ladcms/core/hooks/use-appearance';
@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@ladcms/core/components/ui/select';
+import { Seo } from '@ladcms/core/components/public/seo';
 import { useT } from '@ladcms/core/lib/i18n';
 import { cn } from '@ladcms/core/lib/utils';
 import { update as updateLocale } from '@/routes/locale';
@@ -39,7 +40,7 @@ export default function AppearanceSettings() {
 
     return (
         <>
-            <Head title={t('core::public.settings.appearance.title')} />
+            <Seo title={t('core::public.settings.appearance.title')} />
 
             <Card>
                 <CardHeader>

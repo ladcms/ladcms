@@ -22,14 +22,26 @@ export function ProfileTabs({
         event: KeyboardEvent<HTMLButtonElement>,
         index: number,
     ) => {
-        const step =
-            event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
-        if (step === 0) {
-            return;
+        let target: number;
+        switch (event.key) {
+            case 'ArrowRight':
+                target = (index + 1) % tabs.length;
+                break;
+            case 'ArrowLeft':
+                target = (index - 1 + tabs.length) % tabs.length;
+                break;
+            case 'Home':
+                target = 0;
+                break;
+            case 'End':
+                target = tabs.length - 1;
+                break;
+            default:
+                return;
         }
 
         event.preventDefault();
-        const next = tabs[(index + step + tabs.length) % tabs.length];
+        const next = tabs[target];
         if (next) {
             onSelect(next.key);
             document.getElementById(tabId(next.key))?.focus();

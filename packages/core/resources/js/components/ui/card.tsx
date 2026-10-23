@@ -25,9 +25,14 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+type CardTitleProps = React.ComponentProps<"div"> & {
+  /** Тег заголовка: по умолчанию `h2` (карточка — раздел страницы под `h1`). */
+  as?: "h2" | "h3" | "h4" | "div"
+}
+
+function CardTitle({ className, as: Tag = "h2", ...props }: CardTitleProps) {
   return (
-    <div
+    <Tag
       data-slot="card-title"
       className={cn("leading-none font-semibold", className)}
       {...props}
